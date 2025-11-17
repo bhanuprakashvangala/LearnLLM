@@ -1,0 +1,634 @@
+{
+  "beginner": {
+    "title": "Complete Beginner",
+    "description": "Zero coding required - perfect for everyone!",
+    "duration": "2-3 weeks",
+    "icon": "BookOpen",
+    "modules": [
+      {
+        "id": "ai-fundamentals",
+        "title": "AI Fundamentals",
+        "description": "Understanding the basics of Large Language Models",
+        "order": 1,
+        "lessons": [
+          {
+            "slug": "what-is-llm",
+            "title": "What is a Large Language Model?",
+            "duration": 10,
+            "order": 1
+          },
+          {
+            "slug": "how-ai-learns",
+            "title": "How AI Learns: Training vs Inference",
+            "duration": 12,
+            "order": 2
+          },
+          {
+            "slug": "tokens-and-context",
+            "title": "Understanding Tokens and Context Windows",
+            "duration": 15,
+            "order": 3
+          },
+          {
+            "slug": "prompt-engineering-intro",
+            "title": "The Power of Prompt Engineering",
+            "duration": 12,
+            "order": 4
+          },
+          {
+            "slug": "first-chatgpt-conversation",
+            "title": "Hands-on: Your First ChatGPT Conversation",
+            "duration": 20,
+            "order": 5
+          }
+        ]
+      },
+      {
+        "id": "prompt-mastery",
+        "title": "Prompt Mastery",
+        "description": "Learn to write effective prompts",
+        "order": 2,
+        "lessons": [
+          {
+            "slug": "effective-prompts",
+            "title": "Writing Effective Prompts",
+            "duration": 15,
+            "order": 6
+          },
+          {
+            "slug": "few-shot-learning",
+            "title": "Few-Shot Learning Explained",
+            "duration": 12,
+            "order": 7
+          },
+          {
+            "slug": "chain-of-thought",
+            "title": "Chain of Thought Prompting",
+            "duration": 15,
+            "order": 8
+          },
+          {
+            "slug": "prompt-patterns",
+            "title": "Common Prompt Patterns",
+            "duration": 18,
+            "order": 9
+          },
+          {
+            "slug": "prompt-library-project",
+            "title": "Project: Build a Prompt Library",
+            "duration": 30,
+            "order": 10
+          }
+        ]
+      },
+      {
+        "id": "no-code-tools",
+        "title": "No-Code AI Tools",
+        "description": "Use AI without writing code",
+        "order": 3,
+        "lessons": [
+          {
+            "slug": "ai-assistants-compared",
+            "title": "ChatGPT, Claude, and Gemini Compared",
+            "duration": 15,
+            "order": 11
+          },
+          {
+            "slug": "ai-content-creation",
+            "title": "Using AI for Content Creation",
+            "duration": 20,
+            "order": 12
+          },
+          {
+            "slug": "ai-productivity",
+            "title": "AI Assistants and Productivity",
+            "duration": 15,
+            "order": 13
+          },
+          {
+            "slug": "ethical-ai",
+            "title": "Ethical AI Usage",
+            "duration": 12,
+            "order": 14
+          },
+          {
+            "slug": "ai-workflow-project",
+            "title": "Project: Create an AI-Powered Workflow",
+            "duration": 30,
+            "order": 15
+          }
+        ]
+      }
+    ]
+  },
+  "intermediate": {
+    "title": "Creator & Builder",
+    "description": "Build real AI apps - for anyone ready to level up",
+    "duration": "4-6 weeks",
+    "icon": "Code",
+    "modules": [
+      {
+        "id": "transformer-foundations",
+        "title": "Foundation of Transformers",
+        "description": "Understanding the architecture that powers modern LLMs",
+        "order": 1,
+        "lessons": [
+          {
+            "slug": "nlp-evolution",
+            "title": "The Evolution of NLP (Pre-Transformer Era)",
+            "duration": 15,
+            "order": 16
+          },
+          {
+            "slug": "attention-is-all-you-need",
+            "title": "Paper: Attention Is All You Need (Simplified)",
+            "duration": 25,
+            "order": 17
+          },
+          {
+            "slug": "self-attention",
+            "title": "Understanding Self-Attention",
+            "duration": 20,
+            "order": 18
+          },
+          {
+            "slug": "encoder-decoder",
+            "title": "Encoder-Decoder Architecture",
+            "duration": 20,
+            "order": 19
+          },
+          {
+            "slug": "positional-encodings",
+            "title": "Positional Encodings Explained",
+            "duration": 15,
+            "order": 20
+          }
+        ]
+      },
+      {
+        "id": "modern-architectures",
+        "title": "Modern LLM Architectures",
+        "description": "Explore GPT, BERT, T5 and more",
+        "order": 2,
+        "lessons": [
+          {
+            "slug": "gpt-evolution",
+            "title": "GPT Series Evolution (GPT-1 → GPT-4)",
+            "duration": 20,
+            "order": 21
+          },
+          {
+            "slug": "bert-bidirectional",
+            "title": "BERT and Bidirectional Models",
+            "duration": 18,
+            "order": 22
+          },
+          {
+            "slug": "t5-text-to-text",
+            "title": "T5: Text-to-Text Transfer Transformer",
+            "duration": 18,
+            "order": 23
+          },
+          {
+            "slug": "decoder-only-models",
+            "title": "Decoder-Only Models (GPT, LLaMA)",
+            "duration": 15,
+            "order": 24
+          },
+          {
+            "slug": "encoder-only-models",
+            "title": "Encoder-Only Models (BERT, RoBERTa)",
+            "duration": 15,
+            "order": 25
+          }
+        ]
+      },
+      {
+        "id": "langchain-frameworks",
+        "title": "LangChain & Frameworks",
+        "description": "Build AI apps with LangChain",
+        "order": 3,
+        "lessons": [
+          {
+            "slug": "langchain-basics",
+            "title": "Introduction to LangChain",
+            "duration": 20,
+            "order": 26
+          },
+          {
+            "slug": "chains-agents-tools",
+            "title": "Chains, Agents, and Tools",
+            "duration": 25,
+            "order": 27
+          },
+          {
+            "slug": "memory-systems",
+            "title": "Memory Systems in LangChain",
+            "duration": 18,
+            "order": 28
+          },
+          {
+            "slug": "first-langchain-app",
+            "title": "Building Your First LangChain App",
+            "duration": 30,
+            "order": 29
+          },
+          {
+            "slug": "multi-step-agent-project",
+            "title": "Project: Multi-Step AI Agent",
+            "duration": 45,
+            "order": 30
+          }
+        ]
+      },
+      {
+        "id": "rag-systems",
+        "title": "RAG (Retrieval-Augmented Generation)",
+        "description": "Build AI that works with your documents",
+        "order": 4,
+        "lessons": [
+          {
+            "slug": "what-is-rag",
+            "title": "What is RAG and Why It Matters",
+            "duration": 15,
+            "order": 31
+          },
+          {
+            "slug": "vector-databases",
+            "title": "Vector Databases Explained",
+            "duration": 20,
+            "order": 32
+          },
+          {
+            "slug": "embeddings-similarity",
+            "title": "Embeddings and Similarity Search",
+            "duration": 20,
+            "order": 33
+          },
+          {
+            "slug": "building-rag-system",
+            "title": "Building a RAG System with LangChain",
+            "duration": 35,
+            "order": 34
+          },
+          {
+            "slug": "document-qa-project",
+            "title": "Project: Document Q&A System",
+            "duration": 45,
+            "order": 35
+          }
+        ]
+      },
+      {
+        "id": "vector-databases-deep",
+        "title": "Vector Databases & Embeddings",
+        "description": "Deep dive into semantic search",
+        "order": 5,
+        "lessons": [
+          {
+            "slug": "understanding-embeddings",
+            "title": "Understanding Embeddings",
+            "duration": 18,
+            "order": 36
+          },
+          {
+            "slug": "vector-db-comparison",
+            "title": "ChromaDB, Pinecone, Weaviate Compared",
+            "duration": 20,
+            "order": 37
+          },
+          {
+            "slug": "chunking-strategies",
+            "title": "Chunking Strategies",
+            "duration": 15,
+            "order": 38
+          },
+          {
+            "slug": "hybrid-search",
+            "title": "Hybrid Search Techniques",
+            "duration": 18,
+            "order": 39
+          },
+          {
+            "slug": "semantic-search-project",
+            "title": "Project: Semantic Search Engine",
+            "duration": 40,
+            "order": 40
+          }
+        ]
+      }
+    ]
+  },
+  "advanced": {
+    "title": "Advanced Developer",
+    "description": "For developers who want to build production AI",
+    "duration": "6-8 weeks",
+    "icon": "Rocket",
+    "modules": [
+      {
+        "id": "advanced-transformers",
+        "title": "Advanced Transformer Concepts",
+        "description": "Deep dive into transformer internals",
+        "order": 1,
+        "lessons": [
+          {
+            "slug": "multi-head-attention-deep",
+            "title": "Multi-Head Attention Deep Dive",
+            "duration": 25,
+            "order": 41
+          },
+          {
+            "slug": "layer-norm-residuals",
+            "title": "Layer Normalization and Residual Connections",
+            "duration": 20,
+            "order": 42
+          },
+          {
+            "slug": "tokenization-algorithms",
+            "title": "Tokenization Algorithms (BPE, WordPiece, SentencePiece)",
+            "duration": 22,
+            "order": 43
+          },
+          {
+            "slug": "model-scaling-laws",
+            "title": "Model Scaling Laws",
+            "duration": 20,
+            "order": 44
+          },
+          {
+            "slug": "scaling-laws-paper",
+            "title": "Paper: Scaling Laws for Neural Language Models",
+            "duration": 25,
+            "order": 45
+          }
+        ]
+      },
+      {
+        "id": "modern-architectures-advanced",
+        "title": "Modern Architectures",
+        "description": "LLaMA, Mistral, and cutting-edge models",
+        "order": 2,
+        "lessons": [
+          {
+            "slug": "llama-architecture",
+            "title": "LLaMA Architecture Analysis",
+            "duration": 25,
+            "order": 46
+          },
+          {
+            "slug": "mistral-moe",
+            "title": "Mistral and Mixture of Experts (MoE)",
+            "duration": 30,
+            "order": 47
+          },
+          {
+            "slug": "llama-paper",
+            "title": "Paper: LLaMA - Open and Efficient Foundation Models",
+            "duration": 30,
+            "order": 48
+          },
+          {
+            "slug": "flash-attention",
+            "title": "FlashAttention and Optimization Techniques",
+            "duration": 25,
+            "order": 49
+          },
+          {
+            "slug": "rope-embeddings",
+            "title": "Rotary Position Embeddings (RoPE)",
+            "duration": 20,
+            "order": 50
+          }
+        ]
+      },
+      {
+        "id": "fine-tuning-basics",
+        "title": "Fine-Tuning Techniques",
+        "description": "Customize models for your needs",
+        "order": 3,
+        "lessons": [
+          {
+            "slug": "transfer-learning-llms",
+            "title": "Transfer Learning for LLMs",
+            "duration": 18,
+            "order": 51
+          },
+          {
+            "slug": "fine-tuning",
+            "title": "Full Fine-Tuning vs Parameter-Efficient Methods",
+            "duration": 22,
+            "order": 52
+          },
+          {
+            "slug": "lora",
+            "title": "LoRA (Low-Rank Adaptation)",
+            "duration": 25,
+            "order": 53
+          },
+          {
+            "slug": "qlora",
+            "title": "QLoRA: Quantized LoRA",
+            "duration": 25,
+            "order": 54
+          },
+          {
+            "slug": "lora-paper",
+            "title": "Paper: LoRA - Low-Rank Adaptation of Large Language Models",
+            "duration": 30,
+            "order": 55
+          }
+        ]
+      },
+      {
+        "id": "advanced-fine-tuning",
+        "title": "Advanced Fine-Tuning",
+        "description": "RLHF, DPO, and instruction tuning",
+        "order": 4,
+        "lessons": [
+          {
+            "slug": "instruction-tuning",
+            "title": "Instruction Tuning",
+            "duration": 20,
+            "order": 56
+          },
+          {
+            "slug": "rlhf",
+            "title": "RLHF (Reinforcement Learning from Human Feedback)",
+            "duration": 30,
+            "order": 57
+          },
+          {
+            "slug": "dpo",
+            "title": "DPO (Direct Preference Optimization)",
+            "duration": 25,
+            "order": 58
+          },
+          {
+            "slug": "instructgpt-paper",
+            "title": "Paper: Training Language Models to Follow Instructions",
+            "duration": 30,
+            "order": 59
+          },
+          {
+            "slug": "fine-tune-project",
+            "title": "Project: Fine-Tune Your Own Model",
+            "duration": 60,
+            "order": 60
+          }
+        ]
+      },
+      {
+        "id": "ai-agents",
+        "title": "AI Agents & Autonomous Systems",
+        "description": "Build agents that can reason and act",
+        "order": 5,
+        "lessons": [
+          {
+            "slug": "react-reasoning-acting",
+            "title": "ReAct: Reasoning and Acting",
+            "duration": 25,
+            "order": 61
+          },
+          {
+            "slug": "react-paper",
+            "title": "Paper: ReAct - Synergizing Reasoning and Acting",
+            "duration": 30,
+            "order": 62
+          },
+          {
+            "slug": "tool-use-function-calling",
+            "title": "Tool Use and Function Calling",
+            "duration": 25,
+            "order": 63
+          },
+          {
+            "slug": "multi-agent-systems",
+            "title": "Multi-Agent Systems",
+            "duration": 30,
+            "order": 64
+          },
+          {
+            "slug": "research-agent-project",
+            "title": "Project: Autonomous Research Agent",
+            "duration": 60,
+            "order": 65
+          }
+        ]
+      },
+      {
+        "id": "advanced-rag",
+        "title": "Advanced RAG & Context",
+        "description": "Production-ready retrieval systems",
+        "order": 6,
+        "lessons": [
+          {
+            "slug": "advanced-chunking",
+            "title": "Advanced Chunking Strategies",
+            "duration": 20,
+            "order": 66
+          },
+          {
+            "slug": "reranking-hybrid",
+            "title": "Re-ranking and Hybrid Search",
+            "duration": 25,
+            "order": 67
+          },
+          {
+            "slug": "query-expansion",
+            "title": "Query Expansion Techniques",
+            "duration": 20,
+            "order": 68
+          },
+          {
+            "slug": "context-compression",
+            "title": "Context Compression",
+            "duration": 22,
+            "order": 69
+          },
+          {
+            "slug": "production-rag-project",
+            "title": "Project: Production-Ready RAG System",
+            "duration": 60,
+            "order": 70
+          }
+        ]
+      },
+      {
+        "id": "optimization-deployment",
+        "title": "Optimization & Deployment",
+        "description": "Deploy and scale LLM applications",
+        "order": 7,
+        "lessons": [
+          {
+            "slug": "quantization",
+            "title": "Quantization (GPTQ, AWQ, GGUF)",
+            "duration": 25,
+            "order": 71
+          },
+          {
+            "slug": "model-serving",
+            "title": "Model Serving with vLLM and TGI",
+            "duration": 30,
+            "order": 72
+          },
+          {
+            "slug": "caching-strategies",
+            "title": "Caching Strategies",
+            "duration": 20,
+            "order": 73
+          },
+          {
+            "slug": "cost-optimization",
+            "title": "Cost Optimization",
+            "duration": 22,
+            "order": 74
+          },
+          {
+            "slug": "monitoring-observability",
+            "title": "Monitoring and Observability",
+            "duration": 25,
+            "order": 75
+          }
+        ]
+      },
+      {
+        "id": "cutting-edge",
+        "title": "Cutting-Edge Topics",
+        "description": "The future of LLMs",
+        "order": 8,
+        "lessons": [
+          {
+            "slug": "moe-deep-dive",
+            "title": "Mixture of Experts (MoE) in Depth",
+            "duration": 30,
+            "order": 76
+          },
+          {
+            "slug": "long-context-models",
+            "title": "Long Context Models (100k+ tokens)",
+            "duration": 25,
+            "order": 77
+          },
+          {
+            "slug": "multimodal-models",
+            "title": "Multimodal Models (Vision + Language)",
+            "duration": 30,
+            "order": 78
+          },
+          {
+            "slug": "constitutional-ai",
+            "title": "Constitutional AI and Safety",
+            "duration": 25,
+            "order": 79
+          },
+          {
+            "slug": "future-of-llms",
+            "title": "The Future of LLMs",
+            "duration": 20,
+            "order": 80
+          }
+        ]
+      }
+    ]
+  }
+}

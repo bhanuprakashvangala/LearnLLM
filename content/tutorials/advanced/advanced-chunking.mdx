@@ -1,0 +1,708 @@
+---
+title: "Advanced Chunking Strategies"
+description: "Master advanced chunking techniques including sentence window retrieval and parent document retrieval for better RAG performance"
+order: 66
+duration: 20
+difficulty: "advanced"
+tags: ["RAG", "Chunking", "Document Processing", "Retrieval"]
+---
+
+# Advanced Chunking Strategies
+
+Effective chunking is critical for RAG performance. Advanced strategies go beyond simple text splitting to preserve context and improve retrieval accuracy.
+
+<Callout type="info">
+**Why Advanced Chunking**: Basic fixed-size chunking often splits important context. Advanced strategies preserve semantic meaning while optimizing for retrieval and generation.
+</Callout>
+
+## Problems with Basic Chunking
+
+Standard chunking approaches have limitations:
+
+```python
+# Basic chunking problems
+text = """
+The transformer architecture was introduced in 2017. It uses self-attention mechanisms.
+
+Self-attention allows the model to weigh the importance of different words. This was a breakthrough.
+"""
+
+# Fixed-size chunking might split like this:
+# Chunk 1: "The transformer architecture was introduced in 2017. It uses self-"
+# Chunk 2: "attention mechanisms. Self-attention allows the model to weigh"
+
+# Problems:
+# 1. Splits sentences mid-word
+# 2. Loses context (what does "it" refer to in chunk 2?)
+# 3. May split related information
+```
+
+## Sentence Window Retrieval
+
+Retrieve small chunks but provide larger context to the LLM:
+
+```python
+from typing import List, Dict, Tuple
+from dataclasses import dataclass
+import re
+
+
+@dataclass
+class Chunk:
+    """Represents a text chunk."""
+    content: str
+    start_idx: int
+    end_idx: int
+    metadata: Dict = None
+
+
+class SentenceWindowRetriever:
+    """
+    Implements sentence window retrieval strategy.
+
+    Stores small chunks (sentences) but retrieves with surrounding context.
+    """
+
+    def __init__(
+        self,
+        window_size: int = 3,
+        embedding_model: str = "text-embedding-ada-002"
+    ):
+        """
+        Initialize retriever.
+
+        Args:
+            window_size: Number of sentences before/after to include as context
+            embedding_model: Model for embeddings
+        """
+        self.window_size = window_size
+        self.embedding_model = embedding_model
+        self.sentences: List[str] = []
+        self.embeddings: List[List[float]] = []
+
+    def split_into_sentences(self, text: str) -> List[str]:
+        """Split text into sentences using regex."""
+        # More sophisticated sentence splitting
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        return [s.strip() for s in sentences if s.strip()]
+
+    def index_document(self, text: str):
+        """
+        Index a document by splitting into sentences.
+
+        Args:
+            text: Document text
+        """
+        import openai
+
+        # Split into sentences
+        self.sentences = self.split_into_sentences(text)
+
+        print(f"📝 Split document into {len(self.sentences)} sentences")
+
+        # Generate embeddings for each sentence
+        print("🔢 Generating embeddings...")
+
+        for sentence in self.sentences:
+            response = openai.Embedding.create(
+                model=self.embedding_model,
+                input=sentence
+            )
+            embedding = response['data'][0]['embedding']
+            self.embeddings.append(embedding)
+
+        print(f"✅ Indexed {len(self.sentences)} sentences")
+
+    def retrieve_with_window(
+        self,
+        query: str,
+        top_k: int = 3
+    ) -> List[Dict[str, str]]:
+        """
+        Retrieve sentences with surrounding context window.
+
+        Args:
+            query: Search query
+            top_k: Number of results
+
+        Returns:
+            List of results with content and window
+        """
+        import openai
+        import numpy as np
+
+        # Generate query embedding
+        response = openai.Embedding.create(
+            model=self.embedding_model,
+            input=query
+        )
+        query_embedding = response['data'][0]['embedding']
+
+        # Calculate similarities
+        similarities = []
+        for i, doc_embedding in enumerate(self.embeddings):
+            similarity = np.dot(query_embedding, doc_embedding)
+            similarities.append((i, similarity))
+
+        # Sort by similarity
+        similarities.sort(key=lambda x: x[1], reverse=True)
+
+        # Get top results with windows
+        results = []
+        for idx, score in similarities[:top_k]:
+            # Calculate window boundaries
+            start_idx = max(0, idx - self.window_size)
+            end_idx = min(len(self.sentences), idx + self.window_size + 1)
+
+            # Get window content
+            window_sentences = self.sentences[start_idx:end_idx]
+            window_content = ' '.join(window_sentences)
+
+            # Mark the retrieved sentence
+            result = {
+                "retrieved_sentence": self.sentences[idx],
+                "full_context": window_content,
+                "sentence_index": idx,
+                "window_range": (start_idx, end_idx),
+                "score": float(score)
+            }
+
+            results.append(result)
+
+        return results
+
+
+# Usage example
+retriever = SentenceWindowRetriever(window_size=2)
+
+document = """
+The transformer architecture revolutionized NLP. It was introduced in the 2017 paper "Attention is All You Need".
+The key innovation was self-attention. This mechanism allows models to weigh input tokens differently.
+Traditional RNNs process sequences sequentially. Transformers can process all tokens in parallel.
+This leads to better performance and faster training. Modern LLMs are all based on transformers.
+"""
+
+retriever.index_document(document)
+
+# Retrieve with context
+results = retriever.retrieve_with_window(
+    query="How do transformers differ from RNNs?",
+    top_k=2
+)
+
+for i, result in enumerate(results, 1):
+    print(f"\n--- Result {i} ---")
+    print(f"Retrieved: {result['retrieved_sentence']}")
+    print(f"\nFull Context:\n{result['full_context']}")
+    print(f"\nScore: {result['score']:.4f}")
+```
+
+<Callout type="tip">
+**Best Practice**: Use sentence window retrieval when you need precise matching but want to provide broader context to the LLM for generation.
+</Callout>
+
+## Parent Document Retrieval
+
+Store and search small chunks but retrieve entire parent documents:
+
+```python
+from typing import Optional
+import uuid
+
+
+@dataclass
+class DocumentChunk:
+    """Chunk with reference to parent document."""
+    chunk_id: str
+    content: str
+    parent_id: str
+    chunk_index: int
+    metadata: Dict
+
+
+class ParentDocumentRetriever:
+    """
+    Implements parent document retrieval.
+
+    Indexes small chunks for search but retrieves full parent documents.
+    """
+
+    def __init__(
+        self,
+        child_chunk_size: int = 200,
+        embedding_model: str = "text-embedding-ada-002"
+    ):
+        """
+        Initialize retriever.
+
+        Args:
+            child_chunk_size: Size of child chunks for indexing
+            embedding_model: Embedding model
+        """
+        self.child_chunk_size = child_chunk_size
+        self.embedding_model = embedding_model
+
+        # Storage
+        self.parent_documents: Dict[str, str] = {}
+        self.child_chunks: List[DocumentChunk] = []
+        self.chunk_embeddings: List[List[float]] = []
+
+    def add_document(
+        self,
+        content: str,
+        metadata: Optional[Dict] = None
+    ) -> str:
+        """
+        Add a document and create child chunks.
+
+        Args:
+            content: Document content
+            metadata: Optional metadata
+
+        Returns:
+            Parent document ID
+        """
+        import openai
+
+        # Generate parent ID
+        parent_id = str(uuid.uuid4())
+
+        # Store parent document
+        self.parent_documents[parent_id] = content
+
+        # Split into child chunks
+        chunks = self._create_chunks(content, self.child_chunk_size)
+
+        print(f"📄 Document {parent_id[:8]}... split into {len(chunks)} chunks")
+
+        # Index each chunk
+        for i, chunk_text in enumerate(chunks):
+            # Create chunk
+            chunk = DocumentChunk(
+                chunk_id=str(uuid.uuid4()),
+                content=chunk_text,
+                parent_id=parent_id,
+                chunk_index=i,
+                metadata=metadata or {}
+            )
+
+            # Generate embedding
+            response = openai.Embedding.create(
+                model=self.embedding_model,
+                input=chunk_text
+            )
+            embedding = response['data'][0]['embedding']
+
+            # Store
+            self.child_chunks.append(chunk)
+            self.chunk_embeddings.append(embedding)
+
+        return parent_id
+
+    def _create_chunks(self, text: str, chunk_size: int) -> List[str]:
+        """Create overlapping chunks."""
+        words = text.split()
+        chunks = []
+
+        for i in range(0, len(words), chunk_size // 2):  # 50% overlap
+            chunk_words = words[i:i + chunk_size]
+            if chunk_words:
+                chunks.append(' '.join(chunk_words))
+
+        return chunks
+
+    def retrieve_parents(
+        self,
+        query: str,
+        top_k: int = 3
+    ) -> List[Dict[str, any]]:
+        """
+        Search child chunks but return parent documents.
+
+        Args:
+            query: Search query
+            top_k: Number of parent documents to return
+
+        Returns:
+            Parent documents with metadata
+        """
+        import openai
+        import numpy as np
+
+        # Generate query embedding
+        response = openai.Embedding.create(
+            model=self.embedding_model,
+            input=query
+        )
+        query_embedding = response['data'][0]['embedding']
+
+        # Calculate similarities for all chunks
+        similarities = []
+        for i, chunk_embedding in enumerate(self.chunk_embeddings):
+            similarity = np.dot(query_embedding, chunk_embedding)
+            chunk = self.child_chunks[i]
+            similarities.append((chunk, similarity))
+
+        # Sort by similarity
+        similarities.sort(key=lambda x: x[1], reverse=True)
+
+        # Get unique parent documents
+        seen_parents = set()
+        results = []
+
+        for chunk, score in similarities:
+            if chunk.parent_id in seen_parents:
+                continue
+
+            if len(results) >= top_k:
+                break
+
+            # Get parent document
+            parent_content = self.parent_documents[chunk.parent_id]
+
+            result = {
+                "parent_id": chunk.parent_id,
+                "content": parent_content,
+                "matched_chunk": chunk.content,
+                "chunk_index": chunk.chunk_index,
+                "score": float(score),
+                "metadata": chunk.metadata
+            }
+
+            results.append(result)
+            seen_parents.add(chunk.parent_id)
+
+        return results
+
+
+# Usage example
+retriever = ParentDocumentRetriever(child_chunk_size=50)
+
+# Add documents
+doc1 = """
+Retrieval Augmented Generation (RAG) combines retrieval with generation.
+It first retrieves relevant documents from a knowledge base.
+Then it uses those documents as context for the language model.
+This approach reduces hallucination and grounds responses in facts.
+RAG is particularly useful for question answering and knowledge-intensive tasks.
+"""
+
+doc2 = """
+Vector databases store embeddings for efficient similarity search.
+Popular options include Pinecone, Weaviate, and Qdrant.
+They enable fast nearest neighbor search at scale.
+Vector databases are essential for RAG systems.
+"""
+
+id1 = retriever.add_document(doc1, metadata={"topic": "RAG"})
+id2 = retriever.add_document(doc2, metadata={"topic": "Vector DB"})
+
+# Retrieve parent documents
+results = retriever.retrieve_parents(
+    query="How does RAG reduce hallucination?",
+    top_k=2
+)
+
+for i, result in enumerate(results, 1):
+    print(f"\n{'='*60}")
+    print(f"Result {i}")
+    print(f"{'='*60}")
+    print(f"Matched Chunk: {result['matched_chunk']}")
+    print(f"\nFull Parent Document:\n{result['content']}")
+    print(f"\nScore: {result['score']:.4f}")
+```
+
+<Callout type="tip">
+**Use Case**: Parent document retrieval works well when documents have strong internal coherence and the full document provides important context.
+</Callout>
+
+## Semantic Chunking
+
+Split documents based on semantic meaning rather than fixed size:
+
+```python
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+
+class SemanticChunker:
+    """
+    Chunks documents based on semantic similarity.
+
+    Groups sentences with similar meanings together.
+    """
+
+    def __init__(
+        self,
+        embedding_model: str = "text-embedding-ada-002",
+        similarity_threshold: float = 0.7
+    ):
+        self.embedding_model = embedding_model
+        self.similarity_threshold = similarity_threshold
+
+    def chunk_document(self, text: str) -> List[str]:
+        """
+        Chunk document based on semantic similarity.
+
+        Args:
+            text: Document text
+
+        Returns:
+            List of semantic chunks
+        """
+        import openai
+
+        # Split into sentences
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        sentences = [s.strip() for s in sentences if s.strip()]
+
+        if len(sentences) <= 1:
+            return sentences
+
+        # Generate embeddings
+        print("🔢 Generating embeddings for semantic chunking...")
+
+        embeddings = []
+        for sentence in sentences:
+            response = openai.Embedding.create(
+                model=self.embedding_model,
+                input=sentence
+            )
+            embeddings.append(response['data'][0]['embedding'])
+
+        embeddings = np.array(embeddings)
+
+        # Calculate similarities between consecutive sentences
+        similarities = []
+        for i in range(len(embeddings) - 1):
+            sim = cosine_similarity(
+                embeddings[i].reshape(1, -1),
+                embeddings[i + 1].reshape(1, -1)
+            )[0][0]
+            similarities.append(sim)
+
+        # Identify split points where similarity drops
+        chunks = []
+        current_chunk = [sentences[0]]
+
+        for i, sim in enumerate(similarities):
+            if sim < self.similarity_threshold:
+                # Low similarity - start new chunk
+                chunks.append(' '.join(current_chunk))
+                current_chunk = [sentences[i + 1]]
+            else:
+                # High similarity - add to current chunk
+                current_chunk.append(sentences[i + 1])
+
+        # Add final chunk
+        if current_chunk:
+            chunks.append(' '.join(current_chunk))
+
+        print(f"✅ Created {len(chunks)} semantic chunks from {len(sentences)} sentences")
+
+        return chunks
+
+
+# Usage
+chunker = SemanticChunker(similarity_threshold=0.75)
+
+document = """
+Python is a high-level programming language. It emphasizes code readability.
+Python was created by Guido van Rossum. It was first released in 1991.
+The transformer architecture uses self-attention. This allows parallel processing.
+Transformers have revolutionized NLP. They power modern language models.
+"""
+
+chunks = chunker.chunk_document(document)
+
+for i, chunk in enumerate(chunks, 1):
+    print(f"\nChunk {i}:")
+    print(chunk)
+```
+
+## Hierarchical Chunking
+
+Create chunks at multiple levels of granularity:
+
+```python
+@dataclass
+class HierarchicalChunk:
+    """Chunk with hierarchical structure."""
+    level: int
+    content: str
+    parent_id: Optional[str]
+    child_ids: List[str]
+    chunk_id: str
+
+
+class HierarchicalChunker:
+    """
+    Creates hierarchical chunks at multiple levels.
+
+    Level 0: Full document
+    Level 1: Sections
+    Level 2: Paragraphs
+    Level 3: Sentences
+    """
+
+    def __init__(self):
+        self.chunks: Dict[str, HierarchicalChunk] = {}
+
+    def create_hierarchy(self, text: str) -> str:
+        """
+        Create hierarchical chunks.
+
+        Args:
+            text: Document text
+
+        Returns:
+            Root chunk ID
+        """
+        # Level 0: Full document
+        root_id = str(uuid.uuid4())
+        root_chunk = HierarchicalChunk(
+            level=0,
+            content=text,
+            parent_id=None,
+            child_ids=[],
+            chunk_id=root_id
+        )
+        self.chunks[root_id] = root_chunk
+
+        # Level 1: Split into sections (by double newline)
+        sections = text.split('\n\n')
+        section_ids = []
+
+        for section in sections:
+            section_id = str(uuid.uuid4())
+            section_chunk = HierarchicalChunk(
+                level=1,
+                content=section.strip(),
+                parent_id=root_id,
+                child_ids=[],
+                chunk_id=section_id
+            )
+            self.chunks[section_id] = section_chunk
+            section_ids.append(section_id)
+
+            # Level 2: Split into sentences
+            sentences = re.split(r'(?<=[.!?])\s+', section)
+            sentence_ids = []
+
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+
+                sentence_id = str(uuid.uuid4())
+                sentence_chunk = HierarchicalChunk(
+                    level=2,
+                    content=sentence.strip(),
+                    parent_id=section_id,
+                    child_ids=[],
+                    chunk_id=sentence_id
+                )
+                self.chunks[sentence_id] = sentence_chunk
+                sentence_ids.append(sentence_id)
+
+            section_chunk.child_ids = sentence_ids
+
+        root_chunk.child_ids = section_ids
+
+        print(f"✅ Created hierarchical structure:")
+        print(f"   Level 0: 1 document")
+        print(f"   Level 1: {len(section_ids)} sections")
+        print(f"   Level 2: {sum(len(self.chunks[sid].child_ids) for sid in section_ids)} sentences")
+
+        return root_id
+
+    def get_chunk_with_context(
+        self,
+        chunk_id: str,
+        include_parent: bool = True,
+        include_siblings: bool = False
+    ) -> str:
+        """Get chunk with contextual information."""
+        chunk = self.chunks[chunk_id]
+        context_parts = [chunk.content]
+
+        if include_parent and chunk.parent_id:
+            parent = self.chunks[chunk.parent_id]
+            context_parts.insert(0, f"[Parent Context: {parent.content[:100]}...]")
+
+        if include_siblings and chunk.parent_id:
+            parent = self.chunks[chunk.parent_id]
+            siblings = [
+                self.chunks[sid].content
+                for sid in parent.child_ids
+                if sid != chunk_id
+            ]
+            if siblings:
+                context_parts.append(f"[Related: {siblings[0][:50]}...]")
+
+        return '\n\n'.join(context_parts)
+```
+
+<Callout type="warning">
+**Trade-off**: More sophisticated chunking improves quality but increases complexity and processing time. Choose based on your specific needs.
+</Callout>
+
+## Key Takeaways
+
+1. **Sentence window retrieval** - search small, provide large context
+2. **Parent document retrieval** - search chunks, return full documents
+3. **Semantic chunking** - split by meaning, not arbitrary size
+4. **Hierarchical chunking** - multiple granularity levels
+5. **Context preservation** - always consider what context the LLM needs
+
+## Quiz
+
+Test your understanding of advanced chunking strategies:
+
+<Quiz
+  questions={[
+    {
+      question: "What is the main advantage of sentence window retrieval?",
+      options: [
+        "It uses less storage space",
+        "It retrieves precise sentences while providing broader context to the LLM",
+        "It's faster than other methods",
+        "It works without embeddings"
+      ],
+      correctAnswer: 1,
+      explanation: "Sentence window retrieval indexes individual sentences for precise matching but includes surrounding sentences as context when passing to the LLM, balancing precision and context."
+    },
+    {
+      question: "When should you use parent document retrieval?",
+      options: [
+        "When you want to save storage space",
+        "When documents have strong internal coherence and full context is valuable",
+        "Only for very short documents",
+        "When you need the fastest retrieval"
+      ],
+      correctAnswer: 1,
+      explanation: "Parent document retrieval is best when the full document provides valuable context and documents are coherent units where the whole is greater than the parts."
+    },
+    {
+      question: "How does semantic chunking differ from fixed-size chunking?",
+      options: [
+        "It creates chunks of exactly the same size",
+        "It splits text based on semantic similarity rather than character/word count",
+        "It only works with embeddings",
+        "It's always faster"
+      ],
+      correctAnswer: 1,
+      explanation: "Semantic chunking groups semantically similar sentences together by analyzing embedding similarities, creating variable-sized chunks that preserve meaning."
+    },
+    {
+      question: "What is a key trade-off of advanced chunking strategies?",
+      options: [
+        "They always use more storage",
+        "They improve quality but increase complexity and processing time",
+        "They only work with GPT-4",
+        "They can't be cached"
+      ],
+      correctAnswer: 1,
+      explanation: "Advanced chunking strategies typically provide better quality results but require more sophisticated processing, computation (e.g., embedding generation), and implementation complexity."
+    }
+  ]}
+/>

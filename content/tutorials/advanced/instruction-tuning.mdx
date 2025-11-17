@@ -1,0 +1,768 @@
+---
+title: "Instruction Tuning"
+description: "Learn instruction tuning: how to teach LLMs to follow instructions through supervised fine-tuning. Create instruction datasets, implement training, and evaluate instruction-following capabilities."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Instruction Tuning", "Fine-Tuning", "Supervised Learning", "Prompting"]
+difficulty: "advanced"
+duration: 20
+order: 56
+---
+
+# Instruction Tuning
+
+Instruction tuning transforms general language models into helpful assistants that follow instructions. It's the key technique behind ChatGPT, Claude, and other instruction-following models.
+
+## What is Instruction Tuning?
+
+Instruction tuning is supervised fine-tuning on (instruction, response) pairs to teach models to:
+
+1. **Follow instructions** accurately
+2. **Generalize** to new instruction types
+3. **Refuse** inappropriate requests
+4. **Format outputs** appropriately
+
+<Callout type="info">
+**Base Model vs Instruction-Tuned Model:**
+
+**Base LLM (pre-trained only):**
+```
+Prompt: "Translate to French: Hello"
+Output: "Translate to French: Goodbye
+        Translate to Spanish: Hello
+        Translate to German: ..." (continues pattern)
+```
+
+**Instruction-Tuned LLM:**
+```
+Prompt: "Translate to French: Hello"
+Output: "Bonjour"
+```
+
+Instruction tuning teaches the model to **complete the task** rather than **continue the pattern**.
+</Callout>
+
+## Instruction Dataset Format
+
+### Standard Format
+
+```python
+from dataclasses import dataclass
+from typing import List, Optional
+
+@dataclass
+class InstructionExample:
+    """
+    Single instruction-following example.
+    """
+    instruction: str  # What to do
+    input: Optional[str]  # Additional context (optional)
+    output: str  # Expected response
+
+    def format_for_training(self, template="alpaca"):
+        """
+        Format example using a specific template.
+
+        Args:
+            template: Template name (alpaca, vicuna, etc.)
+
+        Returns:
+            Formatted training string
+        """
+        if template == "alpaca":
+            if self.input:
+                prompt = f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+
+### Instruction:
+{self.instruction}
+
+### Input:
+{self.input}
+
+### Response:
+{self.output}"""
+            else:
+                prompt = f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
+
+### Instruction:
+{self.instruction}
+
+### Response:
+{self.output}"""
+
+        elif template == "vicuna":
+            user_message = f"{self.instruction}\n{self.input}" if self.input else self.instruction
+            prompt = f"""USER: {user_message}
+ASSISTANT: {self.output}"""
+
+        elif template == "chatml":
+            # OpenAI's ChatML format
+            user_message = f"{self.instruction}\n{self.input}" if self.input else self.instruction
+            prompt = f"""<|im_start|>user
+{user_message}<|im_end|>
+<|im_start|>assistant
+{self.output}<|im_end|>"""
+
+        return prompt
+
+
+# Example instruction data
+examples = [
+    InstructionExample(
+        instruction="Summarize the following text in one sentence.",
+        input="The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris, France. It is named after the engineer Gustave Eiffel, whose company designed and built the tower. Constructed from 1887 to 1889, it was initially criticized by some of France's leading artists and intellectuals but has become a global cultural icon.",
+        output="The Eiffel Tower is an iconic wrought-iron tower in Paris, designed by Gustave Eiffel and built from 1887-1889."
+    ),
+    InstructionExample(
+        instruction="What is the capital of France?",
+        input=None,
+        output="The capital of France is Paris."
+    ),
+    InstructionExample(
+        instruction="Write a haiku about programming.",
+        input=None,
+        output="Code flows like water\nBugs hide in silent shadows\nDebugger brings light"
+    )
+]
+
+# Print formatted examples
+print("Alpaca Format:")
+print(examples[0].format_for_training("alpaca"))
+print("\n" + "="*70 + "\n")
+
+print("Vicuna Format:")
+print(examples[1].format_for_training("vicuna"))
+print("\n" + "="*70 + "\n")
+
+print("ChatML Format:")
+print(examples[2].format_for_training("chatml"))
+```
+
+<Callout type="tip">
+**Template Choice Matters:**
+
+Different templates suit different use cases:
+- **Alpaca:** Good for general-purpose instruction following
+- **Vicuna:** Conversational, chat-like interactions
+- **ChatML:** OpenAI-compatible, supports multi-turn conversations
+- **Custom:** Design your own for domain-specific needs
+
+Be consistent: use the same template for training and inference!
+</Callout>
+
+## Creating Instruction Datasets
+
+### 1. Manual Curation
+
+High-quality but labor-intensive:
+
+```python
+def create_manual_instruction_dataset(domain="general"):
+    """
+    Template for manually creating instruction datasets.
+
+    Args:
+        domain: Domain of instructions (general, code, math, etc.)
+
+    Returns:
+        List of instruction examples
+    """
+    dataset = []
+
+    if domain == "general":
+        # General-purpose instructions
+        dataset = [
+            InstructionExample(
+                instruction="Explain the concept of photosynthesis to a 10-year-old.",
+                input=None,
+                output="Photosynthesis is how plants make their own food using sunlight! Plants take in carbon dioxide from the air and water from the ground. When sunlight hits their leaves, they use that energy to turn the carbon dioxide and water into sugar (their food) and oxygen. The oxygen is released into the air for us to breathe. It's like the plant is using the sun as a kitchen to cook its meals!"
+            ),
+            InstructionExample(
+                instruction="Convert the following temperature to Fahrenheit.",
+                input="25 degrees Celsius",
+                output="25 degrees Celsius is equal to 77 degrees Fahrenheit. The conversion formula is: F = (C × 9/5) + 32 = (25 × 9/5) + 32 = 45 + 32 = 77°F"
+            )
+        ]
+
+    elif domain == "code":
+        # Programming instructions
+        dataset = [
+            InstructionExample(
+                instruction="Write a Python function to check if a string is a palindrome.",
+                input=None,
+                output="""def is_palindrome(s):
+    # Remove spaces and convert to lowercase
+    s = s.replace(" ", "").lower()
+    # Check if string equals its reverse
+    return s == s[::-1]
+
+# Test
+print(is_palindrome("racecar"))  # True
+print(is_palindrome("hello"))    # False"""
+            )
+        ]
+
+    elif domain == "math":
+        # Math problem-solving
+        dataset = [
+            InstructionExample(
+                instruction="Solve the following equation for x.",
+                input="2x + 5 = 13",
+                output="""Let's solve 2x + 5 = 13 step by step:
+
+Step 1: Subtract 5 from both sides
+2x + 5 - 5 = 13 - 5
+2x = 8
+
+Step 2: Divide both sides by 2
+2x/2 = 8/2
+x = 4
+
+Therefore, x = 4."""
+            )
+        ]
+
+    return dataset
+
+
+# Create datasets
+general_dataset = create_manual_instruction_dataset("general")
+code_dataset = create_manual_instruction_dataset("code")
+math_dataset = create_manual_instruction_dataset("math")
+
+print(f"Created {len(general_dataset)} general instructions")
+print(f"Created {len(code_dataset)} code instructions")
+print(f"Created {len(math_dataset)} math instructions")
+```
+
+### 2. Self-Instruct: Using LLMs to Generate Instructions
+
+Use a strong LLM to generate training data:
+
+```python
+import openai
+from typing import List
+
+class SelfInstructGenerator:
+    """
+    Generate instruction datasets using a strong LLM (Self-Instruct method).
+
+    Based on "Self-Instruct: Aligning Language Models with Self-Generated Instructions"
+    """
+
+    def __init__(self, model="gpt-4"):
+        """
+        Args:
+            model: Model to use for generation
+        """
+        self.model = model
+
+    def generate_instruction_batch(
+        self,
+        seed_instructions: List[str],
+        num_instructions: int = 20
+    ) -> List[InstructionExample]:
+        """
+        Generate new instructions based on seed examples.
+
+        Args:
+            seed_instructions: Example instructions to guide generation
+            num_instructions: Number of new instructions to generate
+
+        Returns:
+            List of generated instruction examples
+        """
+        # Format seed instructions
+        seed_text = "\n".join([f"{i+1}. {inst}" for i, inst in enumerate(seed_instructions)])
+
+        prompt = f"""Generate {num_instructions} diverse instruction-following examples. Each example should have:
+1. An instruction (what to do)
+2. An input (optional context)
+3. An output (appropriate response)
+
+Make the instructions diverse across different tasks like:
+- Question answering
+- Summarization
+- Translation
+- Math problems
+- Code generation
+- Creative writing
+- Classification
+- Reasoning
+
+Here are some seed examples:
+{seed_text}
+
+Generate {num_instructions} new examples in JSON format:
+[
+  {{
+    "instruction": "...",
+    "input": "...",
+    "output": "..."
+  }},
+  ...
+]"""
+
+        # In practice, call API here
+        # response = openai.ChatCompletion.create(...)
+
+        # Placeholder for demonstration
+        print(f"Would generate {num_instructions} instructions based on {len(seed_instructions)} seeds")
+
+        return []
+
+    def filter_quality(
+        self,
+        examples: List[InstructionExample],
+        min_length: int = 20,
+        max_length: int = 2048
+    ) -> List[InstructionExample]:
+        """
+        Filter generated examples for quality.
+
+        Args:
+            examples: Generated examples
+            min_length: Minimum output length
+            max_length: Maximum output length
+
+        Returns:
+            Filtered examples
+        """
+        filtered = []
+
+        for ex in examples:
+            # Length checks
+            if len(ex.output) < min_length or len(ex.output) > max_length:
+                continue
+
+            # Avoid repetition
+            if ex.instruction.lower() in ex.output.lower():
+                continue
+
+            # Avoid truncated outputs
+            if ex.output.endswith("...") or ex.output.endswith("etc."):
+                continue
+
+            filtered.append(ex)
+
+        return filtered
+
+
+# Example usage
+generator = SelfInstructGenerator()
+
+seed_instructions = [
+    "Explain the water cycle in simple terms.",
+    "Write a function to calculate factorial.",
+    "Translate 'Hello, how are you?' to Spanish."
+]
+
+# generator.generate_instruction_batch(seed_instructions, num_instructions=100)
+```
+
+<Callout type="warning">
+**Self-Instruct Considerations:**
+
+**Pros:**
+- Scalable: Generate thousands of examples quickly
+- Diverse: Can cover wide range of tasks
+- Cost-effective: Cheaper than human annotation
+
+**Cons:**
+- Quality varies: May include errors or inappropriate content
+- Requires filtering: Need quality control
+- Potential bias: Inherits biases from generator model
+
+Always manually review a sample before training!
+</Callout>
+
+## Training Implementation
+
+```python
+import torch
+import torch.nn as nn
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
+
+class InstructionDataset(Dataset):
+    """
+    Dataset for instruction tuning.
+    """
+
+    def __init__(
+        self,
+        examples: List[InstructionExample],
+        tokenizer,
+        max_length=2048,
+        template="alpaca"
+    ):
+        """
+        Args:
+            examples: List of instruction examples
+            tokenizer: Tokenizer
+            max_length: Maximum sequence length
+            template: Formatting template
+        """
+        self.examples = examples
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+        self.template = template
+
+    def __len__(self):
+        return len(self.examples)
+
+    def __getitem__(self, idx):
+        """
+        Format example and tokenize.
+
+        Key: Only compute loss on the response, not the instruction!
+        """
+        example = self.examples[idx]
+
+        # Format full text
+        full_text = example.format_for_training(self.template)
+
+        # Tokenize
+        encoding = self.tokenizer(
+            full_text,
+            truncation=True,
+            max_length=self.max_length,
+            padding='max_length',
+            return_tensors='pt'
+        )
+
+        input_ids = encoding['input_ids'].squeeze()
+        attention_mask = encoding['attention_mask'].squeeze()
+
+        # Create labels: -100 for instruction part (no loss), tokens for response part
+        labels = input_ids.clone()
+
+        # Find where response starts
+        if self.template == "alpaca":
+            response_start_text = "### Response:\n"
+        elif self.template == "vicuna":
+            response_start_text = "ASSISTANT: "
+        elif self.template == "chatml":
+            response_start_text = "<|im_start|>assistant\n"
+
+        # Tokenize just to find the marker
+        response_marker = self.tokenizer(response_start_text, add_special_tokens=False)['input_ids']
+
+        # Find response start in input_ids
+        # Mask everything before response as -100 (ignore in loss)
+        response_start_idx = 0
+        for i in range(len(input_ids) - len(response_marker)):
+            if input_ids[i:i+len(response_marker)].tolist() == response_marker:
+                response_start_idx = i + len(response_marker)
+                break
+
+        # Mask instruction part
+        labels[:response_start_idx] = -100
+
+        # Mask padding
+        labels[attention_mask == 0] = -100
+
+        return {
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
+            'labels': labels
+        }
+
+
+class InstructionTuner:
+    """
+    Train models with instruction tuning.
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        use_lora: bool = True,
+        lora_rank: int = 8
+    ):
+        """
+        Args:
+            model_name: Base model name
+            use_lora: Whether to use LoRA
+            lora_rank: LoRA rank if using LoRA
+        """
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Load model and tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+
+        # Add padding token if missing
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+
+        # Apply LoRA if requested
+        if use_lora:
+            from peft import LoraConfig, get_peft_model
+
+            lora_config = LoraConfig(
+                r=lora_rank,
+                lora_alpha=16,
+                target_modules=["q_proj", "v_proj"],
+                lora_dropout=0.05,
+                bias="none",
+                task_type="CAUSAL_LM"
+            )
+
+            self.model = get_peft_model(self.model, lora_config)
+            self.model.print_trainable_parameters()
+
+        self.model.to(self.device)
+
+    def train(
+        self,
+        train_examples: List[InstructionExample],
+        val_examples: List[InstructionExample],
+        epochs: int = 3,
+        batch_size: int = 4,
+        learning_rate: float = 2e-5,
+        template: str = "alpaca"
+    ):
+        """
+        Train the model on instruction data.
+
+        Args:
+            train_examples: Training examples
+            val_examples: Validation examples
+            epochs: Number of epochs
+            batch_size: Batch size
+            learning_rate: Learning rate
+            template: Formatting template
+        """
+        # Create datasets
+        train_dataset = InstructionDataset(
+            train_examples, self.tokenizer, template=template
+        )
+        val_dataset = InstructionDataset(
+            val_examples, self.tokenizer, template=template
+        )
+
+        # Data loaders
+        train_loader = DataLoader(
+            train_dataset, batch_size=batch_size, shuffle=True
+        )
+        val_loader = DataLoader(
+            val_dataset, batch_size=batch_size
+        )
+
+        # Optimizer
+        optimizer = torch.optim.AdamW(
+            [p for p in self.model.parameters() if p.requires_grad],
+            lr=learning_rate
+        )
+
+        # Training loop
+        best_val_loss = float('inf')
+
+        for epoch in range(epochs):
+            # Train
+            self.model.train()
+            train_loss = 0
+
+            progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
+            for batch in progress_bar:
+                input_ids = batch['input_ids'].to(self.device)
+                attention_mask = batch['attention_mask'].to(self.device)
+                labels = batch['labels'].to(self.device)
+
+                outputs = self.model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    labels=labels
+                )
+
+                loss = outputs.loss
+                loss.backward()
+
+                optimizer.step()
+                optimizer.zero_grad()
+
+                train_loss += loss.item()
+                progress_bar.set_postfix({'loss': loss.item()})
+
+            avg_train_loss = train_loss / len(train_loader)
+
+            # Validate
+            val_loss = self.validate(val_loader)
+
+            print(f"\nEpoch {epoch+1}/{epochs}")
+            print(f"  Train Loss: {avg_train_loss:.4f}")
+            print(f"  Val Loss: {val_loss:.4f}")
+
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                self.save_model('best_instruction_model')
+                print("  Saved best model!")
+
+    def validate(self, val_loader):
+        """Validate the model."""
+        self.model.eval()
+        total_loss = 0
+
+        with torch.no_grad():
+            for batch in val_loader:
+                input_ids = batch['input_ids'].to(self.device)
+                attention_mask = batch['attention_mask'].to(self.device)
+                labels = batch['labels'].to(self.device)
+
+                outputs = self.model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    labels=labels
+                )
+
+                total_loss += outputs.loss.item()
+
+        return total_loss / len(val_loader)
+
+    def save_model(self, path):
+        """Save the instruction-tuned model."""
+        self.model.save_pretrained(path)
+        self.tokenizer.save_pretrained(path)
+
+
+# Example usage (commented - requires actual data)
+# tuner = InstructionTuner("gpt2", use_lora=True, lora_rank=8)
+# tuner.train(train_examples, val_examples, epochs=3)
+```
+
+<Callout type="tip">
+**Training Tips:**
+
+1. **Mask instructions in loss:** Only compute loss on responses
+2. **Use LoRA:** More efficient, prevents overfitting
+3. **Learning rate:** 1e-5 to 5e-5 for full fine-tuning, 1e-4 to 3e-4 for LoRA
+4. **Data quality > quantity:** 1000 high-quality examples better than 10,000 noisy ones
+5. **Diverse instructions:** Cover many task types for better generalization
+</Callout>
+
+## Evaluation
+
+```python
+def evaluate_instruction_following(model, tokenizer, test_instructions):
+    """
+    Evaluate instruction-following ability.
+
+    Args:
+        model: Instruction-tuned model
+        tokenizer: Tokenizer
+        test_instructions: List of test instructions
+    """
+    model.eval()
+    device = next(model.parameters()).device
+
+    results = []
+
+    for instruction in test_instructions:
+        # Format instruction
+        prompt = f"""### Instruction:
+{instruction}
+
+### Response:
+"""
+
+        # Generate response
+        input_ids = tokenizer.encode(prompt, return_tensors='pt').to(device)
+
+        with torch.no_grad():
+            output_ids = model.generate(
+                input_ids,
+                max_new_tokens=256,
+                temperature=0.7,
+                top_p=0.9,
+                do_sample=True
+            )
+
+        # Decode
+        response = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        # Extract just the response part
+        response = response.split("### Response:")[-1].strip()
+
+        results.append({
+            'instruction': instruction,
+            'response': response
+        })
+
+        print(f"\nInstruction: {instruction}")
+        print(f"Response: {response}")
+        print("-" * 70)
+
+    return results
+
+
+# Example test instructions
+test_instructions = [
+    "What is the capital of Japan?",
+    "Write a Python function to reverse a string.",
+    "Explain photosynthesis in one sentence."
+]
+
+# evaluate_instruction_following(model, tokenizer, test_instructions)
+```
+
+## Summary
+
+Instruction tuning teaches models to follow instructions through:
+
+1. **Dataset creation:** Manual curation or Self-Instruct generation
+2. **Formatting:** Consistent templates (Alpaca, Vicuna, ChatML)
+3. **Training:** Supervised fine-tuning with loss only on responses
+4. **Evaluation:** Test on diverse instruction types
+
+This transforms base LLMs into helpful assistants like ChatGPT.
+
+<Quiz
+  questions={[
+    {
+      question: "What is the key difference between a base pre-trained LLM and an instruction-tuned LLM?",
+      options: [
+        "Instruction-tuned models have more parameters",
+        "Base models complete patterns while instruction-tuned models complete tasks by following instructions",
+        "Instruction-tuned models are faster at inference",
+        "Base models cannot generate text"
+      ],
+      correctAnswer: 1,
+      explanation: "Base LLMs are trained to predict the next token, so they continue patterns. Given 'Translate to French: Hello', they might continue with more translation examples. Instruction-tuned models are trained on (instruction, response) pairs to actually perform the requested task, so they output 'Bonjour' instead of continuing the pattern."
+    },
+    {
+      question: "Why should we mask the instruction part when computing loss during instruction tuning?",
+      options: [
+        "To reduce training time",
+        "To save memory during training",
+        "To ensure the model only learns to generate appropriate responses, not to memorize instructions",
+        "To prevent overfitting on the instruction format"
+      ],
+      correctAnswer: 2,
+      explanation: "We set labels to -100 for the instruction part so the loss is only computed on the response tokens. This teaches the model to generate appropriate responses given instructions, rather than learning to reproduce the instruction format. The model should learn 'given this instruction, produce this response' not 'memorize the entire instruction+response template'."
+    },
+    {
+      question: "What is the Self-Instruct method for creating instruction datasets?",
+      options: [
+        "Having humans manually write instruction examples",
+        "Using a strong LLM to generate diverse instruction-response pairs from seed examples",
+        "Automatically extracting instructions from existing text",
+        "Converting existing NLP datasets to instruction format"
+      ],
+      correctAnswer: 1,
+      explanation: "Self-Instruct uses a strong LLM (like GPT-4) to generate new instruction examples based on a small set of seed examples. This allows creating large, diverse instruction datasets more efficiently than manual curation. The generated examples still need quality filtering, but this approach dramatically scales dataset creation."
+    },
+    {
+      question: "Which formatting template component is essential for distinguishing instructions from responses during training?",
+      options: [
+        "The model name in the template",
+        "Clear delimiters or markers that separate instruction from response sections",
+        "The length of the instruction",
+        "The programming language used"
+      ],
+      correctAnswer: 1,
+      explanation: "Templates like Alpaca ('### Instruction:' / '### Response:'), Vicuna ('USER:' / 'ASSISTANT:'), and ChatML ('<|im_start|>user' / '<|im_start|>assistant') use clear markers to separate instructions from responses. These markers are crucial for masking the instruction part in the loss function so the model only learns from the response tokens."
+    }
+  ]}
+/>

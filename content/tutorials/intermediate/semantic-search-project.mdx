@@ -1,0 +1,1511 @@
+---
+title: "Project: Semantic Search Engine"
+description: "Build a production-ready semantic search engine with document indexing, hybrid search, re-ranking, and a web interface. Complete end-to-end implementation."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Project", "Semantic Search", "Hybrid Search", "ChromaDB", "FastAPI", "Full-Stack"]
+difficulty: "intermediate"
+duration: 40
+order: 40
+---
+
+# Project: Semantic Search Engine
+
+Build a complete semantic search engine that combines vector search, keyword search, and re-ranking. We'll create a system that can index documents and provide a web interface for searching.
+
+<Callout type="info">
+**Semantic Search:** A search technique that understands the meaning and intent behind queries, returning results based on conceptual relevance rather than just keyword matching. Uses embeddings to capture semantic similarity.
+</Callout>
+
+## Project Overview
+
+### What We'll Build
+
+A production-ready search engine with:
+
+1. **Document Ingestion**: Upload and process documents
+2. **Hybrid Search**: Combine BM25 + vector search
+3. **Re-ranking**: Refine results with cross-encoder
+4. **Web Interface**: Clean, responsive UI
+5. **API**: RESTful endpoints
+
+### Tech Stack
+
+<Callout type="info">
+**FastAPI:** A modern, high-performance Python web framework for building APIs. Features automatic API documentation, type validation, and async support, making it ideal for ML applications.
+</Callout>
+
+```python
+"""
+Backend:
+- FastAPI: Web framework
+- ChromaDB: Vector database
+- OpenAI: Embeddings
+- rank-bm25: Keyword search
+- sentence-transformers: Re-ranking
+
+Frontend:
+- HTML/CSS/JavaScript
+- Fetch API for backend communication
+"""
+```
+
+### Project Structure
+
+```
+semantic-search-engine/
+├── backend/
+│   ├── main.py              # FastAPI application
+│   ├── search_engine.py     # Core search logic
+│   ├── document_processor.py # Document ingestion
+│   └── requirements.txt     # Dependencies
+├── frontend/
+│   ├── index.html          # Web interface
+│   ├── styles.css          # Styling
+│   └── script.js           # Client logic
+├── data/
+│   └── documents/          # Sample documents
+└── README.md
+```
+
+## Backend Implementation
+
+### 1. Core Search Engine
+
+```python
+# backend/search_engine.py
+
+import chromadb
+from chromadb.config import Settings
+from openai import OpenAI
+from rank_bm25 import BM25Okapi
+from sentence_transformers import CrossEncoder
+import numpy as np
+from typing import List, Dict, Tuple
+import os
+
+class SemanticSearchEngine:
+    """
+    Hybrid search engine combining:
+    - Vector search (ChromaDB)
+    - Keyword search (BM25)
+    - Re-ranking (Cross-encoder)
+    """
+
+    def __init__(
+        self,
+        openai_api_key: str,
+        chroma_path: str = "./chroma_db",
+        collection_name: str = "documents"
+    ):
+        # Initialize OpenAI
+        self.openai_client = OpenAI(api_key=openai_api_key)
+
+        # Initialize ChromaDB
+        self.chroma_client = chromadb.PersistentClient(path=chroma_path)
+        self.collection = self.chroma_client.get_or_create_collection(
+            name=collection_name,
+            metadata={"description": "Document search collection"}
+        )
+
+        # Initialize BM25 (will be populated on first search)
+        self.bm25 = None
+        self.documents = []
+        self.doc_ids = []
+
+        # Initialize cross-encoder for re-ranking
+        print("Loading cross-encoder model...")
+        self.reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+
+        # Load existing documents
+        self._load_documents()
+
+    def _load_documents(self):
+        """Load existing documents from ChromaDB"""
+        try:
+            results = self.collection.get(include=["documents", "metadatas"])
+
+            if results['documents']:
+                self.documents = results['documents']
+                self.doc_ids = results['ids']
+
+                # Build BM25 index
+                tokenized_docs = [doc.lower().split() for doc in self.documents]
+                self.bm25 = BM25Okapi(tokenized_docs)
+
+                print(f"Loaded {len(self.documents)} documents")
+        except Exception as e:
+            print(f"No existing documents: {e}")
+
+    def _get_embedding(self, text: str) -> List[float]:
+        """Create embedding for text"""
+        response = self.openai_client.embeddings.create(
+            input=text,
+            model="text-embedding-3-small"
+        )
+        return response.data[0].embedding
+
+    def add_document(self, text: str, metadata: Dict = None) -> str:
+        """
+        Add document to search index
+
+        Args:
+            text: Document text
+            metadata: Optional metadata
+
+        Returns:
+            Document ID
+        """
+        # Generate document ID
+        doc_id = f"doc_{len(self.documents)}"
+
+        # Create embedding
+        embedding = self._get_embedding(text)
+
+        # Add to ChromaDB
+        self.collection.add(
+            ids=[doc_id],
+            documents=[text],
+            embeddings=[embedding],
+            metadatas=[metadata or {}]
+        )
+
+        # Update local cache
+        self.documents.append(text)
+        self.doc_ids.append(doc_id)
+
+        # Rebuild BM25 index
+        tokenized_docs = [doc.lower().split() for doc in self.documents]
+        self.bm25 = BM25Okapi(tokenized_docs)
+
+        print(f"Added document: {doc_id}")
+        return doc_id
+
+    def add_documents_batch(self, documents: List[str], metadatas: List[Dict] = None):
+        """
+        Add multiple documents efficiently
+
+        Args:
+            documents: List of document texts
+            metadatas: Optional list of metadata dicts
+        """
+        # Generate IDs
+        start_id = len(self.documents)
+        doc_ids = [f"doc_{start_id + i}" for i in range(len(documents))]
+
+        # Create embeddings in batch
+        print(f"Creating embeddings for {len(documents)} documents...")
+        response = self.openai_client.embeddings.create(
+            input=documents,
+            model="text-embedding-3-small"
+        )
+        embeddings = [item.embedding for item in response.data]
+
+        # Add to ChromaDB
+        self.collection.add(
+            ids=doc_ids,
+            documents=documents,
+            embeddings=embeddings,
+            metadatas=metadatas or [{} for _ in documents]
+        )
+
+        # Update local cache
+        self.documents.extend(documents)
+        self.doc_ids.extend(doc_ids)
+
+        # Rebuild BM25
+        tokenized_docs = [doc.lower().split() for doc in self.documents]
+        self.bm25 = BM25Okapi(tokenized_docs)
+
+        print(f"Added {len(documents)} documents")
+
+    def _vector_search(self, query: str, top_k: int = 50) -> List[Tuple[int, float]]:
+        """
+        Perform vector search
+
+        Returns:
+            List of (doc_index, score) tuples
+        """
+        query_embedding = self._get_embedding(query)
+
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=min(top_k, len(self.documents))
+        )
+
+        # Convert to (index, score) tuples
+        scored_results = []
+        for doc_id, distance in zip(results['ids'][0], results['distances'][0]):
+            idx = self.doc_ids.index(doc_id)
+            # Convert distance to similarity (assuming cosine distance)
+            similarity = 1 - distance
+            scored_results.append((idx, similarity))
+
+        return scored_results
+
+    def _bm25_search(self, query: str, top_k: int = 50) -> List[Tuple[int, float]]:
+        """
+        Perform BM25 keyword search
+
+        Returns:
+            List of (doc_index, score) tuples
+        """
+        if self.bm25 is None:
+            return []
+
+        tokenized_query = query.lower().split()
+        scores = self.bm25.get_scores(tokenized_query)
+
+        # Get top-k
+        top_indices = np.argsort(scores)[::-1][:top_k]
+        return [(idx, scores[idx]) for idx in top_indices]
+
+    def _hybrid_search(
+        self,
+        query: str,
+        alpha: float = 0.5,
+        top_k: int = 50
+    ) -> List[Tuple[int, float]]:
+        """
+        Combine vector and BM25 search
+
+        Args:
+            query: Search query
+            alpha: Balance (0=BM25 only, 1=vector only)
+            top_k: Number of results
+
+        Returns:
+            List of (doc_index, score) tuples
+        """
+        # Get results from both methods
+        vector_results = self._vector_search(query, top_k)
+        bm25_results = self._bm25_search(query, top_k)
+
+        # Normalize scores
+        def normalize_scores(results):
+            if not results:
+                return []
+            scores = np.array([score for _, score in results])
+            min_s, max_s = scores.min(), scores.max()
+            if max_s == min_s:
+                return [(idx, 0.5) for idx, _ in results]
+            normalized = (scores - min_s) / (max_s - min_s)
+            return [(idx, norm_score) for (idx, _), norm_score in zip(results, normalized)]
+
+        vector_results = normalize_scores(vector_results)
+        bm25_results = normalize_scores(bm25_results)
+
+        # Combine scores
+        combined_scores = {}
+
+        for idx, score in vector_results:
+            combined_scores[idx] = alpha * score
+
+        for idx, score in bm25_results:
+            if idx in combined_scores:
+                combined_scores[idx] += (1 - alpha) * score
+            else:
+                combined_scores[idx] = (1 - alpha) * score
+
+        # Sort by combined score
+        results = sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)
+        return results[:top_k]
+
+    def _rerank(
+        self,
+        query: str,
+        candidates: List[Tuple[int, float]],
+        top_k: int = 10
+    ) -> List[Dict]:
+        """
+        Re-rank candidates using cross-encoder
+
+        Args:
+            query: Search query
+            candidates: List of (doc_index, score) tuples
+            top_k: Final number of results
+
+        Returns:
+            List of result dicts
+        """
+        # Prepare pairs for cross-encoder
+        pairs = [[query, self.documents[idx]] for idx, _ in candidates]
+
+        # Get cross-encoder scores
+        rerank_scores = self.reranker.predict(pairs)
+
+        # Combine with original scores (optional)
+        results = []
+        for (idx, hybrid_score), rerank_score in zip(candidates, rerank_scores):
+            results.append({
+                'document': self.documents[idx],
+                'doc_id': self.doc_ids[idx],
+                'hybrid_score': float(hybrid_score),
+                'rerank_score': float(rerank_score),
+                'final_score': float(rerank_score)  # Use rerank score as final
+            })
+
+        # Sort by rerank score
+        results.sort(key=lambda x: x['final_score'], reverse=True)
+
+        return results[:top_k]
+
+    def search(
+        self,
+        query: str,
+        top_k: int = 10,
+        alpha: float = 0.5,
+        use_reranking: bool = True,
+        rerank_top_n: int = 50
+    ) -> List[Dict]:
+        """
+        Full search pipeline
+
+        Args:
+            query: Search query
+            top_k: Number of final results
+            alpha: Hybrid search balance
+            use_reranking: Whether to apply re-ranking
+            rerank_top_n: Number of candidates to re-rank
+
+        Returns:
+            List of result dicts
+        """
+        if not self.documents:
+            return []
+
+        # Step 1: Hybrid search
+        candidates = self._hybrid_search(query, alpha=alpha, top_k=rerank_top_n)
+
+        # Step 2: Re-ranking (optional)
+        if use_reranking and len(candidates) > 0:
+            results = self._rerank(query, candidates, top_k=top_k)
+        else:
+            # No re-ranking, just format results
+            results = [
+                {
+                    'document': self.documents[idx],
+                    'doc_id': self.doc_ids[idx],
+                    'final_score': float(score)
+                }
+                for idx, score in candidates[:top_k]
+            ]
+
+        return results
+
+    def get_stats(self) -> Dict:
+        """Get search engine statistics"""
+        return {
+            'total_documents': len(self.documents),
+            'collection_name': self.collection.name
+        }
+```
+
+### 2. Document Processor
+
+<Callout type="info">
+**Document Ingestion:** The process of loading, cleaning, chunking, and indexing documents into a search system. Proper ingestion ensures high-quality retrieval by creating well-structured, searchable chunks.
+</Callout>
+
+```python
+# backend/document_processor.py
+
+import os
+from typing import List, Dict
+import re
+
+class DocumentProcessor:
+    """Process and prepare documents for indexing"""
+
+    @staticmethod
+    def load_text_file(filepath: str) -> str:
+        """Load text from file"""
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return f.read()
+
+    @staticmethod
+    def chunk_document(
+        text: str,
+        chunk_size: int = 500,
+        overlap: int = 100
+    ) -> List[str]:
+        """
+        Split document into chunks
+
+        Args:
+            text: Document text
+            chunk_size: Target chunk size (characters)
+            overlap: Overlap between chunks
+
+        Returns:
+            List of chunks
+        """
+        # Simple character-based chunking
+        chunks = []
+        start = 0
+
+        while start < len(text):
+            end = start + chunk_size
+            chunk = text[start:end]
+
+            # Try to end at sentence boundary
+            if end < len(text):
+                last_period = chunk.rfind('.')
+                last_newline = chunk.rfind('\n')
+                boundary = max(last_period, last_newline)
+
+                if boundary > chunk_size * 0.5:  # At least 50% into chunk
+                    chunk = chunk[:boundary + 1]
+
+            chunks.append(chunk.strip())
+            start += len(chunk) - overlap
+
+        return [c for c in chunks if len(c.strip()) > 50]  # Filter tiny chunks
+
+    @staticmethod
+    def clean_text(text: str) -> str:
+        """Clean and normalize text"""
+        # Remove extra whitespace
+        text = re.sub(r'\s+', ' ', text)
+
+        # Remove special characters (optional)
+        # text = re.sub(r'[^\w\s\.\,\!\?]', '', text)
+
+        return text.strip()
+
+    @staticmethod
+    def process_file(
+        filepath: str,
+        chunk_size: int = 500,
+        overlap: int = 100
+    ) -> List[Dict]:
+        """
+        Process a file into indexable chunks
+
+        Args:
+            filepath: Path to file
+            chunk_size: Target chunk size
+            overlap: Chunk overlap
+
+        Returns:
+            List of dicts with 'text' and 'metadata'
+        """
+        # Load file
+        text = DocumentProcessor.load_text_file(filepath)
+
+        # Clean
+        text = DocumentProcessor.clean_text(text)
+
+        # Chunk
+        chunks = DocumentProcessor.chunk_document(text, chunk_size, overlap)
+
+        # Add metadata
+        filename = os.path.basename(filepath)
+        results = [
+            {
+                'text': chunk,
+                'metadata': {
+                    'source': filename,
+                    'chunk_index': i,
+                    'total_chunks': len(chunks)
+                }
+            }
+            for i, chunk in enumerate(chunks)
+        ]
+
+        return results
+
+    @staticmethod
+    def process_directory(
+        dirpath: str,
+        extensions: List[str] = None
+    ) -> List[Dict]:
+        """
+        Process all files in directory
+
+        Args:
+            dirpath: Directory path
+            extensions: Allowed file extensions (e.g., ['.txt', '.md'])
+
+        Returns:
+            List of processed documents
+        """
+        if extensions is None:
+            extensions = ['.txt', '.md']
+
+        all_docs = []
+
+        for filename in os.listdir(dirpath):
+            filepath = os.path.join(dirpath, filename)
+
+            # Check extension
+            if not any(filename.endswith(ext) for ext in extensions):
+                continue
+
+            # Process file
+            try:
+                docs = DocumentProcessor.process_file(filepath)
+                all_docs.extend(docs)
+                print(f"Processed: {filename} ({len(docs)} chunks)")
+            except Exception as e:
+                print(f"Error processing {filename}: {e}")
+
+        return all_docs
+```
+
+### 3. FastAPI Application
+
+<Callout type="info">
+**RESTful API:** An architectural style for web services that uses HTTP methods (GET, POST, etc.) to perform operations. Provides a standard interface for clients to interact with the search engine.
+</Callout>
+
+```python
+# backend/main.py
+
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+import os
+from dotenv import load_dotenv
+
+from search_engine import SemanticSearchEngine
+from document_processor import DocumentProcessor
+
+# Load environment variables
+load_dotenv()
+
+# Initialize FastAPI
+app = FastAPI(title="Semantic Search Engine API")
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize search engine
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY not found in environment")
+
+search_engine = SemanticSearchEngine(
+    openai_api_key=OPENAI_API_KEY,
+    chroma_path="./chroma_db"
+)
+
+# Pydantic models
+class SearchQuery(BaseModel):
+    query: str
+    top_k: int = 10
+    alpha: float = 0.5
+    use_reranking: bool = True
+
+class AddDocumentRequest(BaseModel):
+    text: str
+    metadata: Optional[dict] = None
+
+class SearchResponse(BaseModel):
+    results: List[dict]
+    query: str
+    total_results: int
+
+# Routes
+@app.get("/")
+async def root():
+    """Health check"""
+    return {"status": "running", "message": "Semantic Search Engine API"}
+
+@app.get("/stats")
+async def get_stats():
+    """Get search engine statistics"""
+    return search_engine.get_stats()
+
+@app.post("/search", response_model=SearchResponse)
+async def search(query: SearchQuery):
+    """
+    Search documents
+
+    Args:
+        query: Search parameters
+
+    Returns:
+        Search results
+    """
+    try:
+        results = search_engine.search(
+            query=query.query,
+            top_k=query.top_k,
+            alpha=query.alpha,
+            use_reranking=query.use_reranking
+        )
+
+        return SearchResponse(
+            results=results,
+            query=query.query,
+            total_results=len(results)
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents")
+async def add_document(doc: AddDocumentRequest):
+    """
+    Add a single document
+
+    Args:
+        doc: Document to add
+
+    Returns:
+        Document ID
+    """
+    try:
+        doc_id = search_engine.add_document(
+            text=doc.text,
+            metadata=doc.metadata
+        )
+
+        return {"doc_id": doc_id, "status": "success"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/batch")
+async def add_documents_batch(documents: List[AddDocumentRequest]):
+    """
+    Add multiple documents
+
+    Args:
+        documents: List of documents
+
+    Returns:
+        Status
+    """
+    try:
+        texts = [doc.text for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+
+        search_engine.add_documents_batch(texts, metadatas)
+
+        return {
+            "status": "success",
+            "count": len(documents)
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """
+    Upload and index a file
+
+    Args:
+        file: Uploaded file
+
+    Returns:
+        Processing results
+    """
+    try:
+        # Save uploaded file temporarily
+        temp_path = f"./temp_{file.filename}"
+
+        with open(temp_path, 'wb') as f:
+            content = await file.read()
+            f.write(content)
+
+        # Process file
+        docs = DocumentProcessor.process_file(temp_path)
+
+        # Add to search engine
+        texts = [doc['text'] for doc in docs]
+        metadatas = [doc['metadata'] for doc in docs]
+
+        search_engine.add_documents_batch(texts, metadatas)
+
+        # Clean up
+        os.remove(temp_path)
+
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "chunks_indexed": len(docs)
+        }
+
+    except Exception as e:
+        # Clean up on error
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+### 4. Requirements
+
+```txt
+# backend/requirements.txt
+
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+python-dotenv==1.0.0
+
+chromadb==0.4.18
+openai==1.3.7
+rank-bm25==0.2.2
+sentence-transformers==2.2.2
+
+numpy==1.24.3
+```
+
+## Frontend Implementation
+
+### 1. HTML Interface
+
+```html
+<!-- frontend/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Search Engine</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Semantic Search Engine</h1>
+            <p>Hybrid search powered by vector embeddings and keyword matching</p>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <span class="stat-label">Documents:</span>
+                <span class="stat-value" id="doc-count">-</span>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Search for anything..."
+                    autofocus
+                />
+                <button id="search-btn" onclick="performSearch()">Search</button>
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="advanced-options">
+                <label>
+                    <input type="checkbox" id="use-reranking" checked />
+                    Use Re-ranking
+                </label>
+
+                <label>
+                    Vector/Keyword Balance:
+                    <input
+                        type="range"
+                        id="alpha-slider"
+                        min="0"
+                        max="100"
+                        value="50"
+                    />
+                    <span id="alpha-value"&gt;0.5</span>
+                </label>
+
+                <label>
+                    Results:
+                    <select id="top-k">
+                        <option value="5"&gt;5</option>
+                        <option value="10" selected&gt;10</option>
+                        <option value="20"&gt;20</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results-container"></div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2>Add Documents</h2>
+
+            <div class="upload-box">
+                <input type="file" id="file-input" accept=".txt,.md" />
+                <button onclick="uploadFile()">Upload File</button>
+            </div>
+
+            <div class="text-input-box">
+                <textarea
+                    id="text-input"
+                    placeholder="Or paste text directly..."
+                    rows="5"
+                ></textarea>
+                <button onclick="addText()">Add Text</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>Built with OpenAI Embeddings, ChromaDB, and FastAPI</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+### 2. CSS Styling
+
+```css
+/* frontend/styles.css */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+header p {
+    opacity: 0.9;
+    font-size: 1.1em;
+}
+
+.stats {
+    background: #f8f9fa;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.stat-item {
+    font-size: 0.95em;
+}
+
+.stat-label {
+    color: #666;
+    margin-right: 8px;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #667eea;
+}
+
+.search-section {
+    padding: 40px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#search-input {
+    flex: 1;
+    padding: 15px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.3s;
+}
+
+#search-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+button {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.advanced-options {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 0.9em;
+}
+
+.advanced-options label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#alpha-slider {
+    width: 100px;
+}
+
+#results-container {
+    padding: 40px;
+    min-height: 200px;
+}
+
+.result-item {
+    background: #f8f9fa;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.result-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.result-rank {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 1.2em;
+}
+
+.result-score {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+}
+
+.result-text {
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.result-metadata {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    background: #ffe0e0;
+    color: #c00;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.upload-section {
+    padding: 40px;
+    background: #f8f9fa;
+}
+
+.upload-section h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.upload-box, .text-input-box {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+#text-input {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1em;
+    resize: vertical;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 0.9em;
+}
+```
+
+### 3. JavaScript Logic
+
+```javascript
+// frontend/script.js
+
+const API_URL = 'http://localhost:8000';
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+
+    // Enter key to search
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    // Update alpha display
+    const alphaSlider = document.getElementById('alpha-slider');
+    alphaSlider.addEventListener('input', (e) => {
+        const alpha = e.target.value / 100;
+        document.getElementById('alpha-value').textContent = alpha.toFixed(2);
+    });
+});
+
+// Load statistics
+async function loadStats() {
+    try {
+        const response = await fetch(`${API_URL}/stats`);
+        const data = await response.json();
+
+        document.getElementById('doc-count').textContent = data.total_documents;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+// Perform search
+async function performSearch() {
+    const query = document.getElementById('search-input').value.trim();
+
+    if (!query) {
+        return;
+    }
+
+    const resultsContainer = document.getElementById('results-container');
+    resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
+
+    try {
+        const useReranking = document.getElementById('use-reranking').checked;
+        const alpha = parseInt(document.getElementById('alpha-slider').value) / 100;
+        const topK = parseInt(document.getElementById('top-k').value);
+
+        const response = await fetch(`${API_URL}/search`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: query,
+                top_k: topK,
+                alpha: alpha,
+                use_reranking: useReranking
+            })
+        });
+
+        const data = await response.json();
+
+        displayResults(data.results, query);
+
+    } catch (error) {
+        resultsContainer.innerHTML = `
+            <div class="error">
+                Error: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Display search results
+function displayResults(results, query) {
+    const resultsContainer = document.getElementById('results-container');
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="loading">
+                No results found for "${query}"
+            </div>
+        `;
+        return;
+    }
+
+    resultsContainer.innerHTML = results.map((result, index) => `
+        <div class="result-item">
+            <div class="result-header">
+                <span class="result-rank">#${index + 1}</span>
+                <span class="result-score">
+                    Score: ${result.final_score.toFixed(4)}
+                </span>
+            </div>
+            <div class="result-text">${highlightQuery(result.document, query)}</div>
+            ${result.metadata ? `
+                <div class="result-metadata">
+                    ${result.metadata.source ? `Source: ${result.metadata.source}` : ''}
+                    ${result.metadata.chunk_index !== undefined ?
+                        ` | Chunk ${result.metadata.chunk_index + 1}` : ''}
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// Highlight query terms in text
+function highlightQuery(text, query) {
+    const terms = query.toLowerCase().split(/\s+/);
+    let highlighted = text;
+
+    terms.forEach(term => {
+        const regex = new RegExp(`(${term})`, 'gi');
+        highlighted = highlighted.replace(regex, '<strong>$1</strong>');
+    });
+
+    return highlighted;
+}
+
+// Upload file
+async function uploadFile() {
+    const fileInput = document.getElementById('file-input');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert('Please select a file');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch(`${API_URL}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        alert(`Success! Indexed ${data.chunks_indexed} chunks from ${data.filename}`);
+
+        fileInput.value = '';
+        loadStats();
+
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
+
+// Add text directly
+async function addText() {
+    const text = document.getElementById('text-input').value.trim();
+
+    if (!text) {
+        alert('Please enter some text');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/documents`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: text,
+                metadata: {
+                    source: 'manual_input'
+                }
+            })
+        });
+
+        const data = await response.json();
+
+        alert('Text added successfully!');
+
+        document.getElementById('text-input').value = '';
+        loadStats();
+
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    }
+}
+```
+
+## Sample Data
+
+Create some sample documents to test:
+
+```txt
+# data/documents/python_intro.txt
+
+Python Programming Introduction
+
+Python is a high-level, interpreted programming language known for its simplicity and readability.
+Created by Guido van Rossum and first released in 1991, Python emphasizes code readability with
+its use of significant indentation.
+
+Python supports multiple programming paradigms including procedural, object-oriented, and functional
+programming. It has a comprehensive standard library, often described as having "batteries included."
+
+Python is widely used in web development, data science, artificial intelligence, scientific computing,
+automation, and many other domains. Popular frameworks include Django and Flask for web development,
+NumPy and Pandas for data analysis, and TensorFlow and PyTorch for machine learning.
+```
+
+```txt
+# data/documents/javascript_guide.txt
+
+JavaScript Fundamentals
+
+JavaScript is a high-level, interpreted programming language that conforms to the ECMAScript
+specification. It is a language that is also characterized as dynamic, weakly typed, prototype-based,
+and multi-paradigm.
+
+JavaScript was initially created to make web pages more interactive. Today, JavaScript can be used
+for both client-side and server-side development. Node.js enables JavaScript to be used for
+server-side scripting.
+
+Modern JavaScript includes features like arrow functions, promises, async/await, destructuring,
+and modules. Popular frameworks and libraries include React, Vue, Angular for frontend development,
+and Express.js for backend development.
+```
+
+## Running the Project
+
+### Setup
+
+```bash
+# 1. Create project directory
+mkdir semantic-search-engine
+cd semantic-search-engine
+
+# 2. Setup backend
+mkdir backend
+cd backend
+
+# Copy all backend files (main.py, search_engine.py, document_processor.py, requirements.txt)
+
+# 3. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 4. Install dependencies
+pip install -r requirements.txt
+
+# 5. Create .env file
+echo "OPENAI_API_KEY=your-key-here" > .env
+
+# 6. Run backend
+python main.py
+```
+
+### Frontend
+
+```bash
+# In another terminal, from project root
+cd frontend
+
+# Copy all frontend files (index.html, styles.css, script.js)
+
+# Serve frontend (Python simple server)
+python -m http.server 3000
+
+# Or use any other web server
+# Open http://localhost:3000 in browser
+```
+
+### Usage
+
+1. **Open browser** to `http://localhost:3000`
+2. **Add documents** using upload or text input
+3. **Search** and experiment with settings
+4. **Compare** different alpha values and re-ranking
+
+## Extensions
+
+<Callout type="info">
+**Production Deployment:** The process of preparing and deploying an application for real-world use. Includes considerations for scalability, monitoring, security, and infrastructure management.
+</Callout>
+
+### 1. Add More Document Formats
+
+```python
+# Support PDF, DOCX, etc.
+# pip install pypdf2 python-docx
+
+from PyPDF2 import PdfReader
+from docx import Document
+
+def load_pdf(filepath):
+    reader = PdfReader(filepath)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+def load_docx(filepath):
+    doc = Document(filepath)
+    return "\n".join([para.text for para in doc.paragraphs])
+```
+
+### 2. Add Metadata Filtering
+
+```python
+# In search_engine.py
+def search(self, query, filters=None, ...):
+    # Apply filters to ChromaDB query
+    results = self.collection.query(
+        query_embeddings=[query_embedding],
+        where=filters,  # e.g., {"source": "python_intro.txt"}
+        n_results=top_k
+    )
+```
+
+### 3. Add Analytics
+
+```python
+# Track searches and clicks
+class SearchAnalytics:
+    def __init__(self):
+        self.searches = []
+
+    def log_search(self, query, results, clicked):
+        self.searches.append({
+            'query': query,
+            'results': results,
+            'clicked': clicked,
+            'timestamp': datetime.now()
+        })
+```
+
+## Summary
+
+You've built a production-ready semantic search engine with:
+
+1. **Hybrid search**: Combining vector and keyword search
+2. **Re-ranking**: Cross-encoder refinement
+3. **Web interface**: Clean, responsive UI
+4. **RESTful API**: FastAPI backend
+5. **Document processing**: Chunking and metadata
+
+**Key learnings:**
+- Hybrid search outperforms pure vector or keyword search
+- Re-ranking improves top results significantly
+- Good chunking is critical for quality
+- User-tunable parameters (alpha) improve flexibility
+
+This foundation can scale to handle millions of documents with proper infrastructure!
+
+<Quiz
+  questions={[
+    {
+      question: "What is the purpose of the alpha parameter in the hybrid search implementation?",
+      options: [
+        "It controls the number of results returned",
+        "It balances the weight between vector search (alpha=1.0) and BM25 keyword search (alpha=0.0)",
+        "It sets the chunk size for document processing",
+        "It determines the re-ranking threshold"
+      ],
+      correctAnswer: 1,
+      explanation: "The alpha parameter controls the weighted balance between vector semantic search and BM25 keyword search. alpha=0.0 means pure BM25, alpha=1.0 means pure vector search, and alpha=0.5 means equal weighting. This allows users to tune the search behavior based on their needs - more semantic understanding vs. more exact keyword matching."
+    },
+    {
+      question: "Why do we re-rank only the top N candidates (e.g., 20-50) rather than re-ranking all documents?",
+      options: [
+        "Re-ranking all documents would be too slow and expensive",
+        "Re-ranking is less accurate than the initial search",
+        "The cross-encoder model only works on small sets",
+        "It's not necessary to re-rank at all"
+      ],
+      correctAnswer: 0,
+      explanation: "Re-ranking with cross-encoders or LLMs is computationally expensive because it scores each query-document pair independently. By first using fast hybrid search to get 20-50 candidates, then re-ranking only those, we balance speed and quality. This two-stage approach (fast retrieval + accurate re-ranking) is a best practice in production search systems."
+    },
+    {
+      question: "What is the main advantage of using ChromaDB in this project?",
+      options: [
+        "It's the fastest vector database available",
+        "It's embedded and requires no separate server, making it perfect for prototyping and local development",
+        "It has the best accuracy for embeddings",
+        "It's the only database that supports hybrid search"
+      ],
+      correctAnswer: 1,
+      explanation: "ChromaDB's embedded mode allows it to run directly in your application without a separate database server, making it extremely easy to set up and perfect for prototyping and local development. While it may not have the scale or advanced features of managed solutions like Pinecone, its simplicity and zero-configuration setup make it ideal for projects like this."
+    },
+    {
+      question: "In the document processing pipeline, why do we use chunk overlap (e.g., 100 characters)?",
+      options: [
+        "To make the chunks larger and reduce storage",
+        "To ensure information at chunk boundaries appears in multiple chunks, preventing context loss",
+        "To improve embedding quality",
+        "To make the search faster"
+      ],
+      correctAnswer: 1,
+      explanation: "Chunk overlap ensures that information near chunk boundaries appears in multiple chunks. Without overlap, a sentence or concept that spans a chunk boundary might be split, losing important context. With 10-20% overlap, we maintain context continuity while minimizing redundancy. This significantly improves retrieval quality for queries that match content near boundaries."
+    }
+  ]}
+/>

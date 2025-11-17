@@ -1,0 +1,782 @@
+---
+title: "Context Compression"
+description: "Master context compression techniques to fit more relevant information within token limits using LongLLMLingua and extraction methods"
+order: 69
+duration: 22
+difficulty: "advanced"
+tags: ["RAG", "Context Compression", "LongLLMLingua", "Token Optimization"]
+---
+
+# Context Compression
+
+Context compression allows you to include more relevant information within LLM token limits by intelligently removing redundant or less important content while preserving key information.
+
+<Callout type="info">
+**Context Compression**: Techniques to reduce the size of retrieved context while maintaining the most relevant information, enabling more efficient use of limited context windows.
+</Callout>
+
+## The Token Limit Problem
+
+LLMs have context window limits:
+
+```python
+# The challenge
+retrieved_documents = 20  # Retrieved 20 relevant documents
+avg_doc_length = 800  # Average 800 tokens per document
+total_tokens = 20 * 800  # = 16,000 tokens
+
+# But your LLM context window might be:
+context_limit = 4096  # Can only fit ~5 documents!
+
+# Solution: Compress 20 documents into 4096 tokens
+# while keeping the most important information
+```
+
+## Extractive Compression
+
+Extract only relevant sentences from documents:
+
+```python
+import openai
+from typing import List, Dict, Any
+import numpy as np
+
+
+class ExtractivCompressor:
+    """
+    Extracts only relevant sentences from retrieved documents.
+
+    Uses sentence-level similarity to keep only content relevant to the query.
+    """
+
+    def __init__(self, embedding_model: str = "text-embedding-ada-002"):
+        self.embedding_model = embedding_model
+
+    def split_into_sentences(self, text: str) -> List[str]:
+        """Split text into sentences."""
+        import re
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        return [s.strip() for s in sentences if s.strip()]
+
+    def compress_document(
+        self,
+        document: str,
+        query: str,
+        relevance_threshold: float = 0.5,
+        max_sentences: int = 5
+    ) -> str:
+        """
+        Compress a document by extracting relevant sentences.
+
+        Args:
+            document: Document to compress
+            query: User query
+            relevance_threshold: Minimum similarity for inclusion
+            max_sentences: Maximum sentences to keep
+
+        Returns:
+            Compressed document
+        """
+        # Split into sentences
+        sentences = self.split_into_sentences(document)
+
+        if len(sentences) <= max_sentences:
+            return document
+
+        # Get query embedding
+        query_response = openai.Embedding.create(
+            model=self.embedding_model,
+            input=query
+        )
+        query_embedding = np.array(query_response['data'][0]['embedding'])
+
+        # Get embeddings for all sentences
+        sentence_embeddings = []
+        for sentence in sentences:
+            response = openai.Embedding.create(
+                model=self.embedding_model,
+                input=sentence
+            )
+            embedding = np.array(response['data'][0]['embedding'])
+            sentence_embeddings.append(embedding)
+
+        # Calculate relevance scores
+        relevance_scores = []
+        for sent_emb in sentence_embeddings:
+            similarity = np.dot(query_embedding, sent_emb)
+            relevance_scores.append(similarity)
+
+        # Rank sentences by relevance
+        sentence_scores = list(zip(sentences, relevance_scores, range(len(sentences))))
+        sentence_scores.sort(key=lambda x: x[1], reverse=True)
+
+        # Select top sentences above threshold
+        selected = []
+        for sentence, score, original_idx in sentence_scores:
+            if score >= relevance_threshold and len(selected) < max_sentences:
+                selected.append((sentence, original_idx))
+
+        # Sort by original order to maintain coherence
+        selected.sort(key=lambda x: x[1])
+
+        # Combine sentences
+        compressed = ' '.join([sent for sent, _ in selected])
+
+        return compressed
+
+    def compress_context(
+        self,
+        documents: List[str],
+        query: str,
+        target_tokens: int = 2000,
+        tokens_per_char: float = 0.25
+    ) -> str:
+        """
+        Compress multiple documents to fit token budget.
+
+        Args:
+            documents: List of documents
+            query: User query
+            target_tokens: Target token count
+            tokens_per_char: Approximate tokens per character
+
+        Returns:
+            Compressed context
+        """
+        target_chars = int(target_tokens / tokens_per_char)
+
+        compressed_docs = []
+        total_chars = 0
+
+        for doc in documents:
+            # Calculate budget for this document
+            remaining_chars = target_chars - total_chars
+
+            if remaining_chars <= 0:
+                break
+
+            # Compress document
+            compressed = self.compress_document(
+                document=doc,
+                query=query,
+                max_sentences=10
+            )
+
+            # Truncate if needed
+            if len(compressed) > remaining_chars:
+                compressed = compressed[:remaining_chars] + "..."
+
+            compressed_docs.append(compressed)
+            total_chars += len(compressed)
+
+        return "\n\n".join(compressed_docs)
+
+
+# Usage example
+compressor = ExtractivCompressor()
+
+documents = [
+    """The transformer architecture was introduced in the 2017 paper 'Attention is All You Need'.
+    It revolutionized natural language processing. The key innovation was the self-attention mechanism.
+    This allows the model to weigh the importance of different input tokens. Traditional RNNs processed
+    sequences sequentially. Transformers can process all tokens in parallel. This leads to better
+    performance and faster training times.""",
+
+    """Self-attention computes attention weights for each token based on all other tokens in the sequence.
+    The mechanism uses queries, keys, and values. Each token generates a query vector. It is compared
+    against key vectors of all tokens. This produces attention weights. These weights are used to create
+    a weighted sum of value vectors. The result captures contextual information from the entire sequence."""
+]
+
+query = "How does self-attention work in transformers?"
+
+compressed = compressor.compress_context(
+    documents=documents,
+    query=query,
+    target_tokens=200
+)
+
+print("📦 Compressed Context:")
+print(compressed)
+print(f"\n📊 Length: {len(compressed)} chars (~{len(compressed) * 0.25:.0f} tokens)")
+```
+
+<Callout type="tip">
+**Trade-off**: Extractive compression preserves exact wording but may lose coherence. Use for factual retrieval where exact quotes matter.
+</Callout>
+
+## LLM-Based Compression
+
+Use an LLM to compress context while maintaining coherence:
+
+```python
+class LLMCompressor:
+    """
+    Uses an LLM to compress context intelligently.
+
+    The LLM rewrites content to be more concise while preserving key information.
+    """
+
+    def __init__(self, model: str = "gpt-3.5-turbo"):
+        self.model = model
+
+    def compress_document(
+        self,
+        document: str,
+        query: str,
+        compression_ratio: float = 0.5
+    ) -> str:
+        """
+        Compress a document using LLM.
+
+        Args:
+            document: Document to compress
+            query: User query for context
+            compression_ratio: Target ratio (0.5 = reduce to 50%)
+
+        Returns:
+            Compressed document
+        """
+        target_length = int(len(document.split()) * compression_ratio)
+
+        prompt = f"""Compress the following text to approximately {target_length} words while preserving information relevant to this question: "{query}"
+
+Text to compress:
+{document}
+
+Compressed version (keep only relevant information, ~{target_length} words):"""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert at compressing text while preserving key information."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+
+        compressed = response.choices[0].message.content
+
+        return compressed
+
+    def compress_context(
+        self,
+        documents: List[str],
+        query: str,
+        target_tokens: int = 2000
+    ) -> str:
+        """
+        Compress multiple documents.
+
+        Args:
+            documents: Documents to compress
+            query: User query
+            target_tokens: Target total tokens
+
+        Returns:
+            Compressed context
+        """
+        # Estimate current size
+        current_text = "\n\n".join(documents)
+        current_words = len(current_text.split())
+        target_words = int(target_tokens * 0.75)  # Rough conversion
+
+        # Calculate compression ratio
+        compression_ratio = target_words / current_words
+
+        if compression_ratio >= 1.0:
+            return current_text  # No compression needed
+
+        print(f"🗜️ Compressing from ~{current_words} to ~{target_words} words")
+
+        # Compress each document
+        compressed_docs = []
+        for doc in documents:
+            compressed = self.compress_document(doc, query, compression_ratio)
+            compressed_docs.append(compressed)
+
+        return "\n\n".join(compressed_docs)
+
+
+# Usage
+llm_compressor = LLMCompressor()
+
+long_document = """
+[Long document text here...]
+"""
+
+query = "What are the main benefits of transformers?"
+
+compressed = llm_compressor.compress_document(
+    document=long_document,
+    query=query,
+    compression_ratio=0.3  # Reduce to 30% of original
+)
+```
+
+## LongLLMLingua
+
+Implement prompt compression inspired by LongLLMLingua research:
+
+```python
+class LongLLMLinguaCompressor:
+    """
+    Implements LongLLMLingua-style prompt compression.
+
+    Uses perplexity-based token importance scoring to remove less
+    important tokens while preserving meaning.
+    """
+
+    def __init__(
+        self,
+        model: str = "gpt2",  # Small model for perplexity
+        embedding_model: str = "text-embedding-ada-002"
+    ):
+        self.model = model
+        self.embedding_model = embedding_model
+
+    def calculate_token_importance(
+        self,
+        text: str,
+        query: str
+    ) -> List[Tuple[str, float]]:
+        """
+        Calculate importance score for each token.
+
+        Args:
+            text: Text to analyze
+            query: Query for context
+
+        Returns:
+            List of (token, importance_score) tuples
+        """
+        from transformers import GPT2LMHeadModel, GPT2Tokenizer
+        import torch
+
+        # Load model for perplexity calculation
+        tokenizer = GPT2Tokenizer.from_pretrained(self.model)
+        model = GPT2LMHeadModel.from_pretrained(self.model)
+        model.eval()
+
+        # Tokenize
+        tokens = tokenizer.encode(text)
+        token_strs = [tokenizer.decode([t]) for t in tokens]
+
+        # Calculate perplexity contribution for each token
+        importance_scores = []
+
+        with torch.no_grad():
+            for i in range(len(tokens)):
+                # Create version without this token
+                tokens_without = tokens[:i] + tokens[i+1:]
+
+                if not tokens_without:
+                    importance_scores.append(0.0)
+                    continue
+
+                # Calculate perplexity difference
+                input_ids = torch.tensor([tokens])
+                outputs = model(input_ids)
+                loss_with = outputs.loss.item() if hasattr(outputs, 'loss') else 0
+
+                input_ids_without = torch.tensor([tokens_without])
+                outputs_without = model(input_ids_without)
+                loss_without = outputs_without.loss.item() if hasattr(outputs_without, 'loss') else 0
+
+                # Higher loss without token = more important
+                importance = abs(loss_without - loss_with)
+                importance_scores.append(importance)
+
+        # Normalize scores
+        max_score = max(importance_scores) if importance_scores else 1
+        normalized = [s / max_score for s in importance_scores]
+
+        return list(zip(token_strs, normalized))
+
+    def compress(
+        self,
+        text: str,
+        query: str,
+        compression_ratio: float = 0.5,
+        use_importance: bool = True
+    ) -> str:
+        """
+        Compress text using token importance.
+
+        Args:
+            text: Text to compress
+            query: Query for context
+            compression_ratio: Ratio of tokens to keep
+            use_importance: Use importance scoring vs random
+
+        Returns:
+            Compressed text
+        """
+        if not use_importance:
+            # Simple truncation
+            words = text.split()
+            keep_count = int(len(words) * compression_ratio)
+            return ' '.join(words[:keep_count])
+
+        # Calculate token importance
+        print("🔍 Calculating token importance...")
+        token_importance = self.calculate_token_importance(text, query)
+
+        # Sort by importance
+        sorted_tokens = sorted(
+            token_importance,
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        # Keep top tokens
+        keep_count = int(len(sorted_tokens) * compression_ratio)
+        kept_tokens = set([t for t, _ in sorted_tokens[:keep_count]])
+
+        # Reconstruct text with important tokens
+        # (This is simplified - real implementation maintains order better)
+        compressed_tokens = [
+            token for token, _ in token_importance
+            if token in kept_tokens
+        ]
+
+        compressed = ''.join(compressed_tokens)
+
+        print(f"✅ Compressed to {len(compressed)} chars "
+              f"({compression_ratio*100:.0f}% of original)")
+
+        return compressed
+
+
+# Usage (simplified - full implementation would use actual LongLLMLingua library)
+# pip install llmlingua
+
+try:
+    from llmlingua import PromptCompressor
+
+    compressor = PromptCompressor(
+        model_name="microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank",
+        use_llmlingua2=True
+    )
+
+    context = """
+    The transformer architecture uses self-attention mechanisms to process sequences in parallel.
+    Unlike RNNs which process sequentially, transformers can attend to all positions simultaneously.
+    This enables better capture of long-range dependencies and faster training.
+    """
+
+    query = "How do transformers differ from RNNs?"
+
+    compressed_result = compressor.compress_prompt(
+        context,
+        instruction=query,
+        rate=0.5,  # Compression rate
+        target_token=100  # Target token count
+    )
+
+    print("Original:")
+    print(context)
+    print(f"\nCompressed ({compressed_result['ratio']}):")
+    print(compressed_result['compressed_prompt'])
+
+except ImportError:
+    print("Install llmlingua: pip install llmlingua")
+```
+
+<Callout type="tip">
+**LongLLMLingua**: State-of-the-art compression that can reduce prompt length by 50-80% while maintaining &gt;90% of performance. Excellent for long-context scenarios.
+</Callout>
+
+## Hierarchical Compression
+
+Compress at different granularity levels:
+
+```python
+class HierarchicalCompressor:
+    """
+    Implements hierarchical compression strategy.
+
+    1. Document-level: Remove least relevant documents
+    2. Paragraph-level: Remove least relevant paragraphs
+    3. Sentence-level: Remove least relevant sentences
+    """
+
+    def __init__(self, embedding_model: str = "text-embedding-ada-002"):
+        self.embedding_model = embedding_model
+        self.extractive = ExtractivCompressor(embedding_model)
+
+    def compress(
+        self,
+        documents: List[str],
+        query: str,
+        target_tokens: int = 2000,
+        aggressive: bool = False
+    ) -> str:
+        """
+        Hierarchical compression.
+
+        Args:
+            documents: List of documents
+            query: Query
+            target_tokens: Target token count
+            aggressive: Use aggressive compression
+
+        Returns:
+            Compressed context
+        """
+        current_text = "\n\n".join(documents)
+        current_tokens = len(current_text.split()) * 1.3  # Rough estimate
+
+        print(f"📊 Starting: ~{current_tokens:.0f} tokens")
+        print(f"🎯 Target: {target_tokens} tokens\n")
+
+        # Level 1: Document-level filtering
+        if current_tokens > target_tokens:
+            print("🔍 Level 1: Document filtering...")
+            documents = self._filter_documents(documents, query, top_k=len(documents))
+
+            # Keep top documents until we're under budget
+            filtered_docs = []
+            total = 0
+
+            for doc in documents:
+                doc_tokens = len(doc.split()) * 1.3
+                if total + doc_tokens <= target_tokens * 1.2:  # 20% buffer
+                    filtered_docs.append(doc)
+                    total += doc_tokens
+                else:
+                    break
+
+            documents = filtered_docs
+            current_text = "\n\n".join(documents)
+            current_tokens = len(current_text.split()) * 1.3
+
+            print(f"   → Kept {len(documents)} documents (~{current_tokens:.0f} tokens)")
+
+        # Level 2: Sentence-level extraction
+        if current_tokens > target_tokens:
+            print("\n🔍 Level 2: Sentence extraction...")
+            compressed = self.extractive.compress_context(
+                documents,
+                query,
+                target_tokens=target_tokens
+            )
+            current_tokens = len(compressed.split()) * 1.3
+            print(f"   → Compressed to ~{current_tokens:.0f} tokens")
+
+            return compressed
+
+        return current_text
+
+    def _filter_documents(
+        self,
+        documents: List[str],
+        query: str,
+        top_k: int
+    ) -> List[str]:
+        """Filter documents by relevance to query."""
+        # Get query embedding
+        response = openai.Embedding.create(
+            model=self.embedding_model,
+            input=query
+        )
+        query_embedding = np.array(response['data'][0]['embedding'])
+
+        # Score documents
+        doc_scores = []
+        for doc in documents:
+            response = openai.Embedding.create(
+                model=self.embedding_model,
+                input=doc
+            )
+            doc_embedding = np.array(response['data'][0]['embedding'])
+            similarity = np.dot(query_embedding, doc_embedding)
+            doc_scores.append((doc, similarity))
+
+        # Sort by score
+        doc_scores.sort(key=lambda x: x[1], reverse=True)
+
+        return [doc for doc, _ in doc_scores[:top_k]]
+
+
+# Usage
+hierarchical = HierarchicalCompressor()
+
+documents = [
+    # ... many documents
+]
+
+query = "How does attention work?"
+
+compressed = hierarchical.compress(
+    documents=documents,
+    query=query,
+    target_tokens=1500
+)
+```
+
+## Adaptive Compression
+
+Adjust compression based on relevance:
+
+```python
+class AdaptiveCompressor:
+    """
+    Compresses documents adaptively based on relevance.
+
+    More relevant documents get less compression.
+    """
+
+    def __init__(self, embedding_model: str = "text-embedding-ada-002"):
+        self.embedding_model = embedding_model
+
+    def compress_adaptive(
+        self,
+        documents: List[str],
+        query: str,
+        target_tokens: int = 2000
+    ) -> str:
+        """
+        Adaptively compress based on relevance.
+
+        Args:
+            documents: Documents to compress
+            query: Query
+            target_tokens: Target token budget
+
+        Returns:
+            Compressed context
+        """
+        # Score documents by relevance
+        doc_scores = self._score_documents(documents, query)
+
+        # Calculate compression ratios
+        # More relevant = less compression
+        total_score = sum(score for _, score in doc_scores)
+        compression_ratios = []
+
+        for doc, score in doc_scores:
+            # Higher score = higher ratio (less compression)
+            # Normalize to [0.3, 1.0] range
+            normalized_score = score / total_score if total_score > 0 else 0
+            ratio = 0.3 + (0.7 * normalized_score * len(documents))
+            ratio = min(1.0, ratio)  # Cap at 1.0
+            compression_ratios.append((doc, ratio))
+
+        # Compress each document with its ratio
+        compressed_docs = []
+
+        for doc, ratio in compression_ratios:
+            words = doc.split()
+            keep_count = int(len(words) * ratio)
+            compressed = ' '.join(words[:keep_count])
+
+            if ratio < 1.0:
+                compressed += "..."
+
+            compressed_docs.append(compressed)
+
+        # Combine and truncate if needed
+        result = "\n\n".join(compressed_docs)
+
+        # Final truncation if still over budget
+        result_tokens = len(result.split()) * 1.3
+        if result_tokens > target_tokens:
+            words = result.split()
+            keep_words = int(target_tokens / 1.3)
+            result = ' '.join(words[:keep_words]) + "..."
+
+        return result
+
+    def _score_documents(
+        self,
+        documents: List[str],
+        query: str
+    ) -> List[Tuple[str, float]]:
+        """Score documents by relevance."""
+        response = openai.Embedding.create(
+            model=self.embedding_model,
+            input=query
+        )
+        query_embedding = np.array(response['data'][0]['embedding'])
+
+        scored = []
+        for doc in documents:
+            response = openai.Embedding.create(
+                model=self.embedding_model,
+                input=doc
+            )
+            doc_embedding = np.array(response['data'][0]['embedding'])
+            similarity = np.dot(query_embedding, doc_embedding)
+            scored.append((doc, float(similarity)))
+
+        return scored
+```
+
+<Callout type="warning">
+**Information Loss**: All compression involves some information loss. Evaluate the trade-off between token reduction and answer quality for your use case.
+</Callout>
+
+## Key Takeaways
+
+1. **Extractive compression** - preserve exact wording, may lose coherence
+2. **LLM-based compression** - maintain coherence, but adds LLM call
+3. **LongLLMLingua** - state-of-the-art perplexity-based compression
+4. **Hierarchical** - compress at multiple levels for efficiency
+5. **Adaptive** - compress less important content more aggressively
+
+## Quiz
+
+Test your understanding of context compression:
+
+<Quiz
+  questions={[
+    {
+      question: "What is the primary goal of context compression in RAG systems?",
+      options: [
+        "To make documents smaller on disk",
+        "To fit more relevant information within LLM token limits",
+        "To speed up document retrieval",
+        "To reduce embedding costs"
+      ],
+      correctAnswer: 1,
+      explanation: "Context compression aims to fit more relevant information within the LLM's context window by removing less important content while preserving key information."
+    },
+    {
+      question: "How does extractive compression differ from LLM-based compression?",
+      options: [
+        "Extractive is always better",
+        "Extractive selects existing sentences while LLM-based rewrites content",
+        "Extractive is slower",
+        "They are the same thing"
+      ],
+      correctAnswer: 1,
+      explanation: "Extractive compression selects and keeps existing sentences based on relevance, while LLM-based compression rewrites and paraphrases content to be more concise."
+    },
+    {
+      question: "What does LongLLMLingua use to determine token importance?",
+      options: [
+        "Random selection",
+        "Token frequency",
+        "Perplexity-based scoring to identify important tokens",
+        "Token position in text"
+      ],
+      correctAnswer: 2,
+      explanation: "LongLLMLingua uses perplexity-based scoring to measure how much each token contributes to meaning, keeping tokens that most affect model predictions."
+    },
+    {
+      question: "In adaptive compression, how should highly relevant documents be handled?",
+      options: [
+        "Compress them more aggressively",
+        "Remove them entirely",
+        "Compress them less (higher compression ratio) to preserve more information",
+        "Always keep them uncompressed"
+      ],
+      correctAnswer: 2,
+      explanation: "Adaptive compression applies less compression (higher retention ratio) to more relevant documents to preserve important information while compressing less relevant content more aggressively."
+    }
+  ]}
+/>

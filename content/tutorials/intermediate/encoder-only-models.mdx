@@ -1,0 +1,1034 @@
+---
+title: "Encoder-Only Models (BERT, RoBERTa)"
+description: "Master encoder-only architectures for classification and embeddings, understand when to use them, and explore improvements from BERT to RoBERTa"
+difficulty: "intermediate"
+duration: "15 min"
+order: 25
+---
+
+# Encoder-Only Models (BERT, RoBERTa)
+
+While decoder-only models dominate generation tasks, encoder-only models excel at understanding and classification. This lesson explores why encoder-only architectures remain the best choice for certain applications, how they differ from decoders, and the evolution from BERT to more optimized variants.
+
+## Encoder-Only Architecture
+
+<Callout type="info">
+**Encoder-Only Architecture:** A transformer architecture using only encoder blocks with bidirectional attention, optimized for understanding and classification tasks where the full input is available and no text generation is needed.
+</Callout>
+
+### Bidirectional Understanding
+
+```python
+"""
+Encoder-Only Models:
+
+Key characteristics:
+1. Bidirectional attention (can see entire context)
+2. No causal masking (all positions visible)
+3. Optimized for understanding, not generation
+4. Best for: classification, embeddings, retrieval
+
+Architecture:
+Input → Token Embeddings → Bidirectional Transformer Blocks → Output
+
+Use cases:
+- Text classification (sentiment, topic, intent)
+- Named Entity Recognition (NER)
+- Question answering (extractive)
+- Semantic search and embeddings
+- Text similarity
+"""
+
+import torch
+import torch.nn as nn
+
+class BidirectionalAttention(nn.Module):
+    """
+    Bidirectional self-attention (encoder-style)
+
+    Unlike causal attention, each token can attend to ALL positions
+    including future ones.
+    """
+
+    def __init__(self, d_model, num_heads, dropout=0.1):
+        super().__init__()
+        assert d_model % num_heads == 0
+
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+
+        # Q, K, V projections
+        self.q_proj = nn.Linear(d_model, d_model)
+        self.k_proj = nn.Linear(d_model, d_model)
+        self.v_proj = nn.Linear(d_model, d_model)
+        self.out_proj = nn.Linear(d_model, d_model)
+
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x, attention_mask=None):
+        """
+        Args:
+            x: Input [batch, seq_len, d_model]
+            attention_mask: Optional padding mask [batch, seq_len]
+                           1 = valid token, 0 = padding
+
+        Returns:
+            output: Attention output
+            attn_weights: Attention weights for visualization
+        """
+        batch_size, seq_len, d_model = x.shape
+
+        # Project Q, K, V
+        Q = self.q_proj(x)
+        K = self.k_proj(x)
+        V = self.v_proj(x)
+
+        # Reshape for multi-head: [batch, heads, seq_len, d_k]
+        Q = Q.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+        K = K.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+        V = V.view(batch_size, seq_len, self.num_heads, self.d_k).transpose(1, 2)
+
+        # Compute attention scores
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.d_k ** 0.5)
+        # scores: [batch, heads, seq_len, seq_len]
+
+        # Apply padding mask if provided
+        if attention_mask is not None:
+            # Expand mask: [batch, 1, 1, seq_len]
+            mask = attention_mask.unsqueeze(1).unsqueeze(2)
+            # Mask padded positions
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+
+        # NO CAUSAL MASK - this is the key difference!
+        # All positions can attend to all other positions
+
+        # Softmax and dropout
+        attn_weights = torch.softmax(scores, dim=-1)
+        attn_weights = self.dropout(attn_weights)
+
+        # Apply to values
+        out = torch.matmul(attn_weights, V)
+
+        # Reshape and project
+        out = out.transpose(1, 2).contiguous()
+        out = out.view(batch_size, seq_len, d_model)
+        out = self.out_proj(out)
+
+        return out, attn_weights
+
+# Compare bidirectional vs causal attention
+def visualize_attention_patterns():
+    """Compare attention patterns between encoder and decoder"""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    seq_len = 8
+
+    # Bidirectional (encoder) - all ones
+    bidirectional_mask = np.ones((seq_len, seq_len))
+
+    # Causal (decoder) - lower triangular
+    causal_mask = np.tril(np.ones((seq_len, seq_len)))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+    # Plot bidirectional
+    im1 = ax1.imshow(bidirectional_mask, cmap='Blues', interpolation='nearest')
+    ax1.set_title('Bidirectional Attention (Encoder)\nAll positions visible')
+    ax1.set_xlabel('Key Position')
+    ax1.set_ylabel('Query Position')
+    plt.colorbar(im1, ax=ax1)
+
+    # Plot causal
+    im2 = ax2.imshow(causal_mask, cmap='Oranges', interpolation='nearest')
+    ax2.set_title('Causal Attention (Decoder)\nOnly past visible')
+    ax2.set_xlabel('Key Position')
+    ax2.set_ylabel('Query Position')
+    plt.colorbar(im2, ax=ax2)
+
+    plt.tight_layout()
+    plt.savefig('encoder_vs_decoder_attention.png', dpi=150)
+
+    print("Attention pattern comparison saved")
+    print("\nKey difference:")
+    print("- Encoder: Each position sees ALL positions (full context)")
+    print("- Decoder: Each position sees only past (causal)")
+
+visualize_attention_patterns()
+```
+
+<Callout type="info">
+**Full Context Advantage**: Bidirectional attention allows encoders to build richer representations by seeing the full context. This makes them superior for understanding tasks where the entire input is available upfront.
+</Callout>
+
+## When to Use Encoder-Only Models
+
+### Task Suitability
+
+```python
+"""
+Encoder-Only vs Decoder-Only: Task Selection Guide
+
+Use ENCODER-ONLY when:
+✓ Input is fully available (no streaming/generation)
+✓ Task is classification or embedding
+✓ Need bidirectional context for understanding
+✓ Don't need to generate new text
+✓ Want smaller, faster models for specific tasks
+
+Examples:
+- Sentiment analysis
+- Named entity recognition
+- Text classification (spam, topic, intent)
+- Semantic search / embeddings
+- Question answering (extractive)
+- Similarity scoring
+
+Use DECODER-ONLY when:
+✓ Need to generate text
+✓ Want one model for many tasks
+✓ Want in-context learning capability
+✓ Generation quality is priority
+✓ Have computational resources
+
+Examples:
+- Chat / conversation
+- Code generation
+- Creative writing
+- Summarization (abstractive)
+- Translation
+- General-purpose assistant
+"""
+
+class TaskRecommender:
+    """Recommend model type based on task requirements"""
+
+    def __init__(self):
+        self.encoder_tasks = {
+            'classification': {
+                'reason': 'Fixed output space, needs full context',
+                'examples': ['sentiment', 'topic', 'spam detection'],
+                'best_model': 'BERT, RoBERTa'
+            },
+            'ner': {
+                'reason': 'Token-level classification with full context',
+                'examples': ['entity extraction', 'POS tagging'],
+                'best_model': 'BERT, RoBERTa'
+            },
+            'embeddings': {
+                'reason': 'Need dense representations for similarity',
+                'examples': ['semantic search', 'clustering', 'retrieval'],
+                'best_model': 'BERT, Sentence-BERT'
+            },
+            'extractive_qa': {
+                'reason': 'Select span from context',
+                'examples': ['SQuAD-style QA', 'reading comprehension'],
+                'best_model': 'BERT, RoBERTa, ELECTRA'
+            }
+        }
+
+        self.decoder_tasks = {
+            'generation': {
+                'reason': 'Need to produce new text',
+                'examples': ['story writing', 'code generation'],
+                'best_model': 'GPT-3, GPT-4, LLaMA'
+            },
+            'chat': {
+                'reason': 'Interactive generation with context',
+                'examples': ['chatbots', 'assistants'],
+                'best_model': 'GPT-3.5, GPT-4, Claude'
+            },
+            'summarization': {
+                'reason': 'Generate concise version',
+                'examples': ['abstractive summarization'],
+                'best_model': 'GPT-3, T5 (encoder-decoder)'
+            }
+        }
+
+    def recommend(self, task_type):
+        """Get recommendation for task type"""
+        if task_type in self.encoder_tasks:
+            info = self.encoder_tasks[task_type]
+            print(f"Task: {task_type}")
+            print(f"Recommended: ENCODER-ONLY")
+            print(f"Reason: {info['reason']}")
+            print(f"Examples: {', '.join(info['examples'])}")
+            print(f"Best models: {info['best_model']}\n")
+        elif task_type in self.decoder_tasks:
+            info = self.decoder_tasks[task_type]
+            print(f"Task: {task_type}")
+            print(f"Recommended: DECODER-ONLY (or Encoder-Decoder)")
+            print(f"Reason: {info['reason']}")
+            print(f"Examples: {', '.join(info['examples'])}")
+            print(f"Best models: {info['best_model']}\n")
+
+# Demonstrate recommendations
+recommender = TaskRecommender()
+
+print("Model Architecture Recommendations:\n")
+recommender.recommend('classification')
+recommender.recommend('embeddings')
+recommender.recommend('generation')
+recommender.recommend('chat')
+```
+
+### Efficiency Comparison
+
+```python
+# Compare model sizes and speeds
+def compare_encoder_decoder_efficiency():
+    """Compare encoder-only vs decoder-only models"""
+
+    comparison = {
+        'BERT-Base': {
+            'type': 'Encoder-only',
+            'params': '110M',
+            'speed': 'Fast (bidirectional, one pass)',
+            'memory': 'Low (no generation cache)',
+            'best_for': 'Classification, embeddings',
+            'cost': '$'
+        },
+        'RoBERTa-Base': {
+            'type': 'Encoder-only',
+            'params': '125M',
+            'speed': 'Fast',
+            'memory': 'Low',
+            'best_for': 'Classification, improved BERT',
+            'cost': '$'
+        },
+        'GPT-2': {
+            'type': 'Decoder-only',
+            'params': '1.5B',
+            'speed': 'Slower (autoregressive)',
+            'memory': 'Higher (KV cache)',
+            'best_for': 'Generation, general-purpose',
+            'cost': '$$'
+        },
+        'GPT-3': {
+            'type': 'Decoder-only',
+            'params': '175B',
+            'speed': 'Slow',
+            'memory': 'Very high',
+            'best_for': 'Complex generation, reasoning',
+            'cost': '$$$$'
+        }
+    }
+
+    print("Model Efficiency Comparison:\n")
+    for model, specs in comparison.items():
+        print(f"{model}:")
+        for key, value in specs.items():
+            print(f"  {key}: {value}")
+        print()
+
+    # Inference time comparison (approximate)
+    print("\nInference Time (relative):")
+    print("Task: Classify 1,000 documents")
+    print("BERT-Base: ~10 seconds")
+    print("GPT-2: ~30 seconds (slower due to causal attention)")
+    print("GPT-3: N/A (API-based, cost-prohibitive for this task)")
+
+    print("\nTask: Generate 100-token response")
+    print("BERT-Base: Cannot generate naturally")
+    print("GPT-2: ~5 seconds")
+    print("GPT-3: ~3 seconds (despite size, optimized infrastructure)")
+
+compare_encoder_decoder_efficiency()
+```
+
+<Callout type="tip">
+**Cost-Performance Trade-off**: For classification tasks with limited budgets, encoder-only models like BERT often provide the best performance per dollar. They're smaller, faster, and can run on cheaper hardware.
+</Callout>
+
+## RoBERTa: Optimized BERT
+
+<Callout type="info">
+**Dynamic Masking:** A training technique where different tokens are masked in each training epoch (rather than using fixed masks), providing more diverse training signal and improving model performance compared to static masking.
+</Callout>
+
+### Key Improvements
+
+```python
+"""
+RoBERTa (Robustly Optimized BERT Approach)
+
+Facebook AI's improvements to BERT (2019):
+
+1. Remove NSP (Next Sentence Prediction)
+   - BERT: MLM + NSP
+   - RoBERTa: MLM only
+   - Result: Better performance!
+
+2. Dynamic Masking
+   - BERT: Static masks during preprocessing
+   - RoBERTa: Generate new masks each epoch
+   - Result: More diverse training signal
+
+3. Larger Batches
+   - BERT: 256 sequences
+   - RoBERTa: 8,000 sequences
+   - Result: Better gradient estimates
+
+4. More Data
+   - BERT: 16GB (BookCorpus + Wikipedia)
+   - RoBERTa: 160GB (CC-News, OpenWebText, Stories)
+   - Result: Significantly better performance
+
+5. Byte-Pair Encoding
+   - BERT: WordPiece (30K vocab)
+   - RoBERTa: BPE (50K vocab)
+   - Result: Better rare word handling
+
+6. Longer Training
+   - BERT: 1M steps
+   - RoBERTa: 500K steps (larger batches = more data per step)
+"""
+
+class DynamicMasking:
+    """RoBERTa's dynamic masking vs BERT's static masking"""
+
+    def __init__(self, mask_prob=0.15):
+        self.mask_prob = mask_prob
+
+    def static_masking_bert(self, text, tokenizer):
+        """
+        BERT approach: Create mask once during preprocessing
+        Same masked version seen every epoch
+        """
+        tokens = tokenizer.tokenize(text)
+        masked_tokens = tokens.copy()
+
+        # Mask 15% of tokens (same masks every time)
+        import random
+        random.seed(42)  # Fixed seed = static masks
+
+        num_to_mask = max(1, int(len(tokens) * self.mask_prob))
+        mask_indices = random.sample(range(len(tokens)), num_to_mask)
+
+        for idx in mask_indices:
+            masked_tokens[idx] = '[MASK]'
+
+        return masked_tokens, mask_indices
+
+    def dynamic_masking_roberta(self, text, tokenizer, epoch):
+        """
+        RoBERTa approach: Create new mask each epoch
+        Different masked versions every epoch
+        """
+        tokens = tokenizer.tokenize(text)
+        masked_tokens = tokens.copy()
+
+        # Different masks for each epoch
+        import random
+        random.seed(epoch)  # Different seed each epoch
+
+        num_to_mask = max(1, int(len(tokens) * self.mask_prob))
+        mask_indices = random.sample(range(len(tokens)), num_to_mask)
+
+        for idx in mask_indices:
+            # 80-10-10 strategy
+            r = random.random()
+            if r < 0.8:
+                masked_tokens[idx] = '<mask>'
+            elif r < 0.9:
+                # Random token
+                masked_tokens[idx] = random.choice(tokens)
+            # else: keep original
+
+        return masked_tokens, mask_indices
+
+# Demonstrate dynamic masking
+def demonstrate_dynamic_masking():
+    """Show difference between static and dynamic masking"""
+
+    class SimpleTokenizer:
+        def tokenize(self, text):
+            return text.split()
+
+    tokenizer = SimpleTokenizer()
+    masker = DynamicMasking(mask_prob=0.15)
+
+    text = "The quick brown fox jumps over the lazy dog"
+
+    print("Dynamic vs Static Masking:\n")
+    print(f"Original: {text}\n")
+
+    # Static masking (BERT) - same every time
+    print("BERT (Static Masking):")
+    for epoch in range(3):
+        masked, indices = masker.static_masking_bert(text, tokenizer)
+        print(f"  Epoch {epoch}: {' '.join(masked)}")
+
+    print("\nRoBERTa (Dynamic Masking):")
+    for epoch in range(3):
+        masked, indices = masker.dynamic_masking_roberta(text, tokenizer, epoch)
+        print(f"  Epoch {epoch}: {' '.join(masked)}")
+
+    print("\nBenefit: Dynamic masking provides more diverse training signal")
+
+demonstrate_dynamic_masking()
+```
+
+### Training Improvements
+
+```python
+"""
+RoBERTa Training Optimizations
+"""
+
+class RoBERTaTrainingConfig:
+    """RoBERTa training configuration"""
+
+    def __init__(self):
+        self.bert_config = {
+            'batch_size': 256,
+            'max_steps': 1_000_000,
+            'data_size': '16GB',
+            'vocab_size': 30_000,
+            'masking': 'static',
+            'objectives': ['MLM', 'NSP']
+        }
+
+        self.roberta_config = {
+            'batch_size': 8_000,  # 31x larger!
+            'max_steps': 500_000,  # Fewer steps but more data per step
+            'data_size': '160GB',  # 10x more data
+            'vocab_size': 50_000,
+            'masking': 'dynamic',
+            'objectives': ['MLM']  # No NSP
+        }
+
+    def compare_effective_training(self):
+        """Compare effective amount of training data"""
+
+        # BERT
+        bert_tokens_per_step = self.bert_config['batch_size'] * 512  # seq_len
+        bert_total_tokens = bert_tokens_per_step * self.bert_config['max_steps']
+
+        # RoBERTa
+        roberta_tokens_per_step = self.roberta_config['batch_size'] * 512
+        roberta_total_tokens = roberta_tokens_per_step * self.roberta_config['max_steps']
+
+        print("Training Data Comparison:\n")
+        print(f"BERT:")
+        print(f"  Batch size: {self.bert_config['batch_size']}")
+        print(f"  Steps: {self.bert_config['max_steps']:,}")
+        print(f"  Total tokens: {bert_total_tokens:,}")
+        print(f"  Data size: {self.bert_config['data_size']}\n")
+
+        print(f"RoBERTa:")
+        print(f"  Batch size: {self.roberta_config['batch_size']}")
+        print(f"  Steps: {self.roberta_config['max_steps']:,}")
+        print(f"  Total tokens: {roberta_total_tokens:,}")
+        print(f"  Data size: {self.roberta_config['data_size']}\n")
+
+        print(f"RoBERTa sees {roberta_total_tokens / bert_total_tokens:.2f}x more tokens!")
+
+    def batch_size_impact(self):
+        """Explain impact of larger batches"""
+        print("\nLarge Batch Benefits:")
+        print("1. Better gradient estimates (less noise)")
+        print("2. Better hardware utilization (GPUs/TPUs)")
+        print("3. Fewer optimizer steps (faster training)")
+        print("\nLarge Batch Challenges:")
+        print("1. Requires more memory")
+        print("2. May need learning rate adjustment")
+        print("3. Can affect generalization (if too large)")
+
+config = RoBERTaTrainingConfig()
+config.compare_effective_training()
+config.batch_size_impact()
+```
+
+<Callout type="warning">
+**NSP Removal Insight**: RoBERTa showed that BERT's Next Sentence Prediction task wasn't helpful and may have hurt performance. This finding influenced many subsequent models to focus on single, well-designed objectives.
+</Callout>
+
+## Classification and Embeddings
+
+### Fine-tuning for Classification
+
+```python
+"""
+Using encoder-only models for classification
+"""
+
+class EncoderClassifier(nn.Module):
+    """
+    Encoder-based classifier
+
+    Uses [CLS] token representation for classification
+    """
+
+    def __init__(self, encoder, hidden_size, num_classes, dropout=0.1):
+        super().__init__()
+        self.encoder = encoder
+        self.dropout = nn.Dropout(dropout)
+        self.classifier = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, input_ids, attention_mask=None):
+        # Get encoder outputs
+        encoder_output = self.encoder(input_ids, attention_mask)
+
+        # Use [CLS] token (first token) for classification
+        cls_output = encoder_output[:, 0, :]  # [batch, hidden_size]
+
+        # Classify
+        cls_output = self.dropout(cls_output)
+        logits = self.classifier(cls_output)
+
+        return logits
+
+# Fine-tuning example
+def finetune_roberta_classification():
+    """Fine-tune RoBERTa for text classification"""
+    from transformers import RobertaForSequenceClassification, RobertaTokenizer
+    import torch
+
+    # Load pre-trained model
+    model = RobertaForSequenceClassification.from_pretrained(
+        'roberta-base',
+        num_labels=3  # e.g., positive, negative, neutral
+    )
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+
+    # Example data
+    texts = [
+        "This product is absolutely amazing! Best purchase ever.",
+        "Terrible quality. Waste of money. Very disappointed.",
+        "It's okay. Nothing special but does the job."
+    ]
+    labels = [2, 0, 1]  # 2=positive, 0=negative, 1=neutral
+
+    # Tokenize
+    encodings = tokenizer(
+        texts,
+        padding=True,
+        truncation=True,
+        max_length=128,
+        return_tensors='pt'
+    )
+
+    # Training step
+    model.train()
+    outputs = model(**encodings, labels=torch.tensor(labels))
+
+    loss = outputs.loss
+    logits = outputs.logits
+
+    print("Classification Fine-tuning:")
+    print(f"Loss: {loss.item():.4f}")
+    print(f"Logits shape: {logits.shape}")  # [batch_size, num_classes]
+
+    # Predictions
+    predictions = torch.argmax(logits, dim=-1)
+    print(f"Predictions: {predictions.tolist()}")
+    print(f"True labels: {labels}")
+
+    # Inference example
+    model.eval()
+    test_text = "This is the best thing I've ever bought!"
+    test_encoding = tokenizer(test_text, return_tensors='pt')
+
+    with torch.no_grad():
+        outputs = model(**test_encoding)
+        prediction = torch.argmax(outputs.logits, dim=-1)
+
+    sentiment_map = {0: 'Negative', 1: 'Neutral', 2: 'Positive'}
+    print(f"\nTest: '{test_text}'")
+    print(f"Predicted: {sentiment_map[prediction.item()]}")
+
+finetune_roberta_classification()
+```
+
+### Sentence Embeddings
+
+<Callout type="info">
+**Sentence Embeddings:** Fixed-length vector representations of entire sentences or documents, created by pooling token embeddings from encoder models. These enable semantic search, clustering, and similarity comparisons.
+</Callout>
+
+```python
+"""
+Using encoders for semantic embeddings
+"""
+
+class SentenceEmbedder:
+    """Create sentence embeddings from encoder models"""
+
+    def __init__(self, model, tokenizer):
+        self.model = model
+        self.tokenizer = tokenizer
+
+    def mean_pooling(self, token_embeddings, attention_mask):
+        """
+        Mean pooling: Average token embeddings (excluding padding)
+
+        Args:
+            token_embeddings: [batch, seq_len, hidden_size]
+            attention_mask: [batch, seq_len]
+
+        Returns:
+            sentence_embeddings: [batch, hidden_size]
+        """
+        # Expand mask
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+
+        # Sum embeddings
+        sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
+
+        # Count valid tokens
+        sum_mask = input_mask_expanded.sum(1)
+        sum_mask = torch.clamp(sum_mask, min=1e-9)  # Avoid division by zero
+
+        # Average
+        return sum_embeddings / sum_mask
+
+    def cls_pooling(self, token_embeddings):
+        """
+        CLS pooling: Use [CLS] token embedding
+
+        Args:
+            token_embeddings: [batch, seq_len, hidden_size]
+
+        Returns:
+            sentence_embeddings: [batch, hidden_size]
+        """
+        return token_embeddings[:, 0, :]
+
+    @torch.no_grad()
+    def encode(self, sentences, pooling='mean'):
+        """
+        Encode sentences to embeddings
+
+        Args:
+            sentences: List of strings
+            pooling: 'mean' or 'cls'
+
+        Returns:
+            embeddings: [num_sentences, hidden_size]
+        """
+        # Tokenize
+        encoded = self.tokenizer(
+            sentences,
+            padding=True,
+            truncation=True,
+            return_tensors='pt'
+        )
+
+        # Get token embeddings
+        outputs = self.model(**encoded, output_hidden_states=True)
+        token_embeddings = outputs.hidden_states[-1]
+
+        # Pool
+        if pooling == 'mean':
+            embeddings = self.mean_pooling(token_embeddings, encoded['attention_mask'])
+        elif pooling == 'cls':
+            embeddings = self.cls_pooling(token_embeddings)
+        else:
+            raise ValueError(f"Unknown pooling: {pooling}")
+
+        # Normalize (for cosine similarity)
+        embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+
+        return embeddings
+
+# Demonstrate semantic search
+def demonstrate_semantic_search():
+    """Use sentence embeddings for semantic search"""
+    from transformers import RobertaModel, RobertaTokenizer
+
+    model = RobertaModel.from_pretrained('roberta-base')
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+
+    embedder = SentenceEmbedder(model, tokenizer)
+
+    # Document corpus
+    documents = [
+        "Python is a popular programming language",
+        "Machine learning models require large datasets",
+        "The weather is sunny today",
+        "Neural networks are inspired by the brain",
+        "I love eating pizza on weekends"
+    ]
+
+    # Query
+    query = "artificial intelligence and deep learning"
+
+    print("Semantic Search Example:\n")
+    print(f"Query: '{query}'\n")
+
+    # Encode everything
+    doc_embeddings = embedder.encode(documents, pooling='mean')
+    query_embedding = embedder.encode([query], pooling='mean')
+
+    # Compute similarities
+    similarities = torch.matmul(query_embedding, doc_embeddings.T)[0]
+
+    # Rank documents
+    ranked_indices = torch.argsort(similarities, descending=True)
+
+    print("Ranked Results:")
+    for i, idx in enumerate(ranked_indices, 1):
+        score = similarities[idx].item()
+        print(f"{i}. [{score:.3f}] {documents[idx]}")
+
+demonstrate_semantic_search()
+```
+
+<Callout type="tip">
+**Sentence-BERT**: For production semantic search, consider using Sentence-BERT (SBERT), which is specifically fine-tuned to produce better sentence embeddings using siamese networks and contrastive learning.
+</Callout>
+
+## Other Encoder Variants
+
+```python
+"""
+Notable encoder-only model variants:
+
+1. BERT (2018) - Original
+2. RoBERTa (2019) - Optimized BERT
+3. ALBERT (2019) - Lighter BERT (parameter sharing)
+4. DistilBERT (2019) - Smaller, faster (knowledge distillation)
+5. ELECTRA (2020) - Replaced token detection
+6. DeBERTa (2020) - Disentangled attention
+"""
+
+class EncoderModelComparison:
+    """Compare different encoder-only models"""
+
+    def __init__(self):
+        self.models = {
+            'BERT-Base': {
+                'params': '110M',
+                'innovation': 'Bidirectional pre-training with MLM',
+                'performance': 'Good',
+                'efficiency': 'Moderate',
+                'year': 2018
+            },
+            'RoBERTa-Base': {
+                'params': '125M',
+                'innovation': 'Optimized BERT training',
+                'performance': 'Better',
+                'efficiency': 'Moderate',
+                'year': 2019
+            },
+            'ALBERT-Base': {
+                'params': '12M',
+                'innovation': 'Parameter sharing, factorized embeddings',
+                'performance': 'Good',
+                'efficiency': 'High (smaller)',
+                'year': 2019
+            },
+            'DistilBERT': {
+                'params': '66M',
+                'innovation': 'Knowledge distillation from BERT',
+                'performance': '97% of BERT',
+                'efficiency': 'Very high (60% faster)',
+                'year': 2019
+            },
+            'ELECTRA-Base': {
+                'params': '110M',
+                'innovation': 'Replaced token detection',
+                'performance': 'Better (sample efficient)',
+                'efficiency': 'High (faster training)',
+                'year': 2020
+            },
+            'DeBERTa-Base': {
+                'params': '140M',
+                'innovation': 'Disentangled attention',
+                'performance': 'Best',
+                'efficiency': 'Moderate',
+                'year': 2020
+            }
+        }
+
+    def compare(self):
+        """Print comparison table"""
+        print("Encoder-Only Model Comparison:\n")
+
+        for name, specs in self.models.items():
+            print(f"{name} ({specs['year']}):")
+            print(f"  Parameters: {specs['params']}")
+            print(f"  Innovation: {specs['innovation']}")
+            print(f"  Performance: {specs['performance']}")
+            print(f"  Efficiency: {specs['efficiency']}\n")
+
+    def recommend_for_task(self, task, constraints):
+        """Recommend model based on task and constraints"""
+
+        if constraints == 'limited_compute':
+            return 'DistilBERT', 'Fast and efficient, minimal performance loss'
+        elif constraints == 'limited_memory':
+            return 'ALBERT-Base', 'Smallest model, parameter sharing'
+        elif constraints == 'best_performance':
+            return 'DeBERTa-Base', 'State-of-the-art on many benchmarks'
+        elif constraints == 'training_from_scratch':
+            return 'ELECTRA', 'Most sample-efficient pre-training'
+        else:
+            return 'RoBERTa-Base', 'Good balance of performance and efficiency'
+
+comparison = EncoderModelComparison()
+comparison.compare()
+
+# Recommendations
+print("Model Recommendations by Constraint:\n")
+for constraint in ['limited_compute', 'limited_memory', 'best_performance']:
+    model, reason = comparison.recommend_for_task('classification', constraint)
+    print(f"{constraint}: {model}")
+    print(f"  Reason: {reason}\n")
+```
+
+## Practice Exercise
+
+```python
+# Exercise: Build a multi-class classifier
+class MultiClassNewsClassifier:
+    """
+    Exercise: Build news article classifier
+
+    Dataset: News articles in 4 categories:
+    - Technology
+    - Sports
+    - Politics
+    - Entertainment
+    """
+
+    def __init__(self):
+        self.categories = ['Technology', 'Sports', 'Politics', 'Entertainment']
+        self.num_classes = len(self.categories)
+
+    def create_model(self, encoder_name='roberta-base'):
+        """Create classifier model"""
+        from transformers import AutoModelForSequenceClassification
+
+        model = AutoModelForSequenceClassification.from_pretrained(
+            encoder_name,
+            num_labels=self.num_classes
+        )
+
+        return model
+
+    def prepare_data(self, articles, labels):
+        """Prepare data for training"""
+        from transformers import AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained('roberta-base')
+
+        encodings = tokenizer(
+            articles,
+            padding=True,
+            truncation=True,
+            max_length=512,
+            return_tensors='pt'
+        )
+
+        return encodings, labels
+
+    def train_step(self, model, encodings, labels):
+        """Single training step"""
+        outputs = model(**encodings, labels=labels)
+        loss = outputs.loss
+        return loss
+
+# Example usage
+classifier = MultiClassNewsClassifier()
+
+# Sample data
+articles = [
+    "Apple releases new iPhone with advanced AI features",
+    "Lakers win championship in overtime thriller",
+    "Senate passes new infrastructure bill",
+    "New blockbuster movie breaks box office records"
+]
+labels = torch.tensor([0, 1, 2, 3])  # Tech, Sports, Politics, Entertainment
+
+model = classifier.create_model()
+encodings, labels = classifier.prepare_data(articles, labels)
+loss = classifier.train_step(model, encodings, labels)
+
+print(f"Training loss: {loss.item():.4f}")
+
+# Exercise questions
+exercise_questions = """
+Practice Exercises:
+
+1. Why does RoBERTa use BPE instead of WordPiece?
+   Compare the vocabularies and tokenization.
+
+2. Implement pooling strategies: Compare mean pooling, max pooling,
+   and [CLS] pooling for sentence embeddings. Which works best?
+
+3. Calculate: How much memory does RoBERTa-Base save compared to
+   GPT-3 for classifying 1000 documents?
+
+4. Design: Create a multi-task classifier that predicts both
+   sentiment AND topic from the same encoder.
+
+5. Benchmark: Compare inference speed of BERT vs DistilBERT
+   on a classification task. Is the speedup worth the performance drop?
+"""
+
+print(exercise_questions)
+```
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What is the key difference between encoder-only and decoder-only attention mechanisms?",
+      options: [
+        "Encoder-only models have more layers",
+        "Encoder-only uses bidirectional attention (can see all positions), decoder-only uses causal attention (only past positions)",
+        "Encoder-only models are always larger",
+        "Encoder-only models use different activation functions"
+      ],
+      correctAnswer: 1,
+      explanation: "The fundamental difference is the attention pattern. Encoder-only models use bidirectional attention where each position can attend to all other positions, enabling rich contextual understanding. Decoder-only models use causal attention where positions can only attend to previous positions, enabling autoregressive generation."
+    },
+    {
+      question: "Which of RoBERTa's improvements over BERT had the most significant impact?",
+      options: [
+        "Using a different activation function",
+        "Removing Next Sentence Prediction (NSP) and training with dynamic masking on more data",
+        "Adding more layers",
+        "Changing the optimizer"
+      ],
+      correctAnswer: 1,
+      explanation: "RoBERTa's key improvements were: (1) removing NSP which wasn't helpful, (2) dynamic masking providing more training signal, (3) much more training data (160GB vs 16GB), and (4) larger batch sizes. These combined yielded significant performance gains over BERT."
+    },
+    {
+      question: "When should you prefer an encoder-only model over a decoder-only model?",
+      options: [
+        "When you need to generate creative text",
+        "When you need classification, embeddings, or extractive tasks with full context available",
+        "When you have unlimited compute budget",
+        "When you need to build a chatbot"
+      ],
+      correctAnswer: 1,
+      explanation: "Encoder-only models excel at understanding and classification tasks where the full input is available upfront and you don't need to generate new text. They're more efficient, faster, and often better for tasks like sentiment analysis, NER, semantic search, and extractive QA."
+    },
+    {
+      question: "What is the purpose of pooling in sentence embeddings from encoder models?",
+      options: [
+        "To reduce memory usage during training",
+        "To compress the model size",
+        "To convert variable-length token embeddings into a fixed-size sentence representation",
+        "To speed up the attention mechanism"
+      ],
+      correctAnswer: 2,
+      explanation: "Pooling strategies (like mean pooling or CLS pooling) convert the sequence of token embeddings (variable length) into a single fixed-size vector representing the entire sentence. This enables downstream tasks like similarity comparison and semantic search."
+    }
+  ]}
+/>
+
+## Further Reading
+
+- [BERT: Pre-training of Deep Bidirectional Transformers](https://arxiv.org/abs/1810.04805)
+- [RoBERTa: A Robustly Optimized BERT Pretraining Approach](https://arxiv.org/abs/1907.11692)
+- [ALBERT: A Lite BERT for Self-supervised Learning](https://arxiv.org/abs/1909.11942)
+- [DistilBERT: A distilled version of BERT](https://arxiv.org/abs/1910.01108)
+- [ELECTRA: Pre-training Text Encoders as Discriminators](https://arxiv.org/abs/2003.10555)
+- [DeBERTa: Decoding-enhanced BERT with Disentangled Attention](https://arxiv.org/abs/2006.03654)
+- [Sentence-BERT: Sentence Embeddings using Siamese Networks](https://arxiv.org/abs/1908.10084)

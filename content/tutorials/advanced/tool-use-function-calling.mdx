@@ -1,0 +1,782 @@
+---
+title: "Tool Use & Function Calling"
+description: "Master tool use and function calling APIs to enable LLMs to interact with external systems and execute actions"
+order: 63
+duration: 25
+difficulty: "advanced"
+tags: ["Function Calling", "Tool Use", "OpenAI API", "AI Agents"]
+---
+
+# Tool Use & Function Calling
+
+Tool use and function calling enable language models to interact with external systems, databases, APIs, and custom functions, transforming them from text generators into capable agents.
+
+<Callout type="info">
+**Function Calling**: A structured way for LLMs to request execution of predefined functions with specific parameters, enabling reliable integration with external systems.
+</Callout>
+
+## Understanding Function Calling
+
+Function calling allows LLMs to:
+
+1. **Recognize** when a function should be called
+2. **Extract** appropriate parameters from context
+3. **Format** the function call as structured JSON
+4. **Integrate** function results into responses
+
+### The Flow
+
+```
+User Query → LLM Analyzes → Decides to Call Function →
+Returns Function Call JSON → You Execute Function →
+Send Result Back → LLM Generates Final Response
+```
+
+## OpenAI Function Calling API
+
+### Basic Implementation
+
+```python
+import openai
+import json
+from typing import List, Dict, Any
+
+# Define available functions
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the current weather for a location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "The temperature unit to use"
+                    }
+                },
+                "required": ["location"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_database",
+            "description": "Search a database for information",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query"
+                    },
+                    "table": {
+                        "type": "string",
+                        "description": "The database table to search"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of results",
+                        "default": 10
+                    }
+                },
+                "required": ["query", "table"]
+            }
+        }
+    }
+]
+
+# Make a function call
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[
+        {"role": "user", "content": "What's the weather in Boston?"}
+    ],
+    tools=tools,
+    tool_choice="auto"  # Let model decide when to call functions
+)
+
+# Check if model wants to call a function
+message = response.choices[0].message
+
+if message.tool_calls:
+    tool_call = message.tool_calls[0]
+    function_name = tool_call.function.name
+    arguments = json.loads(tool_call.function.arguments)
+
+    print(f"Function to call: {function_name}")
+    print(f"Arguments: {arguments}")
+    # Output:
+    # Function to call: get_weather
+    # Arguments: {'location': 'Boston, MA', 'unit': 'fahrenheit'}
+```
+
+### Complete Function Calling System
+
+```python
+from typing import Callable, Optional
+import inspect
+
+
+class FunctionCallingAgent:
+    """
+    Complete agent with function calling capabilities.
+    """
+
+    def __init__(self, model: str = "gpt-4"):
+        self.model = model
+        self.functions: Dict[str, Callable] = {}
+        self.tools: List[Dict] = []
+        self.conversation_history: List[Dict] = []
+
+    def register_function(
+        self,
+        func: Callable,
+        name: Optional[str] = None,
+        description: Optional[str] = None
+    ):
+        """
+        Register a Python function as a callable tool.
+
+        Args:
+            func: The Python function to register
+            name: Optional custom name (defaults to function name)
+            description: Function description for LLM
+        """
+        func_name = name or func.__name__
+        self.functions[func_name] = func
+
+        # Generate function schema from Python function
+        schema = self._generate_schema(func, func_name, description)
+        self.tools.append(schema)
+
+    def _generate_schema(
+        self,
+        func: Callable,
+        name: str,
+        description: Optional[str]
+    ) -> Dict:
+        """Generate OpenAI function schema from Python function."""
+        # Get function signature
+        sig = inspect.signature(func)
+        doc = description or (inspect.getdoc(func) or "No description")
+
+        parameters = {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+
+        # Extract parameters from function signature
+        for param_name, param in sig.parameters.items():
+            param_info = {"type": "string"}  # Default type
+
+            # Try to infer type from annotation
+            if param.annotation != inspect.Parameter.empty:
+                if param.annotation == int:
+                    param_info["type"] = "integer"
+                elif param.annotation == float:
+                    param_info["type"] = "number"
+                elif param.annotation == bool:
+                    param_info["type"] = "boolean"
+                elif param.annotation == list:
+                    param_info["type"] = "array"
+
+            parameters["properties"][param_name] = param_info
+
+            # Mark as required if no default value
+            if param.default == inspect.Parameter.empty:
+                parameters["required"].append(param_name)
+
+        return {
+            "type": "function",
+            "function": {
+                "name": name,
+                "description": doc,
+                "parameters": parameters
+            }
+        }
+
+    def chat(self, user_message: str, max_iterations: int = 5) -> str:
+        """
+        Chat with function calling support.
+
+        Args:
+            user_message: User's message
+            max_iterations: Max function call iterations
+
+        Returns:
+            Final response
+        """
+        # Add user message to history
+        self.conversation_history.append({
+            "role": "user",
+            "content": user_message
+        })
+
+        for iteration in range(max_iterations):
+            # Get model response
+            response = openai.ChatCompletion.create(
+                model=self.model,
+                messages=self.conversation_history,
+                tools=self.tools if self.tools else None,
+                tool_choice="auto"
+            )
+
+            message = response.choices[0].message
+
+            # Add assistant message to history
+            self.conversation_history.append(message.to_dict())
+
+            # Check if function call is needed
+            if not message.tool_calls:
+                # No function call - return final answer
+                return message.content
+
+            # Execute function calls
+            for tool_call in message.tool_calls:
+                function_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
+
+                print(f"\n🔧 Calling: {function_name}({arguments})")
+
+                # Execute the function
+                result = self._execute_function(function_name, arguments)
+
+                print(f"📊 Result: {result}")
+
+                # Add function result to history
+                self.conversation_history.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": str(result)
+                })
+
+        return "Max iterations reached"
+
+    def _execute_function(self, name: str, arguments: Dict) -> Any:
+        """Execute a registered function."""
+        if name not in self.functions:
+            return f"Error: Function '{name}' not found"
+
+        try:
+            func = self.functions[name]
+            result = func(**arguments)
+            return result
+        except Exception as e:
+            return f"Error executing {name}: {str(e)}"
+
+
+# Example usage
+agent = FunctionCallingAgent()
+
+
+# Define and register functions
+def get_weather(location: str, unit: str = "fahrenheit") -> dict:
+    """Get the current weather for a location."""
+    # Simulate API call
+    return {
+        "location": location,
+        "temperature": 72,
+        "unit": unit,
+        "conditions": "Sunny"
+    }
+
+
+def calculate_mortgage(
+    principal: float,
+    annual_rate: float,
+    years: int
+) -> dict:
+    """Calculate monthly mortgage payment."""
+    monthly_rate = annual_rate / 100 / 12
+    num_payments = years * 12
+
+    if monthly_rate == 0:
+        monthly_payment = principal / num_payments
+    else:
+        monthly_payment = principal * (
+            monthly_rate * (1 + monthly_rate) ** num_payments
+        ) / ((1 + monthly_rate) ** num_payments - 1)
+
+    return {
+        "monthly_payment": round(monthly_payment, 2),
+        "total_payment": round(monthly_payment * num_payments, 2),
+        "total_interest": round(monthly_payment * num_payments - principal, 2)
+    }
+
+
+# Register functions
+agent.register_function(get_weather)
+agent.register_function(calculate_mortgage)
+
+# Use the agent
+response = agent.chat(
+    "What's the weather in Seattle and what would my monthly payment "
+    "be on a $500,000 mortgage at 6.5% for 30 years?"
+)
+
+print(f"\n💬 Final Response: {response}")
+```
+
+<Callout type="tip">
+**Best Practice**: Provide clear, detailed function descriptions. The LLM uses these to decide when and how to call functions.
+</Callout>
+
+## Custom Tool System
+
+Build a flexible tool system that works with any LLM:
+
+```python
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, List
+
+
+@dataclass
+class ToolResult:
+    """Result from tool execution."""
+    success: bool
+    data: Any
+    error: Optional[str] = None
+
+
+class Tool(ABC):
+    """Base class for tools."""
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Tool name."""
+        pass
+
+    @property
+    @abstractmethod
+    def description(self) -> str:
+        """Tool description for LLM."""
+        pass
+
+    @abstractmethod
+    def execute(self, **kwargs) -> ToolResult:
+        """Execute the tool."""
+        pass
+
+    @abstractmethod
+    def get_schema(self) -> Dict:
+        """Get tool schema for function calling."""
+        pass
+
+
+class WebSearchTool(Tool):
+    """Tool for web search."""
+
+    @property
+    def name(self) -> str:
+        return "web_search"
+
+    @property
+    def description(self) -> str:
+        return "Search the web for current information"
+
+    def get_schema(self) -> Dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The search query"
+                        },
+                        "num_results": {
+                            "type": "integer",
+                            "description": "Number of results to return",
+                            "default": 5
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        }
+
+    def execute(self, query: str, num_results: int = 5) -> ToolResult:
+        """Execute web search."""
+        try:
+            # In production: integrate with search API
+            # For now, simulate results
+            results = [
+                {
+                    "title": f"Result {i+1} for '{query}'",
+                    "url": f"https://example.com/{i}",
+                    "snippet": f"Information about {query}..."
+                }
+                for i in range(num_results)
+            ]
+
+            return ToolResult(success=True, data=results)
+
+        except Exception as e:
+            return ToolResult(success=False, data=None, error=str(e))
+
+
+class DatabaseTool(Tool):
+    """Tool for database queries."""
+
+    def __init__(self, connection_string: str):
+        self.connection_string = connection_string
+
+    @property
+    def name(self) -> str:
+        return "query_database"
+
+    @property
+    def description(self) -> str:
+        return "Query the database for structured information"
+
+    def get_schema(self) -> Dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "sql": {
+                            "type": "string",
+                            "description": "SQL query to execute"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum rows to return",
+                            "default": 100
+                        }
+                    },
+                    "required": ["sql"]
+                }
+            }
+        }
+
+    def execute(self, sql: str, limit: int = 100) -> ToolResult:
+        """Execute database query."""
+        try:
+            # In production: use actual database connection
+            # Validate and execute SQL safely
+            result = {
+                "columns": ["id", "name", "value"],
+                "rows": [
+                    [1, "Item 1", 100],
+                    [2, "Item 2", 200]
+                ],
+                "count": 2
+            }
+
+            return ToolResult(success=True, data=result)
+
+        except Exception as e:
+            return ToolResult(success=False, data=None, error=str(e))
+
+
+class CalculatorTool(Tool):
+    """Tool for mathematical calculations."""
+
+    @property
+    def name(self) -> str:
+        return "calculate"
+
+    @property
+    def description(self) -> str:
+        return "Perform mathematical calculations safely"
+
+    def get_schema(self) -> Dict:
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "expression": {
+                            "type": "string",
+                            "description": "Mathematical expression to evaluate"
+                        }
+                    },
+                    "required": ["expression"]
+                }
+            }
+        }
+
+    def execute(self, expression: str) -> ToolResult:
+        """Safely evaluate mathematical expression."""
+        try:
+            # Use safer evaluation (in production, use a proper math parser)
+            import ast
+            import operator
+
+            # Allowed operations
+            operators = {
+                ast.Add: operator.add,
+                ast.Sub: operator.sub,
+                ast.Mult: operator.mul,
+                ast.Div: operator.truediv,
+                ast.Pow: operator.pow
+            }
+
+            def eval_expr(node):
+                if isinstance(node, ast.Num):
+                    return node.n
+                elif isinstance(node, ast.BinOp):
+                    return operators[type(node.op)](
+                        eval_expr(node.left),
+                        eval_expr(node.right)
+                    )
+                else:
+                    raise ValueError("Unsupported operation")
+
+            tree = ast.parse(expression, mode='eval')
+            result = eval_expr(tree.body)
+
+            return ToolResult(success=True, data=result)
+
+        except Exception as e:
+            return ToolResult(success=False, data=None, error=str(e))
+```
+
+## Advanced: Tool Manager
+
+Create a comprehensive tool management system:
+
+```python
+class ToolManager:
+    """Manages multiple tools and handles execution."""
+
+    def __init__(self):
+        self.tools: Dict[str, Tool] = {}
+
+    def register(self, tool: Tool):
+        """Register a tool."""
+        self.tools[tool.name] = tool
+        print(f"✅ Registered tool: {tool.name}")
+
+    def get_schemas(self) -> List[Dict]:
+        """Get all tool schemas for function calling."""
+        return [tool.get_schema() for tool in self.tools.values()]
+
+    def execute(self, tool_name: str, **kwargs) -> ToolResult:
+        """Execute a tool by name."""
+        if tool_name not in self.tools:
+            return ToolResult(
+                success=False,
+                data=None,
+                error=f"Tool '{tool_name}' not found"
+            )
+
+        tool = self.tools[tool_name]
+        return tool.execute(**kwargs)
+
+    def list_tools(self) -> List[Dict[str, str]]:
+        """List all available tools."""
+        return [
+            {
+                "name": tool.name,
+                "description": tool.description
+            }
+            for tool in self.tools.values()
+        ]
+
+
+# Create tool manager and register tools
+manager = ToolManager()
+manager.register(WebSearchTool())
+manager.register(DatabaseTool("postgresql://localhost/db"))
+manager.register(CalculatorTool())
+
+# Use with agent
+class ToolEnabledAgent:
+    """Agent with tool management."""
+
+    def __init__(self, tool_manager: ToolManager, model: str = "gpt-4"):
+        self.tool_manager = tool_manager
+        self.model = model
+        self.messages = []
+
+    def run(self, query: str) -> str:
+        """Run agent with tools."""
+        self.messages.append({"role": "user", "content": query})
+
+        # Get response with tool schemas
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=self.messages,
+            tools=self.tool_manager.get_schemas(),
+            tool_choice="auto"
+        )
+
+        message = response.choices[0].message
+        self.messages.append(message.to_dict())
+
+        # Handle tool calls
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                function_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
+
+                # Execute tool
+                result = self.tool_manager.execute(function_name, **arguments)
+
+                # Add result to messages
+                self.messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps(result.data if result.success else {"error": result.error})
+                })
+
+            # Get final response
+            final_response = openai.ChatCompletion.create(
+                model=self.model,
+                messages=self.messages
+            )
+
+            return final_response.choices[0].message.content
+
+        return message.content
+
+
+# Use the agent
+agent = ToolEnabledAgent(manager)
+result = agent.run("Search for information about Python and calculate 15 * 23")
+print(result)
+```
+
+<Callout type="warning">
+**Security**: Always validate and sanitize tool inputs, especially for database queries and code execution. Use allowlists and proper access controls.
+</Callout>
+
+## Error Handling
+
+Robust error handling for function calling:
+
+```python
+class RobustFunctionCaller:
+    """Function caller with comprehensive error handling."""
+
+    def __init__(self):
+        self.retry_count = 3
+        self.timeout = 30
+
+    def call_with_retry(
+        self,
+        func: Callable,
+        args: Dict,
+        retries: int = None
+    ) -> ToolResult:
+        """Call function with retry logic."""
+        retries = retries or self.retry_count
+
+        for attempt in range(retries):
+            try:
+                result = func(**args)
+                return ToolResult(success=True, data=result)
+
+            except TimeoutError:
+                if attempt < retries - 1:
+                    print(f"Timeout, retrying... ({attempt + 1}/{retries})")
+                    continue
+                return ToolResult(
+                    success=False,
+                    data=None,
+                    error="Function timeout after retries"
+                )
+
+            except ValueError as e:
+                # Don't retry on value errors
+                return ToolResult(
+                    success=False,
+                    data=None,
+                    error=f"Invalid argument: {str(e)}"
+                )
+
+            except Exception as e:
+                if attempt < retries - 1:
+                    print(f"Error, retrying... ({attempt + 1}/{retries})")
+                    continue
+                return ToolResult(
+                    success=False,
+                    data=None,
+                    error=f"Function failed: {str(e)}"
+                )
+
+        return ToolResult(success=False, data=None, error="Max retries exceeded")
+```
+
+## Key Takeaways
+
+1. **Function calling enables LLM-system integration** - connect to APIs, databases, and more
+2. **Clear schemas are critical** - well-defined parameters ensure reliable function calls
+3. **Error handling is essential** - gracefully handle failures and retries
+4. **Tool abstraction improves reusability** - build tools once, use with any LLM
+5. **Security matters** - validate inputs and control access to sensitive operations
+
+## Quiz
+
+Test your understanding of tool use and function calling:
+
+<Quiz
+  questions={[
+    {
+      question: "What information must be provided when defining a function for OpenAI's function calling API?",
+      options: [
+        "Only the function name",
+        "Function name, description, and parameter schema",
+        "Function name and return type",
+        "Only the parameter types"
+      ],
+      correctAnswer: 1,
+      explanation: "You must provide the function name, a description of what it does, and a JSON schema describing its parameters (including types, descriptions, and required fields)."
+    },
+    {
+      question: "Who actually executes the function when using function calling?",
+      options: [
+        "The LLM executes it automatically",
+        "OpenAI's servers execute it",
+        "Your application code must execute it",
+        "The function executes itself"
+      ],
+      correctAnswer: 2,
+      explanation: "The LLM only returns a JSON object describing which function to call and with what arguments. Your code must actually execute the function and return the result."
+    },
+    {
+      question: "What is the purpose of the 'tool_choice' parameter?",
+      options: [
+        "To select which tool to use",
+        "To control whether the model can choose to call functions or respond directly",
+        "To choose between different LLM models",
+        "To set the priority of tools"
+      ],
+      correctAnswer: 1,
+      explanation: "The 'tool_choice' parameter controls whether the model must call a function ('required'), can choose to call functions ('auto'), or should not call functions ('none')."
+    },
+    {
+      question: "What is a critical security consideration when implementing function calling?",
+      options: [
+        "Using the fastest model available",
+        "Minimizing the number of functions",
+        "Validating and sanitizing all function inputs",
+        "Caching function results"
+      ],
+      correctAnswer: 2,
+      explanation: "Always validate and sanitize function inputs to prevent security vulnerabilities like SQL injection, code execution, or unauthorized access."
+    }
+  ]}
+/>

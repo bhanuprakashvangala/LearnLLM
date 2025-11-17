@@ -1,0 +1,924 @@
+---
+title: "Constitutional AI and Safety"
+description: "Learn Constitutional AI principles, Anthropic's safety approach, and implement safety guardrails for LLM applications"
+order: 79
+duration: 25
+difficulty: "advanced"
+tags: ["safety", "constitutional-ai", "alignment", "ethics", "guardrails"]
+objectives:
+  - Understand Constitutional AI principles
+  - Implement safety guardrails and filters
+  - Apply Anthropic's safety training approach
+  - Build responsible AI applications
+---
+
+# Constitutional AI and Safety
+
+Learn to build safe and aligned LLM applications using Constitutional AI principles and practical safety techniques.
+
+<Callout type="info">
+**What You'll Learn**: Constitutional AI (CAI) is Anthropic's approach to AI safety, using AI to critique and revise its own outputs based on a set of principles. We'll explore these concepts and build practical safety systems.
+</Callout>
+
+## Understanding Constitutional AI
+
+### Core Principles
+
+```python
+from typing import List, Dict, Optional, Tuple
+from dataclasses import dataclass
+from enum import Enum
+
+class SafetyPrinciple(Enum):
+    """Constitutional AI principles"""
+    HARMLESSNESS = "harmlessness"
+    HELPFULNESS = "helpfulness"
+    HONESTY = "honesty"
+    PRIVACY = "privacy"
+    FAIRNESS = "fairness"
+
+@dataclass
+class Constitution:
+    """A set of principles for AI behavior"""
+
+    principles: Dict[SafetyPrinciple, List[str]]
+
+    def get_critique_prompt(self, principle: SafetyPrinciple) -> str:
+        """Get critique prompt for a principle"""
+
+        prompts = {
+            SafetyPrinciple.HARMLESSNESS: """
+Review the AI's response. Does it:
+- Avoid harmful, dangerous, or illegal content?
+- Refuse to help with harmful requests?
+- Provide appropriate warnings when necessary?
+
+If the response violates these, explain how to revise it to be harmless.
+""",
+            SafetyPrinciple.HELPFULNESS: """
+Review the AI's response. Does it:
+- Actually answer the user's question?
+- Provide useful, actionable information?
+- Give appropriate detail without being excessive?
+
+If not, suggest how to make it more helpful.
+""",
+            SafetyPrinciple.HONESTY: """
+Review the AI's response. Does it:
+- Provide accurate information?
+- Acknowledge uncertainty when appropriate?
+- Avoid making up facts or hallucinating?
+
+If there are issues, suggest corrections.
+""",
+            SafetyPrinciple.PRIVACY: """
+Review the AI's response. Does it:
+- Protect user privacy?
+- Avoid requesting unnecessary personal information?
+- Handle sensitive data appropriately?
+
+Suggest privacy improvements if needed.
+""",
+            SafetyPrinciple.FAIRNESS: """
+Review the AI's response. Does it:
+- Treat all groups fairly?
+- Avoid stereotypes and biases?
+- Provide balanced perspectives?
+
+Identify any fairness issues and suggest improvements.
+"""
+        }
+
+        return prompts[principle]
+
+class ConstitutionalAI:
+    """Implement Constitutional AI approach"""
+
+    def __init__(self, model_client, constitution: Constitution):
+        """
+        Initialize Constitutional AI system
+
+        Args:
+            model_client: LLM client for generation
+            constitution: Set of principles to enforce
+        """
+        self.client = model_client
+        self.constitution = constitution
+
+    def generate_response(self, prompt: str) -> str:
+        """Generate initial response"""
+
+        # This would call your LLM
+        # For demo, we'll return a placeholder
+        return "Initial AI response to: " + prompt
+
+    def critique_response(
+        self,
+        prompt: str,
+        response: str,
+        principle: SafetyPrinciple
+    ) -> str:
+        """
+        Critique response according to a principle
+
+        Returns critique and suggestions for improvement
+        """
+
+        critique_prompt = f"""User request: {prompt}
+
+AI response: {response}
+
+{self.constitution.get_critique_prompt(principle)}
+
+Provide your critique:"""
+
+        # Call LLM for critique
+        critique = self.generate_response(critique_prompt)
+
+        return critique
+
+    def revise_response(
+        self,
+        prompt: str,
+        response: str,
+        critique: str
+    ) -> str:
+        """Revise response based on critique"""
+
+        revision_prompt = f"""Original request: {prompt}
+
+Original response: {response}
+
+Critique: {critique}
+
+Please revise the response to address the critique while maintaining helpfulness:"""
+
+        # Call LLM for revision
+        revised = self.generate_response(revision_prompt)
+
+        return revised
+
+    def constitutional_generation(
+        self,
+        prompt: str,
+        num_iterations: int = 2,
+        principles: Optional[List[SafetyPrinciple]] = None
+    ) -> Tuple[str, List[Dict]]:
+        """
+        Generate response using Constitutional AI
+
+        Process:
+        1. Generate initial response
+        2. Critique against each principle
+        3. Revise based on critiques
+        4. Repeat for num_iterations
+
+        Returns:
+            Final response and iteration history
+        """
+
+        if principles is None:
+            principles = list(SafetyPrinciple)
+
+        # Initial generation
+        response = self.generate_response(prompt)
+
+        history = [{
+            "iteration": 0,
+            "response": response,
+            "critiques": {}
+        }]
+
+        # Iterative refinement
+        for iteration in range(num_iterations):
+            iteration_critiques = {}
+
+            # Critique against each principle
+            for principle in principles:
+                critique = self.critique_response(prompt, response, principle)
+                iteration_critiques[principle.value] = critique
+
+            # Combine critiques
+            combined_critique = "\n\n".join([
+                f"{principle}: {critique}"
+                for principle, critique in iteration_critiques.items()
+            ])
+
+            # Revise
+            response = self.revise_response(prompt, response, combined_critique)
+
+            history.append({
+                "iteration": iteration + 1,
+                "response": response,
+                "critiques": iteration_critiques
+            })
+
+        return response, history
+
+# Example constitution
+example_constitution = Constitution(
+    principles={
+        SafetyPrinciple.HARMLESSNESS: [
+            "Avoid harmful, dangerous, or illegal content",
+            "Refuse to help with harmful requests",
+            "Provide warnings when appropriate"
+        ],
+        SafetyPrinciple.HELPFULNESS: [
+            "Answer the user's actual question",
+            "Provide useful, actionable information",
+            "Give appropriate detail"
+        ],
+        SafetyPrinciple.HONESTY: [
+            "Provide accurate information",
+            "Acknowledge uncertainty",
+            "Avoid hallucination"
+        ]
+    }
+)
+
+# Example usage
+def demonstrate_constitutional_ai():
+    """Demonstrate Constitutional AI process"""
+
+    # Initialize (would use real LLM client)
+    cai = ConstitutionalAI(None, example_constitution)
+
+    prompt = "How do I make a website?"
+
+    # Generate with constitutional approach
+    final_response, history = cai.constitutional_generation(
+        prompt,
+        num_iterations=2,
+        principles=[SafetyPrinciple.HELPFULNESS, SafetyPrinciple.HONESTY]
+    )
+
+    print("Constitutional AI Generation Process:")
+    for entry in history:
+        print(f"\nIteration {entry['iteration']}:")
+        print(f"Response: {entry['response'][:100]}...")
+
+        if entry['critiques']:
+            print("Critiques:")
+            for principle, critique in entry['critiques'].items():
+                print(f"  {principle}: {critique[:80]}...")
+
+demonstrate_constitutional_ai()
+```
+
+## Implementing Safety Guardrails
+
+<Callout type="warning">
+**Safety First**: Always implement multiple layers of safety checks for production LLM applications to prevent harmful outputs and protect users.
+</Callout>
+
+### Input and Output Filtering
+
+```python
+import re
+from typing import List, Dict, Tuple
+
+class SafetyFilter:
+    """Multi-layer safety filtering system"""
+
+    def __init__(self):
+        # Harmful patterns (examples - expand for production)
+        self.harmful_patterns = [
+            r'\b(how to (make|build|create) (a )?bomb)\b',
+            r'\b(illegal (drug|weapon))\b',
+            r'\b(hack|exploit|vulnerability)\b',
+            # Add more patterns
+        ]
+
+        # PII patterns
+        self.pii_patterns = {
+            'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            'phone': r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
+            'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
+            'credit_card': r'\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b'
+        }
+
+        # Toxic categories
+        self.toxic_categories = [
+            'hate_speech',
+            'violence',
+            'sexual_content',
+            'self_harm',
+            'harassment'
+        ]
+
+    def check_harmful_input(self, text: str) -> Tuple[bool, List[str]]:
+        """
+        Check if input contains harmful patterns
+
+        Returns:
+            (is_safe, violations)
+        """
+
+        violations = []
+
+        for pattern in self.harmful_patterns:
+            if re.search(pattern, text, re.IGNORECASE):
+                violations.append(f"Harmful pattern detected: {pattern}")
+
+        return len(violations) == 0, violations
+
+    def detect_pii(self, text: str) -> Dict[str, List[str]]:
+        """Detect personally identifiable information"""
+
+        detected = {}
+
+        for pii_type, pattern in self.pii_patterns.items():
+            matches = re.findall(pattern, text)
+            if matches:
+                detected[pii_type] = matches
+
+        return detected
+
+    def redact_pii(self, text: str) -> str:
+        """Redact PII from text"""
+
+        redacted = text
+
+        for pii_type, pattern in self.pii_patterns.items():
+            redacted = re.sub(pattern, f"[REDACTED_{pii_type.upper()}]", redacted)
+
+        return redacted
+
+    def check_toxicity(self, text: str) -> Dict[str, float]:
+        """
+        Check text toxicity using a toxicity classifier
+
+        In production, use models like:
+        - Perspective API
+        - Detoxify
+        - Custom trained models
+        """
+
+        # Placeholder - use real toxicity detection
+        scores = {
+            'toxicity': 0.1,
+            'severe_toxicity': 0.05,
+            'obscene': 0.08,
+            'threat': 0.02,
+            'insult': 0.15,
+            'identity_hate': 0.03
+        }
+
+        return scores
+
+    def is_safe(
+        self,
+        text: str,
+        check_harmful: bool = True,
+        check_pii: bool = True,
+        check_toxicity: bool = True,
+        toxicity_threshold: float = 0.7
+    ) -> Tuple[bool, Dict]:
+        """
+        Comprehensive safety check
+
+        Returns:
+            (is_safe, details)
+        """
+
+        details = {
+            'harmful': {'safe': True, 'violations': []},
+            'pii': {'detected': {}},
+            'toxicity': {'scores': {}, 'above_threshold': False}
+        }
+
+        # Check harmful patterns
+        if check_harmful:
+            is_safe, violations = self.check_harmful_input(text)
+            details['harmful'] = {'safe': is_safe, 'violations': violations}
+
+            if not is_safe:
+                return False, details
+
+        # Check PII
+        if check_pii:
+            pii_detected = self.detect_pii(text)
+            details['pii']['detected'] = pii_detected
+
+        # Check toxicity
+        if check_toxicity:
+            toxicity_scores = self.check_toxicity(text)
+            details['toxicity']['scores'] = toxicity_scores
+
+            max_toxicity = max(toxicity_scores.values())
+            details['toxicity']['above_threshold'] = max_toxicity > toxicity_threshold
+
+            if max_toxicity > toxicity_threshold:
+                return False, details
+
+        return True, details
+
+class SafetyGuardrails:
+    """Complete safety guardrail system"""
+
+    def __init__(self, llm_client):
+        self.client = llm_client
+        self.filter = SafetyFilter()
+
+    def safe_generate(
+        self,
+        prompt: str,
+        max_retries: int = 2,
+        **generation_kwargs
+    ) -> Dict:
+        """
+        Generate with safety checks
+
+        Process:
+        1. Check input safety
+        2. Generate response
+        3. Check output safety
+        4. Retry if unsafe
+        """
+
+        # Check input
+        input_safe, input_details = self.filter.is_safe(prompt)
+
+        if not input_safe:
+            return {
+                'success': False,
+                'error': 'Unsafe input detected',
+                'details': input_details,
+                'response': None
+            }
+
+        # Redact PII from input
+        if input_details['pii']['detected']:
+            prompt = self.filter.redact_pii(prompt)
+
+        # Generate
+        for attempt in range(max_retries + 1):
+            # Call LLM (placeholder)
+            response = f"Generated response for: {prompt}"
+
+            # Check output safety
+            output_safe, output_details = self.filter.is_safe(response)
+
+            if output_safe:
+                # Redact any PII in output
+                if output_details['pii']['detected']:
+                    response = self.filter.redact_pii(response)
+
+                return {
+                    'success': True,
+                    'response': response,
+                    'input_details': input_details,
+                    'output_details': output_details,
+                    'attempts': attempt + 1
+                }
+
+            # If unsafe and retries left, add safety instruction
+            if attempt < max_retries:
+                prompt = (
+                    f"{prompt}\n\nIMPORTANT: Provide a safe, helpful response "
+                    "without harmful, toxic, or inappropriate content."
+                )
+
+        return {
+            'success': False,
+            'error': 'Could not generate safe response after retries',
+            'details': output_details,
+            'response': None
+        }
+
+# Example usage
+def demonstrate_safety():
+    """Demonstrate safety system"""
+
+    guardrails = SafetyGuardrails(None)
+
+    # Test safe input
+    print("Testing safe input:")
+    result = guardrails.safe_generate("How do I bake a cake?")
+    print(f"Success: {result['success']}")
+    print(f"Response: {result.get('response', result.get('error'))}")
+
+    # Test unsafe input
+    print("\nTesting unsafe input:")
+    result = guardrails.safe_generate("How to make a bomb")
+    print(f"Success: {result['success']}")
+    print(f"Error: {result.get('error')}")
+
+    # Test PII
+    print("\nTesting PII detection:")
+    text = "My email is user@example.com and phone is 555-123-4567"
+    safe, details = SafetyFilter().is_safe(text)
+    print(f"PII detected: {details['pii']['detected']}")
+
+    redacted = SafetyFilter().redact_pii(text)
+    print(f"Redacted: {redacted}")
+
+demonstrate_safety()
+```
+
+## Content Moderation System
+
+<Callout type="info">
+**Layered Defense**: Implement multiple layers of content moderation including pre-filtering, post-filtering, and user feedback loops.
+</Callout>
+
+```python
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
+
+@dataclass
+class ModerationResult:
+    """Result of content moderation"""
+    is_safe: bool
+    confidence: float
+    categories_violated: List[str]
+    severity: str  # 'low', 'medium', 'high'
+    recommended_action: str
+    timestamp: datetime
+
+class ContentModerator:
+    """Advanced content moderation system"""
+
+    def __init__(self):
+        self.filter = SafetyFilter()
+        self.moderation_history = []
+
+    def moderate_content(
+        self,
+        content: str,
+        context: Optional[Dict] = None
+    ) -> ModerationResult:
+        """
+        Comprehensive content moderation
+
+        Args:
+            content: Text to moderate
+            context: Additional context (user history, etc.)
+
+        Returns:
+            ModerationResult with decision and metadata
+        """
+
+        violations = []
+        max_severity = 'low'
+
+        # Layer 1: Pattern matching
+        harmful_safe, harmful_violations = self.filter.check_harmful_input(content)
+        if not harmful_safe:
+            violations.extend(['harmful_content'])
+            max_severity = 'high'
+
+        # Layer 2: PII detection
+        pii_detected = self.filter.detect_pii(content)
+        if pii_detected:
+            violations.append('pii_exposure')
+            max_severity = max(max_severity, 'medium', key=lambda x: ['low', 'medium', 'high'].index(x))
+
+        # Layer 3: Toxicity
+        toxicity_scores = self.filter.check_toxicity(content)
+        max_toxicity = max(toxicity_scores.values())
+
+        if max_toxicity > 0.8:
+            violations.append('high_toxicity')
+            max_severity = 'high'
+        elif max_toxicity > 0.5:
+            violations.append('moderate_toxicity')
+            max_severity = max(max_severity, 'medium', key=lambda x: ['low', 'medium', 'high'].index(x))
+
+        # Determine action
+        is_safe = len(violations) == 0
+
+        if not is_safe:
+            if max_severity == 'high':
+                action = 'block'
+            elif max_severity == 'medium':
+                action = 'warn'
+            else:
+                action = 'flag'
+        else:
+            action = 'allow'
+
+        result = ModerationResult(
+            is_safe=is_safe,
+            confidence=0.9,  # Placeholder
+            categories_violated=violations,
+            severity=max_severity,
+            recommended_action=action,
+            timestamp=datetime.now()
+        )
+
+        # Log
+        self.moderation_history.append({
+            'content': content[:100],
+            'result': result
+        })
+
+        return result
+
+    def get_moderation_stats(self) -> Dict:
+        """Get moderation statistics"""
+
+        total = len(self.moderation_history)
+
+        if total == 0:
+            return {}
+
+        blocked = sum(
+            1 for entry in self.moderation_history
+            if entry['result'].recommended_action == 'block'
+        )
+
+        return {
+            'total_moderated': total,
+            'blocked': blocked,
+            'block_rate': blocked / total,
+            'common_violations': self._get_common_violations()
+        }
+
+    def _get_common_violations(self) -> Dict[str, int]:
+        """Get most common violation types"""
+
+        from collections import Counter
+
+        all_violations = []
+        for entry in self.moderation_history:
+            all_violations.extend(entry['result'].categories_violated)
+
+        return dict(Counter(all_violations).most_common(5))
+
+# Example usage
+def demonstrate_moderation():
+    """Demonstrate content moderation"""
+
+    moderator = ContentModerator()
+
+    test_cases = [
+        "This is a safe message",
+        "My email is test@example.com",
+        "I hate everyone",  # Toxic
+        "How to hack a website"  # Harmful
+    ]
+
+    print("Content Moderation Results:\n")
+
+    for content in test_cases:
+        result = moderator.moderate_content(content)
+
+        print(f"Content: {content}")
+        print(f"  Safe: {result.is_safe}")
+        print(f"  Action: {result.recommended_action}")
+        print(f"  Severity: {result.severity}")
+
+        if result.categories_violated:
+            print(f"  Violations: {', '.join(result.categories_violated)}")
+
+        print()
+
+    # Statistics
+    stats = moderator.get_moderation_stats()
+    print("Moderation Statistics:")
+    print(f"  Total: {stats['total_moderated']}")
+    print(f"  Blocked: {stats['blocked']}")
+    print(f"  Block rate: {stats['block_rate']*100:.1f}%")
+
+demonstrate_moderation()
+```
+
+## RLHF and Alignment
+
+```python
+class RLHFFeedbackCollector:
+    """Collect human feedback for RLHF"""
+
+    def __init__(self):
+        self.feedback_data = []
+
+    def collect_comparison_feedback(
+        self,
+        prompt: str,
+        response_a: str,
+        response_b: str,
+        preference: str,  # 'a', 'b', or 'equal'
+        reasons: List[str]
+    ):
+        """
+        Collect comparison feedback
+
+        Used for training reward models in RLHF
+        """
+
+        self.feedback_data.append({
+            'type': 'comparison',
+            'prompt': prompt,
+            'response_a': response_a,
+            'response_b': response_b,
+            'preference': preference,
+            'reasons': reasons,
+            'timestamp': datetime.now()
+        })
+
+    def collect_rating_feedback(
+        self,
+        prompt: str,
+        response: str,
+        rating: int,  # 1-5
+        aspects: Dict[str, int]  # helpfulness, harmlessness, honesty
+    ):
+        """Collect rating feedback"""
+
+        self.feedback_data.append({
+            'type': 'rating',
+            'prompt': prompt,
+            'response': response,
+            'rating': rating,
+            'aspects': aspects,
+            'timestamp': datetime.now()
+        })
+
+    def export_for_training(self) -> List[Dict]:
+        """Export feedback data for model training"""
+
+        return self.feedback_data
+
+# Example
+collector = RLHFFeedbackCollector()
+
+# Comparison feedback
+collector.collect_comparison_feedback(
+    prompt="Explain quantum computing",
+    response_a="Quantum computing uses quantum bits...",
+    response_b="Quantum computers are very fast...",
+    preference='a',
+    reasons=['more accurate', 'better explanation']
+)
+
+# Rating feedback
+collector.collect_rating_feedback(
+    prompt="How to learn Python?",
+    response="Start with Python tutorials...",
+    rating=4,
+    aspects={
+        'helpfulness': 5,
+        'harmlessness': 5,
+        'honesty': 4
+    }
+)
+
+print(f"Collected {len(collector.feedback_data)} feedback entries")
+```
+
+## Production Safety System
+
+```python
+class ProductionSafetySystem:
+    """Complete production-ready safety system"""
+
+    def __init__(self, llm_client):
+        self.client = llm_client
+        self.moderator = ContentModerator()
+        self.guardrails = SafetyGuardrails(llm_client)
+        self.feedback_collector = RLHFFeedbackCollector()
+
+    def safe_completion(
+        self,
+        prompt: str,
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None
+    ) -> Dict:
+        """
+        Generate completion with full safety pipeline
+
+        Pipeline:
+        1. Input moderation
+        2. Content generation with guardrails
+        3. Output moderation
+        4. PII redaction
+        5. Logging and monitoring
+        """
+
+        # Moderate input
+        input_moderation = self.moderator.moderate_content(prompt)
+
+        if not input_moderation.is_safe:
+            return {
+                'success': False,
+                'error': 'Input violates content policy',
+                'details': input_moderation
+            }
+
+        # Generate with guardrails
+        generation_result = self.guardrails.safe_generate(prompt)
+
+        if not generation_result['success']:
+            return generation_result
+
+        response = generation_result['response']
+
+        # Moderate output
+        output_moderation = self.moderator.moderate_content(response)
+
+        if not output_moderation.is_safe:
+            return {
+                'success': False,
+                'error': 'Generated content violates policy',
+                'details': output_moderation
+            }
+
+        # Log for monitoring
+        self._log_interaction(
+            prompt=prompt,
+            response=response,
+            user_id=user_id,
+            session_id=session_id,
+            input_moderation=input_moderation,
+            output_moderation=output_moderation
+        )
+
+        return {
+            'success': True,
+            'response': response,
+            'safety_checks': {
+                'input': input_moderation,
+                'output': output_moderation
+            }
+        }
+
+    def _log_interaction(self, **kwargs):
+        """Log interaction for monitoring"""
+        # In production: log to database/monitoring system
+        pass
+
+# Example
+system = ProductionSafetySystem(None)
+
+result = system.safe_completion("How do I learn programming?")
+
+if result['success']:
+    print(f"Response: {result['response']}")
+else:
+    print(f"Error: {result['error']}")
+```
+
+## Quiz
+
+Test your understanding of Constitutional AI and safety:
+
+<Quiz questions={[
+  {
+    question: "What is the key idea behind Constitutional AI?",
+    options: [
+      "Using laws to control AI",
+      "Using AI to critique and revise its own outputs based on principles",
+      "Creating a constitution for AI companies",
+      "Filtering outputs with rules"
+    ],
+    correctAnswer: 1,
+    explanation: "Constitutional AI uses the AI itself to critique and improve its outputs according to a set of principles (constitution), rather than relying solely on human feedback or hardcoded rules. The AI learns to align its responses with the specified principles."
+  },
+  {
+    question: "Why is multi-layer safety filtering important?",
+    options: [
+      "It's faster",
+      "No single method catches all safety issues; multiple methods provide defense in depth",
+      "It's required by law",
+      "It reduces costs"
+    ],
+    correctAnswer: 1,
+    explanation: "Different safety methods (pattern matching, ML-based toxicity detection, PII detection) catch different types of issues. Multiple layers provide defense in depth, ensuring that if one method fails, others can still catch problems."
+  },
+  {
+    question: "What should you do when PII is detected in user input?",
+    options: [
+      "Reject the request immediately",
+      "Redact the PII before processing and optionally warn the user",
+      "Ignore it",
+      "Store it for analysis"
+    ],
+    correctAnswer: 1,
+    explanation: "Best practice is to redact PII (replace with placeholders) before processing the request and optionally warn users about sharing sensitive information. This protects privacy while still allowing the system to function."
+  },
+  {
+    question: "In RLHF, what is the purpose of collecting comparison feedback?",
+    options: [
+      "To improve speed",
+      "To train a reward model that learns human preferences",
+      "To reduce costs",
+      "To detect bugs"
+    ],
+    correctAnswer: 1,
+    explanation: "Comparison feedback (preferring response A over B) is used to train a reward model that learns to predict human preferences. This reward model then guides reinforcement learning to align the model with human values."
+  }
+]} />
+
+## Summary
+
+In this lesson, you learned:
+
+- **Constitutional AI**: Using AI to critique and improve its own outputs
+- **Safety guardrails**: Multi-layer input and output filtering
+- **Content moderation**: Comprehensive moderation systems
+- **PII protection**: Detecting and redacting sensitive information
+- **Production safety**: Building complete safety systems for deployment
+
+Safety and alignment are critical for responsible AI deployment. These techniques help ensure LLMs behave helpfully, harmlessly, and honestly.

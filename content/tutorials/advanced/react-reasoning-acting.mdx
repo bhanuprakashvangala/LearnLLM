@@ -1,0 +1,440 @@
+---
+title: "ReAct: Reasoning and Acting"
+description: "Master the ReAct paradigm for building intelligent AI agents that combine reasoning with action-taking capabilities"
+order: 61
+duration: 25
+difficulty: "advanced"
+tags: ["AI Agents", "ReAct", "LLM", "Autonomous Systems"]
+---
+
+# ReAct: Reasoning and Acting
+
+The ReAct (Reasoning and Acting) paradigm is a powerful framework for building AI agents that can solve complex tasks by interleaving reasoning traces with action execution.
+
+<Callout type="info">
+**ReAct Framework**: Combines chain-of-thought reasoning with action-taking to enable LLMs to solve complex, multi-step problems through iterative thought-action-observation loops.
+</Callout>
+
+## Understanding the ReAct Paradigm
+
+ReAct extends traditional prompting by enabling models to:
+
+1. **Reason** about the current state and what to do next
+2. **Act** by calling tools or taking actions
+3. **Observe** the results of actions
+4. **Repeat** until the task is complete
+
+### The ReAct Loop
+
+```
+Thought → Action → Observation → Thought → Action → Observation → ...
+```
+
+Each iteration allows the agent to:
+- Reflect on progress
+- Adjust strategy based on observations
+- Make informed decisions about next steps
+
+## Core Components
+
+### 1. Thought Generation
+
+The agent generates reasoning traces that explain its decision-making process.
+
+```python
+import openai
+from typing import List, Dict, Any
+
+class ReActAgent:
+    def __init__(self, model: str = "gpt-4"):
+        self.model = model
+        self.history: List[Dict[str, str]] = []
+
+    def generate_thought(self, question: str, context: str) -> str:
+        """Generate reasoning trace for next action."""
+        prompt = f"""
+You are an AI agent using the ReAct framework. Given the question and context,
+think step-by-step about what to do next.
+
+Question: {question}
+
+Context: {context}
+
+Thought: Let me think about this step by step...
+"""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a helpful AI agent that reasons step-by-step."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=200
+        )
+
+        thought = response.choices[0].message.content
+        self.history.append({"type": "thought", "content": thought})
+        return thought
+```
+
+### 2. Action Selection
+
+Based on reasoning, the agent selects and executes an action.
+
+```python
+from enum import Enum
+from dataclasses import dataclass
+
+class ActionType(Enum):
+    SEARCH = "search"
+    CALCULATE = "calculate"
+    FINISH = "finish"
+    LOOKUP = "lookup"
+
+@dataclass
+class Action:
+    type: ActionType
+    input: str
+
+class ActionParser:
+    """Parse action from LLM output."""
+
+    @staticmethod
+    def parse(text: str) -> Action:
+        """Extract action from thought text."""
+        # Look for Action: pattern
+        if "Action:" in text:
+            action_line = text.split("Action:")[1].split("\n")[0].strip()
+
+            # Parse action type and input
+            if action_line.startswith("Search["):
+                query = action_line[7:-1]  # Extract text between Search[ and ]
+                return Action(ActionType.SEARCH, query)
+            elif action_line.startswith("Calculate["):
+                expression = action_line[10:-1]
+                return Action(ActionType.CALCULATE, expression)
+            elif action_line.startswith("Lookup["):
+                term = action_line[7:-1]
+                return Action(ActionType.LOOKUP, term)
+            elif action_line.startswith("Finish["):
+                answer = action_line[7:-1]
+                return Action(ActionType.FINISH, answer)
+
+        # Default to finish if no clear action
+        return Action(ActionType.FINISH, text)
+```
+
+### 3. Observation Processing
+
+The agent processes action results and incorporates them into context.
+
+```python
+class ToolExecutor:
+    """Execute actions and return observations."""
+
+    def __init__(self):
+        self.search_results = {}
+        self.calculation_results = {}
+
+    def execute(self, action: Action) -> str:
+        """Execute action and return observation."""
+        if action.type == ActionType.SEARCH:
+            return self._search(action.input)
+        elif action.type == ActionType.CALCULATE:
+            return self._calculate(action.input)
+        elif action.type == ActionType.LOOKUP:
+            return self._lookup(action.input)
+        elif action.type == ActionType.FINISH:
+            return f"Final Answer: {action.input}"
+
+        return "Unknown action"
+
+    def _search(self, query: str) -> str:
+        """Simulate search (integrate with real search API in production)."""
+        # This is a placeholder - integrate with Wikipedia, Google, etc.
+        simulated_results = {
+            "python": "Python is a high-level programming language created by Guido van Rossum.",
+            "react": "React is a JavaScript library for building user interfaces.",
+        }
+
+        result = simulated_results.get(query.lower(), "No results found")
+        self.search_results[query] = result
+        return f"Search result: {result}"
+
+    def _calculate(self, expression: str) -> str:
+        """Safely evaluate mathematical expressions."""
+        try:
+            # Use safer evaluation in production
+            result = eval(expression, {"__builtins__": {}}, {})
+            self.calculation_results[expression] = result
+            return f"Calculation result: {result}"
+        except Exception as e:
+            return f"Calculation error: {str(e)}"
+
+    def _lookup(self, term: str) -> str:
+        """Look up term in previous search results."""
+        for query, content in self.search_results.items():
+            if term.lower() in content.lower():
+                # Find sentence containing term
+                sentences = content.split(".")
+                for sentence in sentences:
+                    if term.lower() in sentence.lower():
+                        return f"Lookup result: {sentence.strip()}"
+
+        return f"Term '{term}' not found in previous searches"
+```
+
+## Complete ReAct Implementation
+
+Here's a full implementation that brings it all together:
+
+```python
+import openai
+from typing import Optional, Tuple
+
+class ReActAgent:
+    """Complete ReAct agent implementation."""
+
+    def __init__(self, model: str = "gpt-4", max_iterations: int = 10):
+        self.model = model
+        self.max_iterations = max_iterations
+        self.executor = ToolExecutor()
+        self.history = []
+
+    def solve(self, question: str) -> str:
+        """Solve a question using ReAct loop."""
+        print(f"\n{'='*60}")
+        print(f"Question: {question}")
+        print(f"{'='*60}\n")
+
+        context = ""
+
+        for i in range(self.max_iterations):
+            print(f"\n--- Iteration {i+1} ---")
+
+            # Generate thought and action
+            thought, action = self._think_and_act(question, context)
+
+            print(f"\nThought: {thought}")
+            print(f"Action: {action.type.value}[{action.input}]")
+
+            # Execute action
+            observation = self.executor.execute(action)
+            print(f"Observation: {observation}")
+
+            # Store in history
+            self.history.append({
+                "iteration": i + 1,
+                "thought": thought,
+                "action": f"{action.type.value}[{action.input}]",
+                "observation": observation
+            })
+
+            # Check if finished
+            if action.type == ActionType.FINISH:
+                return action.input
+
+            # Update context with observation
+            context += f"\n\nObservation {i+1}: {observation}"
+
+        return "Max iterations reached without answer"
+
+    def _think_and_act(self, question: str, context: str) -> Tuple[str, Action]:
+        """Generate thought and parse action."""
+        prompt = self._build_prompt(question, context)
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": self._get_system_prompt()},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=300
+        )
+
+        thought = response.choices[0].message.content
+        action = ActionParser.parse(thought)
+
+        return thought, action
+
+    def _build_prompt(self, question: str, context: str) -> str:
+        """Build prompt for next iteration."""
+        return f"""
+Question: {question}
+
+Previous context:
+{context if context else "No previous context"}
+
+What should I do next? Think step-by-step and then specify an action.
+
+Available actions:
+- Search[query]: Search for information
+- Calculate[expression]: Perform calculation
+- Lookup[term]: Look up a term in previous search results
+- Finish[answer]: Provide final answer
+
+Format your response as:
+Thought: <your reasoning>
+Action: <action_type>[<input>]
+"""
+
+    def _get_system_prompt(self) -> str:
+        """Get system prompt for ReAct agent."""
+        return """You are an AI agent using the ReAct (Reasoning and Acting) framework.
+
+For each step:
+1. Think carefully about what information you need
+2. Choose an appropriate action
+3. Wait for the observation
+4. Continue until you can provide a final answer
+
+Always format your response with:
+Thought: <your step-by-step reasoning>
+Action: <action_type>[<input>]
+
+Be systematic and thorough in your reasoning."""
+```
+
+## Usage Example
+
+```python
+# Initialize agent
+agent = ReActAgent(model="gpt-4", max_iterations=10)
+
+# Solve a question
+question = "What is the sum of the year Python was created and the year React was released?"
+
+answer = agent.solve(question)
+
+print(f"\n{'='*60}")
+print(f"Final Answer: {answer}")
+print(f"{'='*60}")
+
+# Example output:
+# Iteration 1:
+# Thought: I need to find when Python was created
+# Action: Search[python creation year]
+# Observation: Python was created by Guido van Rossum in 1991
+
+# Iteration 2:
+# Thought: Now I need to find when React was released
+# Action: Search[react release year]
+# Observation: React was released by Facebook in 2013
+
+# Iteration 3:
+# Thought: Now I can calculate the sum
+# Action: Calculate[1991 + 2013]
+# Observation: 4004
+
+# Iteration 4:
+# Thought: I have all the information needed
+# Action: Finish[4004]
+# Final Answer: 4004
+```
+
+<Callout type="tip">
+**Best Practices**: Keep thought traces concise but informative, choose actions that make progress toward the goal, and validate observations before using them in reasoning.
+</Callout>
+
+## Advanced: ReAct with Memory
+
+Enhance the agent with episodic memory for better long-term reasoning:
+
+```python
+from collections import deque
+
+class MemoryEnhancedReActAgent(ReActAgent):
+    """ReAct agent with episodic memory."""
+
+    def __init__(self, model: str = "gpt-4", max_iterations: int = 10, memory_size: int = 5):
+        super().__init__(model, max_iterations)
+        self.memory = deque(maxlen=memory_size)
+
+    def _build_prompt(self, question: str, context: str) -> str:
+        """Build prompt with memory context."""
+        memory_context = ""
+        if self.memory:
+            memory_context = "\n\nRelevant past experiences:\n"
+            for i, mem in enumerate(self.memory, 1):
+                memory_context += f"{i}. {mem}\n"
+
+        base_prompt = super()._build_prompt(question, context)
+        return base_prompt + memory_context
+
+    def solve(self, question: str) -> str:
+        """Solve and store experience in memory."""
+        answer = super().solve(question)
+
+        # Store experience summary
+        experience = f"Q: {question[:50]}... A: {answer[:50]}..."
+        self.memory.append(experience)
+
+        return answer
+```
+
+<Callout type="warning">
+**Token Limitations**: Be mindful of context window limits when using ReAct. Each iteration adds tokens, so implement context pruning for long-running agents.
+</Callout>
+
+## Key Takeaways
+
+1. **ReAct combines reasoning with action** - thought traces guide tool use
+2. **Iterative improvement** - each observation refines the agent's understanding
+3. **Transparency** - reasoning traces make decisions interpretable
+4. **Flexibility** - easily extend with new tools and capabilities
+5. **Error recovery** - agents can adjust strategy based on failed actions
+
+## Quiz
+
+Test your understanding of the ReAct paradigm:
+
+<Quiz
+  questions={[
+    {
+      question: "What are the three main components of each ReAct iteration?",
+      options: [
+        "Think, Execute, Return",
+        "Thought, Action, Observation",
+        "Plan, Implement, Verify",
+        "Query, Process, Response"
+      ],
+      correctAnswer: 1,
+      explanation: "ReAct uses Thought (reasoning), Action (tool execution), and Observation (result processing) in each iteration."
+    },
+    {
+      question: "What is the primary advantage of ReAct over standard chain-of-thought prompting?",
+      options: [
+        "It uses less tokens",
+        "It's faster to execute",
+        "It can interact with external tools and environments",
+        "It requires less training data"
+      ],
+      correctAnswer: 2,
+      explanation: "ReAct's key advantage is its ability to take actions and interact with external tools, not just reason internally."
+    },
+    {
+      question: "When should a ReAct agent use the 'Finish' action?",
+      options: [
+        "After the first iteration",
+        "When it has sufficient information to answer the question",
+        "When it encounters an error",
+        "After exactly 5 iterations"
+      ],
+      correctAnswer: 1,
+      explanation: "The agent should finish when it has gathered enough information and reasoning to confidently answer the question."
+    },
+    {
+      question: "What is a key challenge when implementing ReAct agents?",
+      options: [
+        "They can't use multiple tools",
+        "Managing context window limits with growing history",
+        "They only work with GPT-4",
+        "They can't handle mathematical operations"
+      ],
+      correctAnswer: 1,
+      explanation: "Each iteration adds to the context, so managing token limits while maintaining relevant history is a key challenge."
+    }
+  ]}
+/>

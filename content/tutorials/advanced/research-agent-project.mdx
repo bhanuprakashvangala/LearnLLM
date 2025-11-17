@@ -1,0 +1,941 @@
+---
+title: "Project: Autonomous Research Agent"
+description: "Build a complete autonomous research agent that can search the web, analyze information, and generate comprehensive research reports"
+order: 65
+duration: 60
+difficulty: "advanced"
+tags: ["Project", "AI Agents", "Web Scraping", "Research", "Automation"]
+---
+
+# Project: Autonomous Research Agent
+
+Build a production-ready autonomous research agent that combines web search, content extraction, analysis, and report generation to conduct comprehensive research on any topic.
+
+<Callout type="info">
+**Project Goal**: Create a fully autonomous agent that can research any topic, gather information from multiple sources, analyze findings, and produce a well-structured research report.
+</Callout>
+
+## Project Architecture
+
+Our research agent will have these components:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Research Orchestrator                   │
+└─────────────────────────────────────────────────────────┘
+                          │
+        ┌─────────────────┼─────────────────┐
+        ▼                 ▼                 ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│   Search     │  │   Content    │  │   Analysis   │
+│   Agent      │  │   Extractor  │  │   Agent      │
+└──────────────┘  └──────────────┘  └──────────────┘
+        │                 │                 │
+        └─────────────────┼─────────────────┘
+                          ▼
+                  ┌──────────────┐
+                  │    Report    │
+                  │   Generator  │
+                  └──────────────┘
+```
+
+## Step 1: Search Agent
+
+First, implement web search capabilities:
+
+```python
+import requests
+from typing import List, Dict, Optional
+from dataclasses import dataclass
+import os
+
+
+@dataclass
+class SearchResult:
+    """Represents a single search result."""
+    title: str
+    url: str
+    snippet: str
+    content: Optional[str] = None
+
+
+class SearchAgent:
+    """Agent for web searching."""
+
+    def __init__(self, api_key: Optional[str] = None):
+        """
+        Initialize search agent.
+
+        Args:
+            api_key: API key for search service (e.g., Google Custom Search, Bing)
+        """
+        self.api_key = api_key or os.getenv("SEARCH_API_KEY")
+        self.search_engine_id = os.getenv("SEARCH_ENGINE_ID")
+
+    def search(self, query: str, num_results: int = 10) -> List[SearchResult]:
+        """
+        Search the web for a query.
+
+        Args:
+            query: Search query
+            num_results: Number of results to return
+
+        Returns:
+            List of search results
+        """
+        print(f"\n🔍 Searching for: {query}")
+
+        # Using Google Custom Search API
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            "key": self.api_key,
+            "cx": self.search_engine_id,
+            "q": query,
+            "num": min(num_results, 10)  # API limit
+        }
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            results = []
+            for item in data.get("items", []):
+                result = SearchResult(
+                    title=item.get("title", ""),
+                    url=item.get("link", ""),
+                    snippet=item.get("snippet", "")
+                )
+                results.append(result)
+
+            print(f"✅ Found {len(results)} results")
+            return results
+
+        except requests.RequestException as e:
+            print(f"❌ Search error: {e}")
+            return []
+
+    def multi_query_search(
+        self,
+        queries: List[str],
+        results_per_query: int = 5
+    ) -> Dict[str, List[SearchResult]]:
+        """
+        Execute multiple search queries.
+
+        Args:
+            queries: List of search queries
+            results_per_query: Results per query
+
+        Returns:
+            Dictionary mapping queries to results
+        """
+        all_results = {}
+
+        for query in queries:
+            results = self.search(query, results_per_query)
+            all_results[query] = results
+
+        return all_results
+
+    def generate_search_queries(
+        self,
+        topic: str,
+        num_queries: int = 3,
+        model: str = "gpt-4"
+    ) -> List[str]:
+        """
+        Generate diverse search queries for a topic using LLM.
+
+        Args:
+            topic: Research topic
+            num_queries: Number of queries to generate
+            model: LLM model to use
+
+        Returns:
+            List of search queries
+        """
+        import openai
+
+        prompt = f"""Generate {num_queries} diverse search queries to research this topic comprehensively:
+
+Topic: {topic}
+
+Requirements:
+1. Cover different aspects of the topic
+2. Include recent developments (use year if relevant)
+3. Target authoritative sources
+4. Be specific and focused
+
+Return only the queries, one per line."""
+
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+
+        queries_text = response.choices[0].message.content
+        queries = [q.strip() for q in queries_text.split("\n") if q.strip()]
+
+        return queries[:num_queries]
+```
+
+## Step 2: Content Extractor
+
+Extract and clean content from web pages:
+
+```python
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
+import trafilatura
+from typing import Optional
+import re
+
+
+class ContentExtractor:
+    """Extract and clean content from web pages."""
+
+    def __init__(self, timeout: int = 10):
+        self.timeout = timeout
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Research Bot)'
+        })
+
+    def extract(self, url: str) -> Optional[str]:
+        """
+        Extract main content from a URL.
+
+        Args:
+            url: URL to extract content from
+
+        Returns:
+            Extracted text content or None
+        """
+        print(f"\n📄 Extracting content from: {url}")
+
+        try:
+            # Fetch page
+            response = self.session.get(url, timeout=self.timeout)
+            response.raise_for_status()
+
+            # Use trafilatura for content extraction (best for articles)
+            content = trafilatura.extract(response.text)
+
+            if content:
+                # Clean and process
+                content = self._clean_content(content)
+                print(f"✅ Extracted {len(content)} characters")
+                return content
+
+            # Fallback to BeautifulSoup
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Remove unwanted elements
+            for element in soup(['script', 'style', 'nav', 'footer', 'header']):
+                element.decompose()
+
+            # Extract text
+            text = soup.get_text()
+            text = self._clean_content(text)
+
+            print(f"✅ Extracted {len(text)} characters (fallback)")
+            return text
+
+        except Exception as e:
+            print(f"❌ Extraction error: {e}")
+            return None
+
+    def _clean_content(self, text: str) -> str:
+        """Clean extracted content."""
+        # Remove extra whitespace
+        text = re.sub(r'\s+', ' ', text)
+
+        # Remove very short lines (likely navigation/UI text)
+        lines = text.split('\n')
+        lines = [line.strip() for line in lines if len(line.strip()) > 20]
+
+        return '\n\n'.join(lines)
+
+    def extract_batch(
+        self,
+        results: List[SearchResult],
+        max_content_length: int = 5000
+    ) -> List[SearchResult]:
+        """
+        Extract content for multiple search results.
+
+        Args:
+            results: List of search results
+            max_content_length: Maximum content length per page
+
+        Returns:
+            Search results with content added
+        """
+        for result in results:
+            content = self.extract(result.url)
+
+            if content:
+                # Truncate if too long
+                if len(content) > max_content_length:
+                    content = content[:max_content_length] + "..."
+
+                result.content = content
+
+        return results
+```
+
+## Step 3: Analysis Agent
+
+Analyze and synthesize information:
+
+```python
+import openai
+from typing import List, Dict, Any
+
+
+class AnalysisAgent:
+    """Agent for analyzing and synthesizing research."""
+
+    def __init__(self, model: str = "gpt-4"):
+        self.model = model
+
+    def analyze_source(
+        self,
+        content: str,
+        research_question: str
+    ) -> Dict[str, Any]:
+        """
+        Analyze a single source.
+
+        Args:
+            content: Source content
+            research_question: Question being researched
+
+        Returns:
+            Analysis results
+        """
+        prompt = f"""Analyze this source in relation to the research question.
+
+Research Question: {research_question}
+
+Source Content:
+{content[:3000]}
+
+Provide:
+1. Key findings relevant to the research question
+2. Important facts or data
+3. Credibility assessment
+4. Relevance score (1-10)
+
+Format as JSON."""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a research analyst."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+
+        # Parse response (simplified - should use json mode)
+        import json
+        try:
+            analysis = json.loads(response.choices[0].message.content)
+        except:
+            analysis = {
+                "key_findings": response.choices[0].message.content,
+                "relevance_score": 5
+            }
+
+        return analysis
+
+    def synthesize_findings(
+        self,
+        analyses: List[Dict[str, Any]],
+        research_question: str
+    ) -> str:
+        """
+        Synthesize multiple source analyses.
+
+        Args:
+            analyses: List of source analyses
+            research_question: Research question
+
+        Returns:
+            Synthesized findings
+        """
+        # Sort by relevance
+        sorted_analyses = sorted(
+            analyses,
+            key=lambda x: x.get("relevance_score", 0),
+            reverse=True
+        )
+
+        # Create synthesis prompt
+        findings_text = "\n\n".join([
+            f"Source {i+1}:\n{analysis.get('key_findings', 'No findings')}"
+            for i, analysis in enumerate(sorted_analyses[:10])
+        ])
+
+        prompt = f"""Synthesize these research findings into a comprehensive answer.
+
+Research Question: {research_question}
+
+Findings from Sources:
+{findings_text}
+
+Create a well-organized synthesis that:
+1. Answers the research question comprehensively
+2. Integrates findings from multiple sources
+3. Identifies patterns and themes
+4. Notes any contradictions or uncertainties
+5. Provides evidence-based conclusions"""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a research synthesizer."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5
+        )
+
+        return response.choices[0].message.content
+
+    def identify_gaps(
+        self,
+        synthesis: str,
+        research_question: str
+    ) -> List[str]:
+        """
+        Identify gaps in research that need more investigation.
+
+        Args:
+            synthesis: Current synthesis
+            research_question: Research question
+
+        Returns:
+            List of follow-up questions
+        """
+        prompt = f"""Identify gaps or unanswered questions in this research.
+
+Research Question: {research_question}
+
+Current Synthesis:
+{synthesis}
+
+What important aspects need more investigation?
+Provide 3-5 specific follow-up questions."""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+
+        questions_text = response.choices[0].message.content
+        questions = [
+            q.strip().lstrip('0123456789.-) ')
+            for q in questions_text.split('\n')
+            if q.strip()
+        ]
+
+        return questions[:5]
+```
+
+## Step 4: Report Generator
+
+Generate comprehensive research reports:
+
+```python
+from datetime import datetime
+from typing import List, Dict
+
+
+class ReportGenerator:
+    """Generate research reports."""
+
+    def __init__(self, model: str = "gpt-4"):
+        self.model = model
+
+    def generate_report(
+        self,
+        research_question: str,
+        synthesis: str,
+        sources: List[SearchResult],
+        metadata: Optional[Dict] = None
+    ) -> str:
+        """
+        Generate a comprehensive research report.
+
+        Args:
+            research_question: The research question
+            synthesis: Synthesized findings
+            sources: Source materials
+            metadata: Additional metadata
+
+        Returns:
+            Formatted report
+        """
+        # Prepare sources section
+        sources_text = self._format_sources(sources)
+
+        # Generate report
+        prompt = f"""Create a comprehensive research report.
+
+Research Question: {research_question}
+
+Synthesized Findings:
+{synthesis}
+
+Sources Used:
+{sources_text}
+
+Create a professional report with:
+1. Executive Summary
+2. Introduction
+3. Key Findings (organized by themes)
+4. Analysis and Discussion
+5. Conclusions
+6. Sources/References
+
+Use markdown formatting."""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a research report writer."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=2000
+        )
+
+        report = response.choices[0].message.content
+
+        # Add metadata
+        report = self._add_metadata(report, research_question, metadata)
+
+        return report
+
+    def _format_sources(self, sources: List[SearchResult]) -> str:
+        """Format sources for inclusion in report."""
+        formatted = []
+
+        for i, source in enumerate(sources[:20], 1):
+            formatted.append(
+                f"{i}. {source.title}\n   URL: {source.url}"
+            )
+
+        return "\n".join(formatted)
+
+    def _add_metadata(
+        self,
+        report: str,
+        research_question: str,
+        metadata: Optional[Dict]
+    ) -> str:
+        """Add metadata header to report."""
+        header = f"""# Research Report
+
+**Research Question:** {research_question}
+
+**Generated:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+**Agent Version:** 1.0
+
+---
+
+"""
+        return header + report
+
+    def export_report(
+        self,
+        report: str,
+        filename: str,
+        format: str = "markdown"
+    ):
+        """
+        Export report to file.
+
+        Args:
+            report: Report content
+            filename: Output filename
+            format: Output format (markdown, html, pdf)
+        """
+        if format == "markdown":
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(report)
+
+        elif format == "html":
+            # Convert markdown to HTML
+            import markdown
+            html = markdown.markdown(report)
+
+            html_template = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Research Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; line-height: 1.6; }}
+        h1, h2, h3 {{ color: #333; }}
+        code {{ background: #f4f4f4; padding: 2px 5px; }}
+    </style>
+</head>
+<body>
+{html}
+</body>
+</html>
+"""
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(html_template)
+
+        print(f"✅ Report exported to: {filename}")
+```
+
+## Step 5: Research Orchestrator
+
+The main orchestrator that coordinates everything:
+
+```python
+class ResearchOrchestrator:
+    """Orchestrates the complete research process."""
+
+    def __init__(
+        self,
+        search_agent: SearchAgent,
+        content_extractor: ContentExtractor,
+        analysis_agent: AnalysisAgent,
+        report_generator: ReportGenerator
+    ):
+        self.search_agent = search_agent
+        self.content_extractor = content_extractor
+        self.analysis_agent = analysis_agent
+        self.report_generator = report_generator
+
+    def research(
+        self,
+        topic: str,
+        depth: str = "standard",
+        max_iterations: int = 2
+    ) -> str:
+        """
+        Conduct autonomous research on a topic.
+
+        Args:
+            topic: Research topic/question
+            depth: Research depth (quick, standard, deep)
+            max_iterations: Number of research-gap-filling iterations
+
+        Returns:
+            Final research report
+        """
+        print(f"\n{'='*60}")
+        print(f"AUTONOMOUS RESEARCH AGENT")
+        print(f"Topic: {topic}")
+        print(f"Depth: {depth}")
+        print(f"{'='*60}\n")
+
+        # Configure based on depth
+        config = self._get_depth_config(depth)
+
+        all_sources = []
+        iteration_syntheses = []
+
+        for iteration in range(max_iterations):
+            print(f"\n{'='*60}")
+            print(f"ITERATION {iteration + 1}")
+            print(f"{'='*60}\n")
+
+            # 1. Generate search queries
+            if iteration == 0:
+                queries = self.search_agent.generate_search_queries(
+                    topic,
+                    num_queries=config['queries_per_iteration']
+                )
+            else:
+                # Use gap analysis to generate new queries
+                gaps = self.analysis_agent.identify_gaps(
+                    iteration_syntheses[-1],
+                    topic
+                )
+                queries = gaps[:config['queries_per_iteration']]
+
+            print(f"\n📋 Search Queries:")
+            for i, query in enumerate(queries, 1):
+                print(f"  {i}. {query}")
+
+            # 2. Search
+            search_results = self.search_agent.multi_query_search(
+                queries,
+                results_per_query=config['results_per_query']
+            )
+
+            # Flatten results
+            iteration_sources = []
+            for query_results in search_results.values():
+                iteration_sources.extend(query_results)
+
+            # 3. Extract content
+            print(f"\n📥 Extracting Content...")
+            iteration_sources = self.content_extractor.extract_batch(
+                iteration_sources,
+                max_content_length=config['max_content_length']
+            )
+
+            # Filter sources with content
+            iteration_sources = [s for s in iteration_sources if s.content]
+            all_sources.extend(iteration_sources)
+
+            print(f"✅ Extracted content from {len(iteration_sources)} sources")
+
+            # 4. Analyze sources
+            print(f"\n🔬 Analyzing Sources...")
+            analyses = []
+            for source in iteration_sources:
+                analysis = self.analysis_agent.analyze_source(
+                    source.content,
+                    topic
+                )
+                analyses.append(analysis)
+
+            # 5. Synthesize findings
+            print(f"\n🧬 Synthesizing Findings...")
+            synthesis = self.analysis_agent.synthesize_findings(
+                analyses,
+                topic
+            )
+            iteration_syntheses.append(synthesis)
+
+            print(f"\n📊 Iteration {iteration + 1} Complete")
+            print(f"   Sources processed: {len(iteration_sources)}")
+            print(f"   Total sources: {len(all_sources)}")
+
+        # 6. Generate final report
+        print(f"\n{'='*60}")
+        print(f"GENERATING FINAL REPORT")
+        print(f"{'='*60}\n")
+
+        final_synthesis = iteration_syntheses[-1]
+        report = self.report_generator.generate_report(
+            research_question=topic,
+            synthesis=final_synthesis,
+            sources=all_sources,
+            metadata={
+                'iterations': max_iterations,
+                'total_sources': len(all_sources),
+                'depth': depth
+            }
+        )
+
+        print(f"\n✅ Research Complete!")
+
+        return report
+
+    def _get_depth_config(self, depth: str) -> Dict:
+        """Get configuration based on research depth."""
+        configs = {
+            "quick": {
+                "queries_per_iteration": 2,
+                "results_per_query": 3,
+                "max_content_length": 2000
+            },
+            "standard": {
+                "queries_per_iteration": 3,
+                "results_per_query": 5,
+                "max_content_length": 4000
+            },
+            "deep": {
+                "queries_per_iteration": 5,
+                "results_per_query": 8,
+                "max_content_length": 6000
+            }
+        }
+
+        return configs.get(depth, configs["standard"])
+```
+
+## Complete Usage Example
+
+Put it all together:
+
+```python
+# Initialize components
+search_agent = SearchAgent()
+content_extractor = ContentExtractor()
+analysis_agent = AnalysisAgent(model="gpt-4")
+report_generator = ReportGenerator(model="gpt-4")
+
+# Create orchestrator
+orchestrator = ResearchOrchestrator(
+    search_agent=search_agent,
+    content_extractor=content_extractor,
+    analysis_agent=analysis_agent,
+    report_generator=report_generator
+)
+
+# Conduct research
+report = orchestrator.research(
+    topic="What are the latest developments in AI agent architectures?",
+    depth="standard",
+    max_iterations=2
+)
+
+# Export report
+report_generator.export_report(
+    report=report,
+    filename="research_report.md",
+    format="markdown"
+)
+
+report_generator.export_report(
+    report=report,
+    filename="research_report.html",
+    format="html"
+)
+
+print("\n" + "="*60)
+print("FINAL REPORT")
+print("="*60 + "\n")
+print(report)
+```
+
+<Callout type="tip">
+**Production Ready**: This agent includes error handling, iterative refinement, gap analysis, and professional report generation suitable for real-world use.
+</Callout>
+
+## Enhancements
+
+### Add Caching
+
+```python
+import hashlib
+import json
+from pathlib import Path
+
+
+class CachedSearchAgent(SearchAgent):
+    """Search agent with caching."""
+
+    def __init__(self, cache_dir: str = "./cache", **kwargs):
+        super().__init__(**kwargs)
+        self.cache_dir = Path(cache_dir)
+        self.cache_dir.mkdir(exist_ok=True)
+
+    def search(self, query: str, num_results: int = 10) -> List[SearchResult]:
+        """Search with caching."""
+        # Generate cache key
+        cache_key = hashlib.md5(
+            f"{query}:{num_results}".encode()
+        ).hexdigest()
+        cache_file = self.cache_dir / f"{cache_key}.json"
+
+        # Check cache
+        if cache_file.exists():
+            print(f"📦 Using cached results for: {query}")
+            with open(cache_file) as f:
+                data = json.load(f)
+                return [SearchResult(**item) for item in data]
+
+        # Perform search
+        results = super().search(query, num_results)
+
+        # Cache results
+        with open(cache_file, 'w') as f:
+            json.dump([vars(r) for r in results], f)
+
+        return results
+```
+
+### Add Progress Tracking
+
+```python
+from tqdm import tqdm
+
+
+class ProgressTrackingOrchestrator(ResearchOrchestrator):
+    """Orchestrator with progress tracking."""
+
+    def research(self, topic: str, depth: str = "standard", max_iterations: int = 2) -> str:
+        """Research with progress bar."""
+        config = self._get_depth_config(depth)
+        total_queries = max_iterations * config['queries_per_iteration']
+
+        with tqdm(total=total_queries, desc="Research Progress") as pbar:
+            # Override progress updates in methods
+            return super().research(topic, depth, max_iterations)
+```
+
+<Callout type="tip">
+**Optimization**: Cache search results and extracted content to avoid redundant API calls and speed up iterative research.
+</Callout>
+
+## Key Takeaways
+
+1. **Modular design** - separate components for search, extraction, analysis, and reporting
+2. **Iterative refinement** - use gap analysis to guide follow-up research
+3. **Error handling** - gracefully handle API failures and extraction errors
+4. **Caching** - avoid redundant operations for efficiency
+5. **Professional output** - generate well-formatted, comprehensive reports
+
+## Quiz
+
+Test your understanding of autonomous research agents:
+
+<Quiz
+  questions={[
+    {
+      question: "What is the purpose of iterative research with gap analysis?",
+      options: [
+        "To make the research take longer",
+        "To identify and fill gaps in initial research findings",
+        "To generate more queries randomly",
+        "To reduce the number of sources needed"
+      ],
+      correctAnswer: 1,
+      explanation: "Iterative research with gap analysis identifies unanswered questions or incomplete areas in the initial research, then conducts targeted follow-up searches to fill those gaps."
+    },
+    {
+      question: "Why is content extraction important for research agents?",
+      options: [
+        "Search results alone don't contain full article text needed for analysis",
+        "It makes the code more complex",
+        "It's required by search APIs",
+        "It reduces memory usage"
+      ],
+      correctAnswer: 0,
+      explanation: "Search APIs typically return only titles and snippets. Content extraction retrieves and cleans the full article text, which is necessary for comprehensive analysis."
+    },
+    {
+      question: "What is the role of the AnalysisAgent in the research pipeline?",
+      options: [
+        "To search for web pages",
+        "To extract content from URLs",
+        "To analyze sources and synthesize findings from multiple sources",
+        "To format the final report"
+      ],
+      correctAnswer: 2,
+      explanation: "The AnalysisAgent analyzes individual sources, assesses their relevance and credibility, and synthesizes findings from multiple sources into coherent insights."
+    },
+    {
+      question: "Why should a production research agent implement caching?",
+      options: [
+        "To make the code more complex",
+        "To avoid redundant API calls and speed up repeated research",
+        "Because it's required by web APIs",
+        "To reduce code size"
+      ],
+      correctAnswer: 1,
+      explanation: "Caching prevents redundant API calls for the same queries, saves costs, respects rate limits, and significantly speeds up research on related topics."
+    }
+  ]}
+/>

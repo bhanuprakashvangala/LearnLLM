@@ -1,0 +1,744 @@
+---
+title: "Building Your First LangChain App"
+description: "Build a complete question-answering system from scratch with LangChain"
+duration: "30 min"
+difficulty: "intermediate"
+order: 29
+---
+
+# Building Your First LangChain App
+
+It's time to put everything together and build a complete, production-ready LangChain application. We'll create a document question-answering system that can read documents and answer questions about their content.
+
+## Project Overview
+
+We'll build a **Document Q&A System** with these features:
+
+<Callout type="info">
+**Application Features:**
+- Load and process documents (PDF, TXT, Markdown)
+- Split documents into chunks for efficient processing
+- Create vector embeddings for semantic search
+- Answer questions using relevant document context
+- Maintain conversation history
+- Include citations and source references
+</Callout>
+
+## Project Structure
+
+```
+document-qa-system/
+├── app.py                 # Main application
+├── document_loader.py     # Document processing
+├── vector_store.py        # Vector database management
+├── qa_chain.py           # Question-answering logic
+├── requirements.txt      # Dependencies
+├── .env                  # API keys
+├── docs/                 # Sample documents
+│   ├── sample1.txt
+│   └── sample2.pdf
+└── data/                 # Vector store data
+```
+
+## Installation and Setup
+
+### Step 1: Install Dependencies
+
+Create `requirements.txt`:
+
+```txt
+langchain==0.1.0
+langchain-openai==0.0.2
+python-dotenv==1.0.0
+chromadb==0.4.22
+pypdf==3.17.4
+tiktoken==0.5.2
+```
+
+Install packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Step 2: Set Up Environment Variables
+
+Create `.env`:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+<Callout type="warning">
+Never commit `.env` files to version control. Add `.env` to your `.gitignore` file.
+</Callout>
+
+## Building the Components
+
+### Component 1: Document Loader
+
+Create `document_loader.py`:
+
+```python
+from langchain.document_loaders import TextLoader, PyPDFLoader, DirectoryLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from typing import List
+from langchain.schema import Document
+import os
+
+class DocumentProcessor:
+    """Handles loading and splitting documents"""
+
+    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+        )
+
+    def load_text_file(self, file_path: str) -> List[Document]:
+        """Load a single text file"""
+        loader = TextLoader(file_path, encoding='utf-8')
+        documents = loader.load()
+        return self.text_splitter.split_documents(documents)
+
+    def load_pdf_file(self, file_path: str) -> List[Document]:
+        """Load a single PDF file"""
+        loader = PyPDFLoader(file_path)
+        documents = loader.load()
+        return self.text_splitter.split_documents(documents)
+
+    def load_directory(self, directory_path: str) -> List[Document]:
+        """Load all supported documents from a directory"""
+        all_documents = []
+
+        for filename in os.listdir(directory_path):
+            file_path = os.path.join(directory_path, filename)
+
+            if not os.path.isfile(file_path):
+                continue
+
+            try:
+                if filename.endswith('.txt'):
+                    docs = self.load_text_file(file_path)
+                    all_documents.extend(docs)
+                    print(f"Loaded {len(docs)} chunks from {filename}")
+
+                elif filename.endswith('.pdf'):
+                    docs = self.load_pdf_file(file_path)
+                    all_documents.extend(docs)
+                    print(f"Loaded {len(docs)} chunks from {filename}")
+
+            except Exception as e:
+                print(f"Error loading {filename}: {str(e)}")
+
+        print(f"\nTotal documents loaded: {len(all_documents)}")
+        return all_documents
+
+    def get_document_stats(self, documents: List[Document]) -> dict:
+        """Get statistics about loaded documents"""
+        total_chars = sum(len(doc.page_content) for doc in documents)
+        avg_chunk_size = total_chars / len(documents) if documents else 0
+
+        return {
+            "total_chunks": len(documents),
+            "total_characters": total_chars,
+            "average_chunk_size": avg_chunk_size
+        }
+
+
+# Example usage
+if __name__ == "__main__":
+    processor = DocumentProcessor()
+
+    # Load a single file
+    docs = processor.load_text_file("docs/sample1.txt")
+    print(f"Loaded {len(docs)} chunks")
+
+    # Or load entire directory
+    # all_docs = processor.load_directory("docs/")
+    # stats = processor.get_document_stats(all_docs)
+    # print(stats)
+```
+
+### Component 2: Vector Store Manager
+
+Create `vector_store.py`:
+
+```python
+from langchain.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain.schema import Document
+from typing import List
+import os
+
+class VectorStoreManager:
+    """Manages the vector database for document retrieval"""
+
+    def __init__(self, persist_directory: str = "./data/chroma_db"):
+        self.persist_directory = persist_directory
+        self.embeddings = OpenAIEmbeddings()
+        self.vector_store = None
+
+    def create_vector_store(self, documents: List[Document]):
+        """Create a new vector store from documents"""
+        print(f"Creating vector store with {len(documents)} documents...")
+
+        self.vector_store = Chroma.from_documents(
+            documents=documents,
+            embedding=self.embeddings,
+            persist_directory=self.persist_directory
+        )
+
+        print("Vector store created and persisted!")
+        return self.vector_store
+
+    def load_vector_store(self):
+        """Load existing vector store"""
+        if not os.path.exists(self.persist_directory):
+            raise ValueError(f"No vector store found at {self.persist_directory}")
+
+        print("Loading existing vector store...")
+        self.vector_store = Chroma(
+            persist_directory=self.persist_directory,
+            embedding_function=self.embeddings
+        )
+
+        print("Vector store loaded!")
+        return self.vector_store
+
+    def add_documents(self, documents: List[Document]):
+        """Add new documents to existing vector store"""
+        if self.vector_store is None:
+            raise ValueError("Vector store not initialized. Call create_vector_store() or load_vector_store() first.")
+
+        print(f"Adding {len(documents)} new documents...")
+        self.vector_store.add_documents(documents)
+        print("Documents added!")
+
+    def similarity_search(self, query: str, k: int = 4) -> List[Document]:
+        """Search for similar documents"""
+        if self.vector_store is None:
+            raise ValueError("Vector store not initialized.")
+
+        return self.vector_store.similarity_search(query, k=k)
+
+    def get_retriever(self, k: int = 4):
+        """Get a retriever for use in chains"""
+        if self.vector_store is None:
+            raise ValueError("Vector store not initialized.")
+
+        return self.vector_store.as_retriever(
+            search_kwargs={"k": k}
+        )
+
+
+# Example usage
+if __name__ == "__main__":
+    from document_loader import DocumentProcessor
+
+    # Load documents
+    processor = DocumentProcessor()
+    documents = processor.load_directory("docs/")
+
+    # Create vector store
+    vs_manager = VectorStoreManager()
+    vs_manager.create_vector_store(documents)
+
+    # Search for similar documents
+    results = vs_manager.similarity_search("What is machine learning?")
+    for doc in results:
+        print(doc.page_content[:200])
+        print("---")
+```
+
+### Component 3: Q&A Chain
+
+Create `qa_chain.py`:
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts import PromptTemplate
+from vector_store import VectorStoreManager
+
+class QASystem:
+    """Question-answering system with retrieval"""
+
+    def __init__(self, vector_store_manager: VectorStoreManager):
+        self.vector_store_manager = vector_store_manager
+        self.llm = ChatOpenAI(
+            model="gpt-3.5-turbo",
+            temperature=0  # Deterministic for factual answers
+        )
+
+        # Custom prompt template
+        self.prompt_template = """Use the following pieces of context to answer the question at the end.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.
+Use three sentences maximum and keep the answer concise.
+
+Context:
+{context}
+
+Question: {question}
+
+Helpful Answer:"""
+
+        self.PROMPT = PromptTemplate(
+            template=self.prompt_template,
+            input_variables=["context", "question"]
+        )
+
+    def create_simple_qa_chain(self):
+        """Create a simple Q&A chain without conversation history"""
+        retriever = self.vector_store_manager.get_retriever(k=4)
+
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True,
+            chain_type_kwargs={"prompt": self.PROMPT}
+        )
+
+        return qa_chain
+
+    def create_conversational_qa_chain(self):
+        """Create a conversational Q&A chain with memory"""
+        retriever = self.vector_store_manager.get_retriever(k=4)
+
+        memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            return_messages=True,
+            output_key="answer"
+        )
+
+        qa_chain = ConversationalRetrievalChain.from_llm(
+            llm=self.llm,
+            retriever=retriever,
+            memory=memory,
+            return_source_documents=True,
+            verbose=True
+        )
+
+        return qa_chain
+
+    def format_response(self, result: dict) -> str:
+        """Format the QA response with sources"""
+        answer = result.get('answer') or result.get('result')
+        source_documents = result.get('source_documents', [])
+
+        response = f"Answer: {answer}\n\n"
+
+        if source_documents:
+            response += "Sources:\n"
+            for i, doc in enumerate(source_documents, 1):
+                source = doc.metadata.get('source', 'Unknown')
+                page = doc.metadata.get('page', 'N/A')
+                response += f"{i}. {source} (Page: {page})\n"
+                response += f"   Excerpt: {doc.page_content[:150]}...\n\n"
+
+        return response
+
+
+# Example usage
+if __name__ == "__main__":
+    # Load vector store
+    vs_manager = VectorStoreManager()
+    vs_manager.load_vector_store()
+
+    # Create QA system
+    qa_system = QASystem(vs_manager)
+
+    # Simple Q&A
+    simple_chain = qa_system.create_simple_qa_chain()
+    result = simple_chain({"query": "What is the main topic of the documents?"})
+    print(qa_system.format_response(result))
+
+    # Conversational Q&A
+    conv_chain = qa_system.create_conversational_qa_chain()
+    result1 = conv_chain({"question": "What is machine learning?"})
+    print(qa_system.format_response(result1))
+
+    result2 = conv_chain({"question": "Can you give me an example?"})
+    print(qa_system.format_response(result2))
+```
+
+### Component 4: Main Application
+
+Create `app.py`:
+
+```python
+from document_loader import DocumentProcessor
+from vector_store import VectorStoreManager
+from qa_chain import QASystem
+from dotenv import load_dotenv
+import os
+import sys
+
+# Load environment variables
+load_dotenv()
+
+class DocumentQAApp:
+    """Main application class"""
+
+    def __init__(self, docs_directory: str = "docs/"):
+        self.docs_directory = docs_directory
+        self.processor = DocumentProcessor()
+        self.vs_manager = VectorStoreManager()
+        self.qa_system = None
+
+    def setup(self, force_reload: bool = False):
+        """Set up the application"""
+        print("=" * 60)
+        print("Document Q&A System - Setup")
+        print("=" * 60)
+
+        # Check if vector store exists
+        vs_exists = os.path.exists(self.vs_manager.persist_directory)
+
+        if vs_exists and not force_reload:
+            print("\nLoading existing vector store...")
+            self.vs_manager.load_vector_store()
+        else:
+            print("\nProcessing documents...")
+            documents = self.processor.load_directory(self.docs_directory)
+
+            if not documents:
+                print("No documents found! Please add documents to the docs/ folder.")
+                sys.exit(1)
+
+            stats = self.processor.get_document_stats(documents)
+            print(f"\nDocument Statistics:")
+            print(f"  Total chunks: {stats['total_chunks']}")
+            print(f"  Average chunk size: {stats['average_chunk_size']:.0f} characters")
+
+            print("\nCreating vector store...")
+            self.vs_manager.create_vector_store(documents)
+
+        # Initialize QA system
+        self.qa_system = QASystem(self.vs_manager)
+        print("\nSetup complete!")
+
+    def run_interactive(self):
+        """Run interactive Q&A session"""
+        print("\n" + "=" * 60)
+        print("Interactive Q&A Session")
+        print("=" * 60)
+        print("Type 'quit' to exit, 'stats' for document stats\n")
+
+        # Create conversational chain
+        qa_chain = self.qa_system.create_conversational_qa_chain()
+
+        while True:
+            try:
+                question = input("\nYour question: ").strip()
+
+                if not question:
+                    continue
+
+                if question.lower() in ['quit', 'exit', 'q']:
+                    print("Goodbye!")
+                    break
+
+                if question.lower() == 'stats':
+                    self.show_stats()
+                    continue
+
+                # Get answer
+                print("\nThinking...\n")
+                result = qa_chain({"question": question})
+                formatted_response = self.qa_system.format_response(result)
+                print(formatted_response)
+
+            except KeyboardInterrupt:
+                print("\n\nGoodbye!")
+                break
+            except Exception as e:
+                print(f"\nError: {str(e)}")
+
+    def ask_question(self, question: str) -> str:
+        """Ask a single question (for API usage)"""
+        if not self.qa_system:
+            self.setup()
+
+        simple_chain = self.qa_system.create_simple_qa_chain()
+        result = simple_chain({"query": question})
+        return self.qa_system.format_response(result)
+
+    def show_stats(self):
+        """Show system statistics"""
+        print("\n" + "=" * 60)
+        print("System Statistics")
+        print("=" * 60)
+        print(f"Documents directory: {self.docs_directory}")
+        print(f"Vector store location: {self.vs_manager.persist_directory}")
+        print(f"Model: {self.qa_system.llm.model_name}")
+        print("=" * 60)
+
+
+def main():
+    """Main entry point"""
+    print("""
+╔═══════════════════════════════════════════════════════════╗
+║         Document Q&A System with LangChain                ║
+║         Built with OpenAI and ChromaDB                    ║
+╚═══════════════════════════════════════════════════════════╝
+    """)
+
+    # Create and setup app
+    app = DocumentQAApp(docs_directory="docs/")
+
+    # Check for command line arguments
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--reload":
+            app.setup(force_reload=True)
+        elif sys.argv[1] == "--query":
+            app.setup()
+            if len(sys.argv) > 2:
+                question = " ".join(sys.argv[2:])
+                answer = app.ask_question(question)
+                print(answer)
+            else:
+                print("Please provide a question after --query")
+        else:
+            print("Unknown argument. Use --reload to rebuild index or --query to ask a question")
+    else:
+        app.setup()
+        app.run_interactive()
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Sample Documents
+
+Create `docs/sample1.txt`:
+
+```
+Introduction to Machine Learning
+
+Machine learning is a subset of artificial intelligence that enables computers
+to learn from data without being explicitly programmed. It uses statistical
+techniques to give computer systems the ability to "learn" from data and
+improve their performance on a specific task over time.
+
+There are three main types of machine learning:
+
+1. Supervised Learning: The algorithm learns from labeled training data and
+   makes predictions based on that data. Examples include classification and
+   regression tasks.
+
+2. Unsupervised Learning: The algorithm finds patterns in unlabeled data.
+   Common techniques include clustering and dimensionality reduction.
+
+3. Reinforcement Learning: The algorithm learns by interacting with an
+   environment and receiving rewards or penalties for its actions.
+
+Machine learning is used in many applications today, including:
+- Email spam filtering
+- Image recognition
+- Recommendation systems
+- Natural language processing
+- Autonomous vehicles
+
+The field continues to evolve rapidly with new techniques and applications
+emerging constantly.
+```
+
+## Running the Application
+
+### First Time Setup
+
+```bash
+# 1. Create project structure
+mkdir document-qa-system
+cd document-qa-system
+
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Create directories
+mkdir docs data
+
+# 5. Add sample documents to docs/
+
+# 6. Set up .env file with API key
+
+# 7. Run the application
+python app.py
+```
+
+### Usage Examples
+
+```bash
+# Interactive mode
+python app.py
+
+# Reload documents and rebuild index
+python app.py --reload
+
+# Ask a single question
+python app.py --query "What is machine learning?"
+```
+
+<Callout type="tip">
+**Interactive Session Example:**
+```
+Your question: What is machine learning?
+
+Thinking...
+
+Answer: Machine learning is a subset of artificial intelligence that enables
+computers to learn from data without being explicitly programmed, using
+statistical techniques to improve performance on specific tasks over time.
+
+Sources:
+1. docs/sample1.txt (Page: N/A)
+   Excerpt: Introduction to Machine Learning
+
+Machine learning is a subset of artificial intelligence...
+```
+</Callout>
+
+## Deployment Considerations
+
+<Callout type="info">
+**Production Checklist:**
+1. **Error Handling**: Add comprehensive try-catch blocks
+2. **Logging**: Implement proper logging with rotation
+3. **Rate Limiting**: Add API rate limiting for OpenAI calls
+4. **Caching**: Cache frequent queries to reduce costs
+5. **Authentication**: Add user authentication if multi-user
+6. **Monitoring**: Track usage, costs, and performance
+7. **Scaling**: Consider using managed vector databases (Pinecone, Weaviate)
+8. **Security**: Validate inputs, sanitize file uploads
+</Callout>
+
+## Enhancements and Extensions
+
+Here are ways to extend this application:
+
+```python
+# 1. Add file upload capability
+def upload_document(self, file_path: str):
+    """Upload and process a new document"""
+    documents = self.processor.load_text_file(file_path)
+    self.vs_manager.add_documents(documents)
+
+# 2. Add document filtering
+def search_in_document(self, query: str, document_name: str):
+    """Search only in a specific document"""
+    retriever = self.vs_manager.get_retriever(k=4)
+    # Add filter for specific document
+    # Implementation depends on metadata structure
+
+# 3. Add multi-language support
+def translate_question(self, question: str, target_lang: str = "en"):
+    """Translate question before processing"""
+    # Use translation API or model
+    pass
+
+# 4. Add citation tracking
+def get_citations(self, answer: str, sources: List[Document]):
+    """Generate proper citations for sources"""
+    citations = []
+    for i, doc in enumerate(sources, 1):
+        citation = {
+            "id": i,
+            "source": doc.metadata.get('source'),
+            "page": doc.metadata.get('page'),
+            "relevance_score": doc.metadata.get('score', 'N/A')
+        }
+        citations.append(citation)
+    return citations
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You've Built:**
+1. A complete document processing pipeline
+2. Vector database for semantic search
+3. Q&A system with source citations
+4. Conversational interface with memory
+5. Modular, maintainable code structure
+6. Production-ready foundation for extension
+</Callout>
+
+## Troubleshooting
+
+**Common Issues:**
+
+1. **Import Errors**: Ensure all packages are installed: `pip install -r requirements.txt`
+2. **API Key Errors**: Check `.env` file exists and contains valid `OPENAI_API_KEY`
+3. **No Documents Found**: Verify documents are in `docs/` folder
+4. **Vector Store Errors**: Delete `data/` folder and rebuild with `--reload`
+5. **Memory Issues**: Reduce `chunk_size` in `DocumentProcessor` for large documents
+
+## Next Steps
+
+Congratulations! You've built a complete LangChain application. In the final lesson, we'll build an even more advanced multi-step AI agent that can perform research tasks and combine multiple tools.
+
+---
+
+## Quiz
+
+Test your understanding of building LangChain applications:
+
+<Quiz
+  questions={[
+    {
+      question: "What is the purpose of splitting documents into chunks in a RAG system?",
+      options: [
+        "To make the documents load faster",
+        "To fit within the LLM's context window and improve retrieval accuracy",
+        "To reduce storage costs",
+        "To make the code run in parallel"
+      ],
+      correctAnswer: 1,
+      explanation: "Document chunking ensures that each piece fits within the LLM's context window and improves retrieval accuracy by creating focused, semantically coherent segments that can be independently embedded and retrieved."
+    },
+    {
+      question: "Why do we use vector embeddings in the Q&A system?",
+      options: [
+        "To compress the documents and save space",
+        "To encrypt sensitive information",
+        "To enable semantic search and find relevant content based on meaning",
+        "To make the system faster"
+      ],
+      correctAnswer: 2,
+      explanation: "Vector embeddings represent text as high-dimensional vectors that capture semantic meaning, enabling similarity search based on conceptual relevance rather than just keyword matching."
+    },
+    {
+      question: "What is the advantage of using ConversationalRetrievalChain over RetrievalQA?",
+      options: [
+        "It's faster and uses less memory",
+        "It maintains conversation history and can handle follow-up questions",
+        "It works with more document types",
+        "It doesn't require an API key"
+      ],
+      correctAnswer: 1,
+      explanation: "ConversationalRetrievalChain includes memory management, allowing it to maintain conversation context and handle follow-up questions that reference previous exchanges, creating a more natural dialogue experience."
+    },
+    {
+      question: "Why should return_source_documents be set to True in production Q&A systems?",
+      options: [
+        "To make the system run faster",
+        "To provide citations and allow users to verify the information source",
+        "To reduce API costs",
+        "To improve the accuracy of answers"
+      ],
+      correctAnswer: 1,
+      explanation: "Returning source documents provides transparency and allows users to verify where the information came from, which is crucial for trust, fact-checking, and understanding the context of the answer."
+    }
+  ]}
+/>

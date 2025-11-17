@@ -1,0 +1,789 @@
+---
+title: "Embeddings and Similarity Search"
+description: "Deep dive into how embeddings work, creating them with OpenAI, and implementing similarity search using cosine similarity and dot product."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Embeddings", "Similarity Search", "Cosine Similarity", "OpenAI", "Vector Search"]
+difficulty: "intermediate"
+duration: 20
+order: 33
+---
+
+# Embeddings and Similarity Search
+
+In the previous lessons, you learned about RAG and vector databases. But what exactly are these "embeddings" everyone keeps talking about, and how does similarity search actually work?
+
+Let's demystify the magic behind semantic search.
+
+## What Are Embeddings?
+
+An **embedding** is a numerical representation of text (or images, audio, etc.) as a vector of numbers that captures semantic meaning.
+
+<Callout type="info">
+**Embedding Definition:** A high-dimensional numerical vector (array of numbers) that represents text in a way that captures semantic meaning, where similar concepts have similar vector representations enabling mathematical similarity comparisons.
+</Callout>
+
+### From Text to Numbers
+
+```python
+# Text (what we read)
+text = "The cat sat on the mat"
+
+# Embedding (what computers understand)
+embedding = [0.023, -0.145, 0.389, 0.012, -0.234, ...]
+# A list of 1536 numbers (for OpenAI's text-embedding-3-small)
+```
+
+### The Magic of Embeddings
+
+Similar meanings → Similar vectors
+
+```python
+from openai import OpenAI
+import numpy as np
+
+client = OpenAI(api_key="your-api-key")
+
+def get_embedding(text):
+    response = client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+    return response.data[0].embedding
+
+# Similar concepts
+embedding_1 = get_embedding("The dog is happy")
+embedding_2 = get_embedding("The puppy is joyful")
+embedding_3 = get_embedding("The car is red")
+
+print(f"Embedding dimension: {len(embedding_1)}")  # 1536
+
+# These will be close in vector space:
+# "dog/happy" ≈ "puppy/joyful"
+# But far from:
+# "dog/happy" ≠ "car/red"
+```
+
+<Callout type="info">
+**Key Insight:** Embeddings transform semantic similarity into mathematical proximity. Words with similar meanings end up close together in high-dimensional space.
+</Callout>
+
+## How Embeddings Are Created
+
+### The Training Process
+
+Embedding models are trained to place similar concepts close together:
+
+```python
+"""
+Simplified embedding training concept:
+
+1. Start with large text corpus
+2. Learn that words appearing in similar contexts have similar meanings
+3. Optimize vectors so that:
+   - "king" - "man" + "woman" ≈ "queen"
+   - "Paris" - "France" + "Italy" ≈ "Rome"
+   - "happy" ≈ "joyful" ≈ "delighted"
+"""
+
+# Example: Word analogies in embedding space
+def analogy(word1, word2, word3, embeddings):
+    """
+    word1 : word2 :: word3 : ?
+    king : man :: woman : ?
+    """
+    # Vector arithmetic
+    result_vector = (embeddings[word1] - embeddings[word2] + embeddings[word3])
+
+    # Find closest word
+    return find_nearest(result_vector, embeddings)
+```
+
+### OpenAI Embedding Models
+
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="your-api-key")
+
+# Available models
+models = {
+    "text-embedding-3-small": {
+        "dimensions": 1536,
+        "cost_per_1M_tokens": "$0.02",
+        "use_case": "Most tasks, best value"
+    },
+    "text-embedding-3-large": {
+        "dimensions": 3072,
+        "cost_per_1M_tokens": "$0.13",
+        "use_case": "Higher accuracy needs"
+    },
+    "text-embedding-ada-002": {
+        "dimensions": 1536,
+        "cost_per_1M_tokens": "$0.10",
+        "use_case": "Legacy model"
+    }
+}
+
+# Create embedding
+def create_embedding(text, model="text-embedding-3-small"):
+    response = client.embeddings.create(
+        input=text,
+        model=model
+    )
+    return response.data[0].embedding
+
+# Single text
+embedding = create_embedding("Hello, world!")
+print(f"Shape: {len(embedding)}")  # 1536
+
+# Batch processing (more efficient!)
+texts = [
+    "The cat sat on the mat",
+    "The dog played in the park",
+    "Python is a programming language"
+]
+
+response = client.embeddings.create(
+    input=texts,
+    model="text-embedding-3-small"
+)
+
+embeddings = [item.embedding for item in response.data]
+print(f"Created {len(embeddings)} embeddings")  # 3
+```
+
+<Callout type="tip">
+**Cost Optimization:** Always batch your embedding requests. Creating 100 embeddings in one call is much cheaper and faster than 100 individual calls.
+</Callout>
+
+## Similarity Metrics
+
+How do we measure if two vectors are similar?
+
+### 1. Cosine Similarity (Most Common)
+
+Measures the angle between vectors, ranging from -1 to 1.
+
+<Callout type="info">
+**Cosine Similarity Definition:** A similarity metric that measures the cosine of the angle between two vectors, producing a value from -1 to 1 where higher values indicate greater similarity, independent of vector magnitude.
+</Callout>
+
+```python
+import numpy as np
+
+def cosine_similarity(vec1, vec2):
+    """
+    Cosine similarity = (A · B) / (||A|| * ||B||)
+
+    Returns:
+        1.0  = Identical
+        0.0  = Orthogonal (unrelated)
+        -1.0 = Opposite
+    """
+    dot_product = np.dot(vec1, vec2)
+    norm_a = np.linalg.norm(vec1)
+    norm_b = np.linalg.norm(vec2)
+    return dot_product / (norm_a * norm_b)
+
+# Example
+vec_a = get_embedding("I love pizza")
+vec_b = get_embedding("I enjoy pizza")
+vec_c = get_embedding("The weather is nice")
+
+sim_ab = cosine_similarity(vec_a, vec_b)
+sim_ac = cosine_similarity(vec_a, vec_c)
+
+print(f"'love pizza' vs 'enjoy pizza': {sim_ab:.3f}")  # ~0.92 (very similar)
+print(f"'love pizza' vs 'weather': {sim_ac:.3f}")      # ~0.65 (less similar)
+```
+
+### Why Cosine Similarity?
+
+```python
+# Cosine similarity ignores magnitude, only considers direction
+vec1 = np.array([1, 2, 3])
+vec2 = np.array([2, 4, 6])  # Same direction, different magnitude
+
+print(cosine_similarity(vec1, vec2))  # 1.0 (identical direction)
+
+# This is useful for text: "cat" and "the cat is here" should be similar
+# even though the second has more words (larger magnitude)
+```
+
+### 2. Dot Product
+
+The raw dot product without normalization.
+
+```python
+def dot_product(vec1, vec2):
+    """
+    A · B = Σ(a_i * b_i)
+
+    Faster than cosine similarity but sensitive to magnitude
+    """
+    return np.dot(vec1, vec2)
+
+# Example
+vec1 = np.array([1, 2, 3])
+vec2 = np.array([4, 5, 6])
+
+print(f"Dot product: {dot_product(vec1, vec2)}")  # 32
+```
+
+<Callout type="warning">
+**When to use dot product:** Only when embeddings are normalized (unit length). OpenAI embeddings are NOT normalized by default, so use cosine similarity unless you normalize first.
+</Callout>
+
+### 3. Euclidean Distance (L2)
+
+Measures straight-line distance between points.
+
+```python
+def euclidean_distance(vec1, vec2):
+    """
+    L2 distance = sqrt(Σ(a_i - b_i)²)
+
+    Returns:
+        0    = Identical
+        &gt;0   = More distant (higher = less similar)
+    """
+    return np.linalg.norm(vec1 - vec2)
+
+# Example
+vec_a = get_embedding("dog")
+vec_b = get_embedding("puppy")
+vec_c = get_embedding("car")
+
+dist_ab = euclidean_distance(vec_a, vec_b)
+dist_ac = euclidean_distance(vec_a, vec_c)
+
+print(f"'dog' vs 'puppy': {dist_ab:.3f}")  # Lower = more similar
+print(f"'dog' vs 'car': {dist_ac:.3f}")    # Higher = less similar
+```
+
+### Comparing Similarity Metrics
+
+```python
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI(api_key="your-api-key")
+
+def get_embedding(text):
+    response = client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+    return np.array(response.data[0].embedding)
+
+# Test texts
+text1 = "The cat sleeps on the couch"
+text2 = "A kitten rests on the sofa"
+text3 = "Python is a programming language"
+
+v1 = get_embedding(text1)
+v2 = get_embedding(text2)
+v3 = get_embedding(text3)
+
+# Compare metrics
+def compare_metrics(vec_a, vec_b, name):
+    cos_sim = cosine_similarity(vec_a, vec_b)
+    dot_prod = dot_product(vec_a, vec_b)
+    euclidean = euclidean_distance(vec_a, vec_b)
+
+    print(f"\n{name}:")
+    print(f"  Cosine Similarity: {cos_sim:.4f}")
+    print(f"  Dot Product: {dot_prod:.4f}")
+    print(f"  Euclidean Distance: {euclidean:.4f}")
+
+compare_metrics(v1, v2, "Similar (cat/kitten)")
+compare_metrics(v1, v3, "Different (cat/Python)")
+
+# Output:
+# Similar (cat/kitten):
+#   Cosine Similarity: 0.8934  ← High (close to 1)
+#   Dot Product: 45.2341
+#   Euclidean Distance: 12.4563  ← Low
+#
+# Different (cat/Python):
+#   Cosine Similarity: 0.6214  ← Lower
+#   Dot Product: 28.4512
+#   Euclidean Distance: 23.8912  ← Higher
+```
+
+## Building a Similarity Search System
+
+Let's build a complete similarity search from scratch:
+
+<Callout type="info">
+**Similarity Search Definition:** A technique for finding items in a dataset that are most similar to a query based on vector distance metrics, enabling retrieval of semantically related content rather than exact matches.
+</Callout>
+
+```python
+import numpy as np
+from openai import OpenAI
+from typing import List, Tuple
+
+client = OpenAI(api_key="your-api-key")
+
+class SimpleVectorSearch:
+    """Basic similarity search implementation"""
+
+    def __init__(self):
+        self.documents = []
+        self.embeddings = []
+
+    def get_embedding(self, text: str) -> np.ndarray:
+        """Create embedding for text"""
+        response = client.embeddings.create(
+            input=text,
+            model="text-embedding-3-small"
+        )
+        return np.array(response.data[0].embedding)
+
+    def add_document(self, text: str, metadata: dict = None):
+        """Add document to search index"""
+        embedding = self.get_embedding(text)
+        self.documents.append({
+            "text": text,
+            "metadata": metadata or {}
+        })
+        self.embeddings.append(embedding)
+
+    def add_documents(self, texts: List[str], metadatas: List[dict] = None):
+        """Batch add documents (more efficient)"""
+        # Create all embeddings in one API call
+        response = client.embeddings.create(
+            input=texts,
+            model="text-embedding-3-small"
+        )
+
+        for i, text in enumerate(texts):
+            embedding = np.array(response.data[i].embedding)
+            metadata = metadatas[i] if metadatas else {}
+
+            self.documents.append({
+                "text": text,
+                "metadata": metadata
+            })
+            self.embeddings.append(embedding)
+
+    def search(self, query: str, top_k: int = 5) -> List[Tuple[str, float]]:
+        """Search for most similar documents"""
+        if not self.embeddings:
+            return []
+
+        # Get query embedding
+        query_embedding = self.get_embedding(query)
+
+        # Calculate similarities
+        similarities = []
+        for i, doc_embedding in enumerate(self.embeddings):
+            similarity = cosine_similarity(query_embedding, doc_embedding)
+            similarities.append((i, similarity))
+
+        # Sort by similarity (highest first)
+        similarities.sort(key=lambda x: x[1], reverse=True)
+
+        # Return top-k results
+        results = []
+        for idx, score in similarities[:top_k]:
+            results.append({
+                "text": self.documents[idx]["text"],
+                "metadata": self.documents[idx]["metadata"],
+                "score": score
+            })
+
+        return results
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+
+# Example usage
+search = SimpleVectorSearch()
+
+# Add documents
+documents = [
+    "Our company offers a 30-day money-back guarantee",
+    "Free shipping on orders over $50",
+    "Customer support available 24/7 via email and chat",
+    "We accept all major credit cards and PayPal",
+    "Returns must be in original packaging with tags attached",
+    "International shipping takes 7-14 business days",
+    "You can track your order using the tracking number",
+]
+
+metadatas = [
+    {"category": "refund", "source": "policy.pdf"},
+    {"category": "shipping", "source": "shipping.pdf"},
+    {"category": "support", "source": "contact.txt"},
+    {"category": "payment", "source": "checkout.pdf"},
+    {"category": "refund", "source": "policy.pdf"},
+    {"category": "shipping", "source": "shipping.pdf"},
+    {"category": "shipping", "source": "shipping.pdf"},
+]
+
+search.add_documents(documents, metadatas)
+
+# Search
+results = search.search("What's your return policy?", top_k=3)
+
+print("Query: What's your return policy?\n")
+for i, result in enumerate(results, 1):
+    print(f"{i}. Score: {result['score']:.4f}")
+    print(f"   Text: {result['text']}")
+    print(f"   Category: {result['metadata']['category']}\n")
+
+# Output:
+# Query: What's your return policy?
+#
+# 1. Score: 0.8923
+#    Text: Our company offers a 30-day money-back guarantee
+#    Category: refund
+#
+# 2. Score: 0.8456
+#    Text: Returns must be in original packaging with tags attached
+#    Category: refund
+#
+# 3. Score: 0.7234
+#    Text: Customer support available 24/7 via email and chat
+#    Category: support
+```
+
+## Advanced Similarity Search Techniques
+
+### 1. Filtering with Metadata
+
+```python
+class FilteredVectorSearch(SimpleVectorSearch):
+    """Vector search with metadata filtering"""
+
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        filter_metadata: dict = None
+    ) -> List[dict]:
+        """Search with optional metadata filtering"""
+
+        query_embedding = self.get_embedding(query)
+
+        similarities = []
+        for i, doc_embedding in enumerate(self.embeddings):
+            # Apply metadata filter
+            if filter_metadata:
+                doc_meta = self.documents[i]["metadata"]
+                if not all(doc_meta.get(k) == v for k, v in filter_metadata.items()):
+                    continue  # Skip documents that don't match filter
+
+            similarity = cosine_similarity(query_embedding, doc_embedding)
+            similarities.append((i, similarity))
+
+        similarities.sort(key=lambda x: x[1], reverse=True)
+
+        results = []
+        for idx, score in similarities[:top_k]:
+            results.append({
+                "text": self.documents[idx]["text"],
+                "metadata": self.documents[idx]["metadata"],
+                "score": score
+            })
+
+        return results
+
+
+# Usage
+filtered_search = FilteredVectorSearch()
+filtered_search.add_documents(documents, metadatas)
+
+# Search only in refund category
+results = filtered_search.search(
+    "money back",
+    top_k=3,
+    filter_metadata={"category": "refund"}
+)
+
+print("Filtered results (refund only):")
+for result in results:
+    print(f"- {result['text']}")
+```
+
+### 2. Re-ranking Results
+
+<Callout type="info">
+**Re-ranking Definition:** A two-stage retrieval approach where initial similarity search results are refined using an LLM or specialized model to improve relevance and ordering based on nuanced understanding of the query.
+</Callout>
+
+```python
+def rerank_results(query: str, results: List[dict], llm_client) -> List[dict]:
+    """
+    Use LLM to re-rank results for better relevance
+
+    Why? Embeddings might miss nuances that LLMs can catch
+    """
+    from openai import OpenAI
+
+    client = OpenAI(api_key="your-api-key")
+
+    # Create ranking prompt
+    docs_text = "\n\n".join([
+        f"[{i}] {result['text']}"
+        for i, result in enumerate(results)
+    ])
+
+    prompt = f"""Given the query: "{query}"
+
+Rank the following documents from most to least relevant.
+Return only the numbers in order, comma-separated.
+
+{docs_text}
+
+Ranking (most relevant first):"""
+
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0
+    )
+
+    # Parse ranking
+    ranking_str = response.choices[0].message.content.strip()
+    ranking = [int(x.strip()) for x in ranking_str.split(",")]
+
+    # Reorder results
+    reranked = [results[i] for i in ranking if i < len(results)]
+
+    return reranked
+```
+
+### 3. Hybrid Search (Keyword + Semantic)
+
+```python
+def hybrid_search(query: str, documents: List[str], alpha: float = 0.5):
+    """
+    Combine keyword search (BM25) and semantic search
+
+    alpha: 0 = keyword only, 1 = semantic only, 0.5 = balanced
+    """
+    from rank_bm25 import BM25Okapi
+
+    # Keyword search (BM25)
+    tokenized_docs = [doc.lower().split() for doc in documents]
+    bm25 = BM25Okapi(tokenized_docs)
+    keyword_scores = bm25.get_scores(query.lower().split())
+
+    # Semantic search
+    search = SimpleVectorSearch()
+    search.add_documents(documents)
+    semantic_results = search.search(query, top_k=len(documents))
+    semantic_scores = [r["score"] for r in semantic_results]
+
+    # Normalize scores to 0-1
+    def normalize(scores):
+        min_s, max_s = min(scores), max(scores)
+        if max_s == min_s:
+            return [0.5] * len(scores)
+        return [(s - min_s) / (max_s - min_s) for s in scores]
+
+    keyword_scores = normalize(keyword_scores)
+    semantic_scores = normalize(semantic_scores)
+
+    # Combine scores
+    hybrid_scores = [
+        alpha * sem + (1 - alpha) * key
+        for sem, key in zip(semantic_scores, keyword_scores)
+    ]
+
+    # Rank results
+    ranked_indices = np.argsort(hybrid_scores)[::-1]
+
+    return [
+        {"text": documents[i], "score": hybrid_scores[i]}
+        for i in ranked_indices
+    ]
+```
+
+## Embedding Best Practices
+
+### 1. Chunking Strategy
+
+```python
+def smart_chunk(text: str, max_tokens: int = 500) -> List[str]:
+    """
+    Chunk text intelligently for better embeddings
+
+    Guidelines:
+    - Keep chunks 200-1000 tokens
+    - Preserve semantic units (paragraphs, sentences)
+    - Add overlap between chunks
+    """
+    import tiktoken
+
+    enc = tiktoken.get_encoding("cl100k_base")
+
+    # Split by paragraphs
+    paragraphs = text.split("\n\n")
+
+    chunks = []
+    current_chunk = []
+    current_tokens = 0
+
+    for para in paragraphs:
+        para_tokens = len(enc.encode(para))
+
+        if current_tokens + para_tokens <= max_tokens:
+            current_chunk.append(para)
+            current_tokens += para_tokens
+        else:
+            # Save current chunk
+            if current_chunk:
+                chunks.append("\n\n".join(current_chunk))
+
+            # Start new chunk
+            current_chunk = [para]
+            current_tokens = para_tokens
+
+    # Add final chunk
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
+
+    return chunks
+```
+
+### 2. Caching Embeddings
+
+```python
+import json
+import hashlib
+
+class CachedEmbeddings:
+    """Cache embeddings to avoid redundant API calls"""
+
+    def __init__(self, cache_file: str = "embeddings_cache.json"):
+        self.cache_file = cache_file
+        self.cache = self._load_cache()
+
+    def _load_cache(self):
+        try:
+            with open(self.cache_file, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {}
+
+    def _save_cache(self):
+        with open(self.cache_file, 'w') as f:
+            json.dump(self.cache, f)
+
+    def _get_hash(self, text: str) -> str:
+        return hashlib.md5(text.encode()).hexdigest()
+
+    def get_embedding(self, text: str):
+        text_hash = self._get_hash(text)
+
+        # Check cache
+        if text_hash in self.cache:
+            return self.cache[text_hash]
+
+        # Create new embedding
+        embedding = get_embedding(text)
+
+        # Cache it
+        self.cache[text_hash] = embedding
+        self._save_cache()
+
+        return embedding
+
+
+# Usage
+cached = CachedEmbeddings()
+emb1 = cached.get_embedding("Hello")  # API call
+emb2 = cached.get_embedding("Hello")  # From cache! (free)
+```
+
+### 3. Dimension Reduction
+
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="your-api-key")
+
+# text-embedding-3-small supports dimension reduction
+response = client.embeddings.create(
+    input="Your text here",
+    model="text-embedding-3-small",
+    dimensions=512  # Reduce from 1536 to 512
+)
+
+# Benefits:
+# - Faster similarity search
+# - Less storage
+# - Minimal accuracy loss
+```
+
+<Callout type="tip">
+**Performance Tip:** For most applications, reducing dimensions to 512 or 768 maintains 95%+ of the accuracy while cutting storage and search time by 50-75%.
+</Callout>
+
+## Summary
+
+Embeddings and similarity search are the foundation of semantic search:
+
+1. **Embeddings** convert text to vectors that capture meaning
+2. **Cosine similarity** is the most common metric for comparing embeddings
+3. **Batch processing** saves time and money
+4. **Caching** prevents redundant API calls
+5. **Re-ranking** and **hybrid search** improve accuracy
+
+With these techniques, you can build powerful semantic search systems that understand meaning, not just keywords.
+
+<Quiz
+  questions={[
+    {
+      question: "What does an embedding represent?",
+      options: [
+        "A compressed version of the original text",
+        "A numerical vector that captures the semantic meaning of text",
+        "A hash of the text for faster lookup",
+        "The word count and character length of text"
+      ],
+      correctAnswer: 1,
+      explanation: "Embeddings are high-dimensional vectors (arrays of numbers) that represent semantic meaning. Similar concepts have similar vectors, enabling mathematical operations on meaning."
+    },
+    {
+      question: "Why is cosine similarity preferred over Euclidean distance for text embeddings?",
+      options: [
+        "Cosine similarity is faster to compute",
+        "Cosine similarity measures direction (angle) rather than magnitude, making it better for comparing texts of different lengths",
+        "Cosine similarity works with smaller vectors",
+        "Cosine similarity is more accurate for all use cases"
+      ],
+      correctAnswer: 1,
+      explanation: "Cosine similarity measures the angle between vectors, ignoring magnitude. This is important for text because 'cat' and 'the cat is here' should be similar despite different lengths (magnitudes). It returns values from -1 to 1, where 1 means identical direction."
+    },
+    {
+      question: "What is the benefit of batch processing embeddings?",
+      options: [
+        "Better accuracy for each embedding",
+        "More efficient and cost-effective than individual API calls",
+        "Smaller embedding dimensions",
+        "Automatic caching"
+      ],
+      correctAnswer: 1,
+      explanation: "Batch processing (sending multiple texts in one API call) is much more efficient than individual calls. It reduces latency, lowers costs, and makes better use of network resources. OpenAI's API is optimized for batch requests."
+    },
+    {
+      question: "What is the purpose of re-ranking in similarity search?",
+      options: [
+        "To make searches faster",
+        "To reduce API costs",
+        "To use an LLM to refine initial retrieval results for better relevance",
+        "To compress embeddings"
+      ],
+      correctAnswer: 2,
+      explanation: "Re-ranking uses an LLM to evaluate and reorder the initial similarity search results. While embeddings are fast and capture general meaning, LLMs can catch nuances and context that embeddings might miss, improving final result quality."
+    }
+  ]}
+/>

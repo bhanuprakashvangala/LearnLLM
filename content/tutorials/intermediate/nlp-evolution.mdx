@@ -1,0 +1,501 @@
+---
+title: "The Evolution of NLP (Pre-Transformer Era)"
+description: "Explore the historical progression of Natural Language Processing techniques from Bag of Words to LSTMs, understanding the foundations that led to modern transformers."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["NLP", "Word2Vec", "GloVe", "RNN", "LSTM", "History"]
+difficulty: "intermediate"
+duration: 15
+order: 16
+---
+
+# The Evolution of NLP (Pre-Transformer Era)
+
+Before transformers revolutionized natural language processing, researchers developed several innovative techniques to help computers understand text. This lesson explores the key milestones in NLP history and how each approach solved specific limitations of its predecessors.
+
+## Bag of Words (BoW)
+
+<Callout type="info">
+**Bag of Words (BoW):** A simple text representation technique that treats a document as an unordered collection of words, counting word frequencies while ignoring grammar, word order, and context.
+</Callout>
+
+The simplest text representation treats documents as unordered collections of words.
+
+### How It Works
+
+1. Create a vocabulary of all unique words in your corpus
+2. Represent each document as a vector counting word frequencies
+3. Ignore grammar, word order, and context
+
+```python
+from sklearn.feature_extraction.text import CountVectorizer
+
+documents = [
+    "I love machine learning",
+    "I love deep learning",
+    "Deep learning is amazing"
+]
+
+vectorizer = CountVectorizer()
+bow_matrix = vectorizer.fit_transform(documents)
+
+print("Vocabulary:", vectorizer.get_feature_names_out())
+print("\nDocument vectors:\n", bow_matrix.toarray())
+```
+
+**Output:**
+```
+Vocabulary: ['amazing' 'deep' 'is' 'learning' 'love' 'machine']
+
+Document vectors:
+[[0 0 0 1 1 1]
+ [0 1 0 1 1 0]
+ [1 1 1 1 0 0]]
+```
+
+<Callout type="warning">
+**Limitations of BoW:**
+- Loses word order ("dog bites man" vs "man bites dog")
+- No semantic understanding (synonyms treated as different words)
+- High dimensionality with large vocabularies
+- Sparse vectors (mostly zeros)
+</Callout>
+
+## TF-IDF (Term Frequency-Inverse Document Frequency)
+
+<Callout type="info">
+**TF-IDF:** A statistical measure that evaluates how important a word is to a document by combining term frequency (how often it appears) with inverse document frequency (how rare it is across all documents). High TF-IDF scores indicate distinctive, informative words.
+</Callout>
+
+TF-IDF improves on BoW by weighting words based on their importance across documents.
+
+### The Formula
+
+**TF-IDF = TF × IDF**
+
+- **TF (Term Frequency):** How often a word appears in a document
+- **IDF (Inverse Document Frequency):** How rare a word is across all documents
+
+```
+TF(t, d) = (Number of times term t appears in document d) / (Total terms in d)
+IDF(t) = log(Total documents / Documents containing term t)
+```
+
+### Implementation
+
+```python
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+documents = [
+    "The cat sat on the mat",
+    "The dog sat on the log",
+    "Cats and dogs are enemies"
+]
+
+tfidf_vectorizer = TfidfVectorizer()
+tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
+
+print("Feature names:", tfidf_vectorizer.get_feature_names_out())
+print("\nTF-IDF scores:\n", tfidf_matrix.toarray().round(3))
+```
+
+<Callout type="tip">
+**When to use TF-IDF:**
+- Document classification and clustering
+- Information retrieval and search engines
+- Keyword extraction
+- When word importance matters more than raw frequency
+</Callout>
+
+## Word2Vec: Semantic Word Embeddings
+
+<Callout type="info">
+**Word Embeddings:** Dense vector representations of words in a continuous vector space where semantically similar words are positioned close to each other, enabling machines to understand semantic relationships between words.
+</Callout>
+
+Word2Vec was a breakthrough that represented words as dense vectors capturing semantic meaning.
+
+### Two Architectures
+
+**1. CBOW (Continuous Bag of Words)**
+- Predicts target word from context words
+- Faster training
+- Better for smaller datasets
+
+**2. Skip-gram**
+- Predicts context words from target word
+- Better for rare words
+- More accurate with larger datasets
+
+### The Magic of Word Embeddings
+
+```python
+import gensim.downloader as api
+
+# Load pre-trained Word2Vec model
+model = api.load("word2vec-google-news-300")
+
+# Semantic similarity
+print("Similarity between 'king' and 'queen':",
+      model.similarity('king', 'queen'))
+print("Similarity between 'king' and 'apple':",
+      model.similarity('king', 'apple'))
+
+# Famous analogy: king - man + woman = queen
+result = model.most_similar(
+    positive=['woman', 'king'],
+    negative=['man'],
+    topn=1
+)
+print("\nAnalogy: king - man + woman =", result[0][0])
+
+# Find similar words
+print("\nWords similar to 'python':")
+for word, score in model.most_similar('python', topn=5):
+    print(f"  {word}: {score:.3f}")
+```
+
+### Training Word2Vec
+
+```python
+from gensim.models import Word2Vec
+
+sentences = [
+    ["machine", "learning", "is", "fascinating"],
+    ["deep", "learning", "uses", "neural", "networks"],
+    ["transformers", "revolutionized", "nlp"]
+]
+
+# Train model
+model = Word2Vec(
+    sentences,
+    vector_size=100,    # Embedding dimension
+    window=5,           # Context window size
+    min_count=1,        # Minimum word frequency
+    workers=4,          # Parallel threads
+    sg=1                # 1=skip-gram, 0=CBOW
+)
+
+# Get vector for a word
+vector = model.wv['learning']
+print("Vector shape:", vector.shape)
+```
+
+<Callout type="info">
+**Key Insight:** Word2Vec learns that words appearing in similar contexts have similar meanings. This is the **distributional hypothesis**: "You shall know a word by the company it keeps."
+</Callout>
+
+## GloVe: Global Vectors for Word Representation
+
+GloVe combines the benefits of matrix factorization (like LSA) with local context windows (like Word2Vec).
+
+### How GloVe Differs
+
+- **Word2Vec:** Local context window, predicts neighbors
+- **GloVe:** Global matrix factorization, uses co-occurrence statistics
+
+### The GloVe Objective
+
+GloVe minimizes:
+
+```
+J = Σ f(X_ij) * (w_i^T * w_j + b_i + b_j - log(X_ij))^2
+```
+
+Where:
+- `X_ij` = number of times word j appears in context of word i
+- `w_i, w_j` = word vectors
+- `f(X_ij)` = weighting function (prevents common words from dominating)
+
+### Using Pre-trained GloVe
+
+```python
+import numpy as np
+
+def load_glove_vectors(file_path):
+    """Load pre-trained GloVe vectors"""
+    embeddings = {}
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            values = line.split()
+            word = values[0]
+            vector = np.array(values[1:], dtype='float32')
+            embeddings[word] = vector
+    return embeddings
+
+# Load GloVe (download from Stanford NLP)
+# glove = load_glove_vectors('glove.6B.100d.txt')
+
+# Find similar words using cosine similarity
+def cosine_similarity(v1, v2):
+    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+```
+
+## Recurrent Neural Networks (RNNs)
+
+<Callout type="info">
+**Hidden State:** A vector that maintains memory of previous inputs in a sequence, allowing RNNs to capture temporal dependencies by passing information from one time step to the next.
+</Callout>
+
+RNNs introduced the ability to process sequential data by maintaining hidden states.
+
+### The RNN Architecture
+
+```python
+import torch
+import torch.nn as nn
+
+class SimpleRNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(SimpleRNN, self).__init__()
+        self.hidden_size = hidden_size
+
+        # RNN layer
+        self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
+        # Output layer
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        # x shape: (batch, seq_len, input_size)
+        # Initialize hidden state
+        h0 = torch.zeros(1, x.size(0), self.hidden_size)
+
+        # Forward propagate RNN
+        out, hidden = self.rnn(x, h0)
+
+        # Decode the hidden state of the last time step
+        out = self.fc(out[:, -1, :])
+        return out
+
+# Example usage
+input_size = 10      # Word embedding dimension
+hidden_size = 20     # Hidden layer size
+output_size = 2      # Binary classification
+
+model = SimpleRNN(input_size, hidden_size, output_size)
+```
+
+### The Recurrence Equation
+
+At each time step t:
+
+```
+h_t = tanh(W_hh * h_(t-1) + W_xh * x_t + b_h)
+y_t = W_hy * h_t + b_y
+```
+
+<Callout type="warning">
+**The Vanishing Gradient Problem:**
+
+RNNs struggle with long sequences because gradients vanish exponentially as they backpropagate through time. This makes it difficult to learn long-range dependencies.
+
+For a sequence of length T, gradients are multiplied T times, causing:
+- Values < 1 → gradients vanish (approach 0)
+- Values > 1 → gradients explode (approach ∞)
+</Callout>
+
+## Long Short-Term Memory (LSTM)
+
+<Callout type="info">
+**Gating Mechanism:** A learned control system in LSTMs that uses sigmoid gates to selectively remember, forget, or update information in the cell state, enabling the network to maintain long-range dependencies.
+</Callout>
+
+LSTMs solve the vanishing gradient problem with a sophisticated gating mechanism.
+
+### LSTM Architecture
+
+```python
+class LSTMModel(nn.Module):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim):
+        super(LSTMModel, self).__init__()
+
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.lstm = nn.LSTM(
+            embedding_dim,
+            hidden_dim,
+            num_layers=2,
+            batch_first=True,
+            dropout=0.2
+        )
+        self.fc = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, text):
+        # text shape: (batch, seq_len)
+        embedded = self.embedding(text)
+        # embedded shape: (batch, seq_len, embedding_dim)
+
+        output, (hidden, cell) = self.lstm(embedded)
+        # Use the final hidden state
+        return self.fc(hidden[-1])
+
+# Create model
+model = LSTMModel(
+    vocab_size=10000,
+    embedding_dim=100,
+    hidden_dim=256,
+    output_dim=1  # Binary sentiment classification
+)
+```
+
+### The Four Gates
+
+LSTMs use three gates to control information flow:
+
+**1. Forget Gate:** What to remove from cell state
+```
+f_t = σ(W_f · [h_(t-1), x_t] + b_f)
+```
+
+**2. Input Gate:** What new information to add
+```
+i_t = σ(W_i · [h_(t-1), x_t] + b_i)
+C̃_t = tanh(W_C · [h_(t-1), x_t] + b_C)
+```
+
+**3. Output Gate:** What to output
+```
+o_t = σ(W_o · [h_(t-1), x_t] + b_o)
+```
+
+**4. Cell State Update:**
+```
+C_t = f_t * C_(t-1) + i_t * C̃_t
+h_t = o_t * tanh(C_t)
+```
+
+### Practical LSTM Example
+
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+# Sample data for sentiment analysis
+vocab_size = 5000
+embedding_dim = 128
+hidden_dim = 256
+
+# Create model
+lstm_model = LSTMModel(vocab_size, embedding_dim, hidden_dim, output_dim=1)
+
+# Loss and optimizer
+criterion = nn.BCEWithLogitsLoss()
+optimizer = optim.Adam(lstm_model.parameters(), lr=0.001)
+
+# Training loop (pseudo-code)
+def train_epoch(model, data_loader, criterion, optimizer):
+    model.train()
+    total_loss = 0
+
+    for batch in data_loader:
+        texts, labels = batch
+
+        # Forward pass
+        predictions = model(texts).squeeze()
+        loss = criterion(predictions, labels)
+
+        # Backward pass
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+
+    return total_loss / len(data_loader)
+```
+
+<Callout type="tip">
+**LSTM Best Practices:**
+- Use bidirectional LSTMs for better context understanding
+- Stack multiple LSTM layers for complex tasks
+- Apply dropout between layers to prevent overfitting
+- Gradient clipping helps prevent exploding gradients
+</Callout>
+
+## Why These Methods Led to Transformers
+
+Each technique solved specific problems but had limitations:
+
+| Method | Strength | Limitation |
+|--------|----------|------------|
+| BoW/TF-IDF | Simple, interpretable | No semantics, no order |
+| Word2Vec/GloVe | Semantic embeddings | Fixed context, no sentence-level |
+| RNN | Sequential processing | Vanishing gradients, slow |
+| LSTM | Long-range dependencies | Still sequential, limited parallelization |
+
+**The Transformer Revolution:** Combined the best ideas:
+- Attention mechanism for context (like embeddings)
+- Parallel processing (unlike RNNs)
+- Effective long-range dependencies (better than LSTMs)
+- Scalability to massive datasets
+
+<Callout type="info">
+**Historical Timeline:**
+- 2003: Neural Language Models (Bengio et al.)
+- 2013: Word2Vec (Mikolov et al.)
+- 2014: GloVe (Pennington et al.)
+- 2014: Sequence to Sequence (Sutskever et al.)
+- 2015: Attention Mechanism (Bahdanau et al.)
+- **2017: Transformers (Vaswani et al.)** ← Next lesson!
+</Callout>
+
+## Summary
+
+This lesson covered the evolution of NLP techniques:
+
+1. **Bag of Words & TF-IDF:** Simple counting methods
+2. **Word2Vec & GloVe:** Semantic word embeddings
+3. **RNNs:** Sequential processing with memory
+4. **LSTMs:** Gating mechanisms for long-term dependencies
+
+Each innovation addressed limitations of previous approaches, paving the way for the transformer architecture that dominates modern NLP.
+
+<Quiz
+  questions={[
+    {
+      question: "What is the main advantage of Word2Vec over Bag of Words?",
+      options: [
+        "Faster computation",
+        "Captures semantic relationships between words",
+        "Requires less training data",
+        "Better for document classification"
+      ],
+      correctAnswer: 1,
+      explanation: "Word2Vec learns dense vector representations that capture semantic meaning, allowing operations like 'king - man + woman = queen'. BoW only counts word frequencies without understanding meaning."
+    },
+    {
+      question: "What problem do LSTMs solve that vanilla RNNs struggle with?",
+      options: [
+        "Parallel processing of sequences",
+        "Handling multiple languages",
+        "Vanishing gradient problem in long sequences",
+        "Reducing model size"
+      ],
+      correctAnswer: 2,
+      explanation: "LSTMs use gates (forget, input, output) to maintain long-term dependencies and prevent gradients from vanishing during backpropagation through time, which is a major limitation of vanilla RNNs."
+    },
+    {
+      question: "How does GloVe differ from Word2Vec in its approach?",
+      options: [
+        "GloVe uses global co-occurrence statistics while Word2Vec uses local context windows",
+        "GloVe is faster to train",
+        "GloVe produces smaller embeddings",
+        "GloVe only works with English"
+      ],
+      correctAnswer: 0,
+      explanation: "GloVe performs matrix factorization on global word co-occurrence statistics from the entire corpus, while Word2Vec uses local context windows to predict neighboring words."
+    },
+    {
+      question: "In the TF-IDF formula, what does the IDF (Inverse Document Frequency) component do?",
+      options: [
+        "Counts how many times a word appears",
+        "Measures document length",
+        "Reduces the weight of common words that appear in many documents",
+        "Calculates the reading difficulty"
+      ],
+      correctAnswer: 2,
+      explanation: "IDF = log(Total documents / Documents containing term) gives lower weights to common words appearing in many documents (like 'the', 'is') and higher weights to rare, distinctive words that are more informative."
+    }
+  ]}
+/>

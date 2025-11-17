@@ -1,0 +1,937 @@
+---
+title: "Long Context Models (100k+ Tokens)"
+description: "Work with long-context models like Claude 2, GPT-4 Turbo, and understand techniques for handling 100k+ token contexts"
+order: 77
+duration: 25
+difficulty: "advanced"
+tags: ["long-context", "claude", "gpt-4", "attention", "memory"]
+objectives:
+  - Understand long-context model capabilities
+  - Work with 100k+ token contexts effectively
+  - Implement chunking and compression strategies
+  - Optimize performance for long inputs
+---
+
+# Long Context Models (100k+ Tokens)
+
+Master working with long-context models that can process entire books, codebases, and documents in a single prompt.
+
+<Callout type="info">
+**What You'll Learn**: Modern LLMs like Claude 2 (200k), GPT-4 Turbo (128k), and Gemini 1.5 Pro (1M tokens) can handle massive contexts. We'll explore how to use these capabilities effectively and efficiently.
+</Callout>
+
+## Understanding Long Context
+
+### Context Window Comparison
+
+```python
+from dataclasses import dataclass
+from typing import List, Optional, Dict
+import tiktoken
+
+@dataclass
+class ModelSpec:
+    """Model specifications"""
+    name: str
+    context_window: int
+    approx_cost_per_1m_input: float
+    approx_cost_per_1m_output: float
+    supports_streaming: bool = True
+
+# Current long-context models (2024)
+LONG_CONTEXT_MODELS = {
+    "gpt-4-turbo": ModelSpec(
+        name="GPT-4 Turbo",
+        context_window=128_000,
+        approx_cost_per_1m_input=10.0,
+        approx_cost_per_1m_output=30.0
+    ),
+    "gpt-4": ModelSpec(
+        name="GPT-4",
+        context_window=8_192,
+        approx_cost_per_1m_input=30.0,
+        approx_cost_per_1m_output=60.0
+    ),
+    "claude-2": ModelSpec(
+        name="Claude 2",
+        context_window=200_000,
+        approx_cost_per_1m_input=8.0,
+        approx_cost_per_1m_output=24.0
+    ),
+    "claude-3-opus": ModelSpec(
+        name="Claude 3 Opus",
+        context_window=200_000,
+        approx_cost_per_1m_input=15.0,
+        approx_cost_per_1m_output=75.0
+    ),
+    "gemini-1.5-pro": ModelSpec(
+        name="Gemini 1.5 Pro",
+        context_window=1_000_000,
+        approx_cost_per_1m_input=7.0,
+        approx_cost_per_1m_output=21.0
+    )
+}
+
+class ContextAnalyzer:
+    """Analyze and manage long contexts"""
+
+    def __init__(self, model_name: str = "gpt-4-turbo"):
+        self.model_spec = LONG_CONTEXT_MODELS[model_name]
+        self.encoding = tiktoken.encoding_for_model("gpt-4")
+
+    def count_tokens(self, text: str) -> int:
+        """Count tokens in text"""
+        return len(self.encoding.encode(text))
+
+    def estimate_cost(
+        self,
+        input_text: str,
+        output_tokens: int = 1000
+    ) -> Dict[str, float]:
+        """Estimate cost for processing text"""
+
+        input_tokens = self.count_tokens(input_text)
+
+        # Check if within context window
+        if input_tokens + output_tokens > self.model_spec.context_window:
+            raise ValueError(
+                f"Total tokens ({input_tokens + output_tokens}) exceeds "
+                f"context window ({self.model_spec.context_window})"
+            )
+
+        input_cost = (input_tokens / 1_000_000) * self.model_spec.approx_cost_per_1m_input
+        output_cost = (output_tokens / 1_000_000) * self.model_spec.approx_cost_per_1m_output
+
+        return {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+            "input_cost": input_cost,
+            "output_cost": output_cost,
+            "total_cost": input_cost + output_cost,
+            "context_usage": (input_tokens + output_tokens) / self.model_spec.context_window
+        }
+
+    def analyze_document(self, text: str) -> Dict:
+        """Analyze document structure and token distribution"""
+
+        # Split into sections (simple example)
+        paragraphs = text.split('\n\n')
+
+        paragraph_tokens = [
+            self.count_tokens(p) for p in paragraphs if p.strip()
+        ]
+
+        total_tokens = sum(paragraph_tokens)
+
+        return {
+            "total_tokens": total_tokens,
+            "num_paragraphs": len(paragraph_tokens),
+            "avg_tokens_per_paragraph": sum(paragraph_tokens) / len(paragraph_tokens),
+            "max_paragraph_tokens": max(paragraph_tokens),
+            "min_paragraph_tokens": min(paragraph_tokens),
+            "fits_in_context": total_tokens < self.model_spec.context_window,
+            "context_usage": total_tokens / self.model_spec.context_window
+        }
+
+# Example usage
+analyzer = ContextAnalyzer("claude-2")
+
+# Sample long text (simulate a book chapter)
+sample_text = """
+Chapter 1: Introduction to Quantum Computing
+
+Quantum computing represents a fundamental shift in how we process information...
+""" * 1000  # Repeat to create long text
+
+# Analyze
+analysis = analyzer.analyze_document(sample_text)
+print("Document Analysis:")
+print(f"Total tokens: {analysis['total_tokens']:,}")
+print(f"Paragraphs: {analysis['num_paragraphs']}")
+print(f"Fits in context: {analysis['fits_in_context']}")
+print(f"Context usage: {analysis['context_usage']*100:.1f}%")
+
+# Estimate cost
+cost = analyzer.estimate_cost(sample_text, output_tokens=2000)
+print(f"\nCost Estimate:")
+print(f"Input cost: ${cost['input_cost']:.4f}")
+print(f"Output cost: ${cost['output_cost']:.4f}")
+print(f"Total cost: ${cost['total_cost']:.4f}")
+```
+
+## Working with Long Contexts
+
+<Callout type="tip">
+**Best Practices**: Long-context models excel at tasks requiring understanding of entire documents, but require careful prompt engineering and cost management.
+</Callout>
+
+### Long Document Processing
+
+```python
+from typing import List, Dict, Any
+import anthropic
+import openai
+
+class LongContextProcessor:
+    """Process long documents with context-aware strategies"""
+
+    def __init__(
+        self,
+        provider: str = "anthropic",
+        model: str = "claude-2"
+    ):
+        self.provider = provider
+        self.model = model
+
+        if provider == "anthropic":
+            self.client = anthropic.Anthropic()
+        elif provider == "openai":
+            self.client = openai.OpenAI()
+
+    def process_full_document(
+        self,
+        document: str,
+        query: str,
+        max_tokens: int = 4000
+    ) -> str:
+        """
+        Process entire document in one prompt
+
+        Best for:
+        - Documents under context limit
+        - Tasks requiring full context
+        - Summary, Q&A, analysis
+        """
+
+        prompt = f"""Here is a document:
+
+<document>
+{document}
+</document>
+
+Based on the above document, please answer the following question:
+
+{query}
+
+Provide a detailed answer with specific references to the document."""
+
+        if self.provider == "anthropic":
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.content[0].text
+
+        elif self.provider == "openai":
+            response = self.client.chat.completions.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content
+
+    def process_with_streaming(
+        self,
+        document: str,
+        query: str
+    ):
+        """
+        Process with streaming for faster perceived latency
+
+        Useful for:
+        - Better UX with long outputs
+        - Progressive rendering
+        """
+
+        prompt = f"""Document: {document}
+
+Query: {query}
+
+Answer:"""
+
+        if self.provider == "anthropic":
+            with self.client.messages.stream(
+                model=self.model,
+                max_tokens=4000,
+                messages=[{"role": "user", "content": prompt}]
+            ) as stream:
+                for text in stream.text_stream:
+                    yield text
+
+        elif self.provider == "openai":
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                stream=True
+            )
+
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+
+    def multi_query_processing(
+        self,
+        document: str,
+        queries: List[str]
+    ) -> List[str]:
+        """
+        Process multiple queries on same document efficiently
+
+        Key insight: Reuse document context across queries
+        """
+
+        results = []
+
+        for query in queries:
+            # For APIs with prompt caching (like Claude), the document
+            # will be cached after the first request
+            result = self.process_full_document(document, query)
+            results.append(result)
+
+        return results
+
+    def hierarchical_summarization(
+        self,
+        document: str,
+        chunk_size: int = 10000
+    ) -> str:
+        """
+        Summarize very long documents hierarchically
+
+        1. Split into chunks
+        2. Summarize each chunk
+        3. Combine summaries
+        4. Summarize the combined summaries
+        """
+
+        # Split into chunks
+        chunks = self._split_into_chunks(document, chunk_size)
+
+        print(f"Processing {len(chunks)} chunks...")
+
+        # Summarize each chunk
+        chunk_summaries = []
+
+        for i, chunk in enumerate(chunks):
+            print(f"Summarizing chunk {i+1}/{len(chunks)}...")
+
+            summary = self.process_full_document(
+                chunk,
+                "Provide a comprehensive summary of this text section, "
+                "preserving all key points and important details.",
+                max_tokens=500
+            )
+
+            chunk_summaries.append(summary)
+
+        # Combine and summarize
+        combined = "\n\n".join([
+            f"Section {i+1} Summary:\n{summary}"
+            for i, summary in enumerate(chunk_summaries)
+        ])
+
+        print("Creating final summary...")
+
+        final_summary = self.process_full_document(
+            combined,
+            "Synthesize these section summaries into a coherent, "
+            "comprehensive summary of the entire document.",
+            max_tokens=1000
+        )
+
+        return final_summary
+
+    def _split_into_chunks(
+        self,
+        text: str,
+        chunk_size: int
+    ) -> List[str]:
+        """Split text into token-aware chunks"""
+
+        encoding = tiktoken.encoding_for_model("gpt-4")
+        tokens = encoding.encode(text)
+
+        chunks = []
+        for i in range(0, len(tokens), chunk_size):
+            chunk_tokens = tokens[i:i + chunk_size]
+            chunk_text = encoding.decode(chunk_tokens)
+            chunks.append(chunk_text)
+
+        return chunks
+
+# Example usage
+processor = LongContextProcessor(provider="anthropic", model="claude-2")
+
+# Sample long document
+book_chapter = """
+[Long book chapter text here...]
+""" * 100
+
+# Single query
+print("Processing single query...")
+answer = processor.process_full_document(
+    book_chapter,
+    "What are the main themes discussed in this chapter?"
+)
+print(f"Answer: {answer[:200]}...")
+
+# Multiple queries (benefits from caching)
+print("\nProcessing multiple queries...")
+queries = [
+    "What are the key concepts?",
+    "Who are the main characters or subjects?",
+    "What conclusions are drawn?"
+]
+
+answers = processor.multi_query_processing(book_chapter, queries)
+
+for query, answer in zip(queries, answers):
+    print(f"\nQ: {query}")
+    print(f"A: {answer[:150]}...")
+
+# Hierarchical summarization for very long docs
+print("\nHierarchical summarization...")
+summary = processor.hierarchical_summarization(book_chapter)
+print(f"Summary: {summary[:200]}...")
+```
+
+## Advanced Long-Context Techniques
+
+<Callout type="info">
+**Context Compression**: For extremely long documents or when cost is a concern, use intelligent compression and retrieval strategies.
+</Callout>
+
+### Smart Chunking and Retrieval
+
+```python
+from sentence_transformers import SentenceTransformer
+import numpy as np
+from typing import List, Tuple
+
+class SmartChunker:
+    """Intelligent chunking for long documents"""
+
+    def __init__(
+        self,
+        chunk_size: int = 1000,
+        overlap: int = 200,
+        use_semantic: bool = True
+    ):
+        self.chunk_size = chunk_size
+        self.overlap = overlap
+        self.use_semantic = use_semantic
+
+        if use_semantic:
+            self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+
+    def chunk_by_tokens(self, text: str) -> List[str]:
+        """Simple token-based chunking with overlap"""
+
+        encoding = tiktoken.encoding_for_model("gpt-4")
+        tokens = encoding.encode(text)
+
+        chunks = []
+        start = 0
+
+        while start < len(tokens):
+            end = min(start + self.chunk_size, len(tokens))
+            chunk_tokens = tokens[start:end]
+            chunk_text = encoding.decode(chunk_tokens)
+            chunks.append(chunk_text)
+
+            start += self.chunk_size - self.overlap
+
+        return chunks
+
+    def chunk_by_semantic(self, text: str) -> List[str]:
+        """
+        Semantic chunking: split at natural boundaries
+
+        Better for:
+        - Maintaining context coherence
+        - Question answering
+        - Retrieval accuracy
+        """
+
+        # Split into sentences
+        sentences = text.split('. ')
+
+        chunks = []
+        current_chunk = []
+        current_length = 0
+
+        encoding = tiktoken.encoding_for_model("gpt-4")
+
+        for sentence in sentences:
+            sentence_tokens = len(encoding.encode(sentence))
+
+            if current_length + sentence_tokens > self.chunk_size and current_chunk:
+                # Start new chunk
+                chunks.append('. '.join(current_chunk) + '.')
+                current_chunk = [sentence]
+                current_length = sentence_tokens
+            else:
+                current_chunk.append(sentence)
+                current_length += sentence_tokens
+
+        # Add final chunk
+        if current_chunk:
+            chunks.append('. '.join(current_chunk) + '.')
+
+        return chunks
+
+    def chunk_with_embeddings(
+        self,
+        text: str
+    ) -> List[Dict[str, Any]]:
+        """Chunk and compute embeddings for retrieval"""
+
+        chunks = (
+            self.chunk_by_semantic(text)
+            if self.use_semantic
+            else self.chunk_by_tokens(text)
+        )
+
+        # Compute embeddings
+        embeddings = self.embedder.encode(chunks)
+
+        return [
+            {
+                "text": chunk,
+                "embedding": emb,
+                "index": i
+            }
+            for i, (chunk, emb) in enumerate(zip(chunks, embeddings))
+        ]
+
+class HybridLongContextProcessor:
+    """
+    Hybrid approach: Use retrieval for very long docs,
+    full context for relevant sections
+    """
+
+    def __init__(self, model: str = "claude-2"):
+        self.chunker = SmartChunker(chunk_size=1000, overlap=100)
+        self.processor = LongContextProcessor(model=model)
+        self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+
+    def process_with_retrieval(
+        self,
+        document: str,
+        query: str,
+        top_k: int = 5,
+        use_full_context: bool = False
+    ) -> str:
+        """
+        Process query using retrieval + long context
+
+        Steps:
+        1. Chunk document
+        2. Retrieve most relevant chunks
+        3. Use full context model on relevant chunks
+        """
+
+        # Check if document fits in context
+        analyzer = ContextAnalyzer()
+        doc_tokens = analyzer.count_tokens(document)
+
+        if doc_tokens < 100_000 or use_full_context:
+            # Use full document
+            print("Using full document context...")
+            return self.processor.process_full_document(document, query)
+
+        # Chunk and retrieve
+        print(f"Document too long ({doc_tokens:,} tokens), using retrieval...")
+
+        chunk_data = self.chunker.chunk_with_embeddings(document)
+
+        # Embed query
+        query_embedding = self.embedder.encode([query])[0]
+
+        # Find most relevant chunks
+        similarities = [
+            np.dot(query_embedding, chunk["embedding"])
+            for chunk in chunk_data
+        ]
+
+        # Get top-k chunks
+        top_indices = np.argsort(similarities)[-top_k:][::-1]
+
+        relevant_chunks = [
+            chunk_data[i]["text"] for i in top_indices
+        ]
+
+        # Combine relevant chunks
+        context = "\n\n".join([
+            f"[Relevant Section {i+1}]\n{chunk}"
+            for i, chunk in enumerate(relevant_chunks)
+        ])
+
+        # Process with context
+        prompt = f"""Here are the most relevant sections from a larger document:
+
+{context}
+
+Based on these sections, please answer:
+
+{query}"""
+
+        return self.processor.process_full_document(
+            context,
+            query,
+            max_tokens=2000
+        )
+
+# Example usage
+hybrid = HybridLongContextProcessor()
+
+# Very long document
+very_long_doc = """
+[Entire book or large codebase...]
+""" * 1000
+
+# Query
+query = "What are the key algorithms described?"
+
+# Process (automatically chooses retrieval or full context)
+answer = hybrid.process_with_retrieval(
+    very_long_doc,
+    query,
+    top_k=5
+)
+
+print(f"Answer: {answer}")
+```
+
+## Prompt Caching for Long Contexts
+
+<Callout type="tip">
+**Prompt Caching**: Claude and some providers cache long prompts, dramatically reducing cost and latency for repeated queries on the same document.
+</Callout>
+
+```python
+class CachedLongContextProcessor:
+    """
+    Leverage prompt caching for cost-effective long context processing
+
+    Claude's prompt caching:
+    - Caches prefixes over 1024 tokens
+    - 90% cost reduction for cached tokens
+    - 10x latency reduction
+    """
+
+    def __init__(self):
+        self.client = anthropic.Anthropic()
+
+    def process_with_caching(
+        self,
+        document: str,
+        queries: List[str],
+        system_prompt: str = "You are a helpful assistant."
+    ) -> List[str]:
+        """
+        Process multiple queries with automatic caching
+
+        The document will be cached after the first request,
+        subsequent queries will be much faster and cheaper.
+        """
+
+        results = []
+
+        for i, query in enumerate(queries):
+            print(f"\nProcessing query {i+1}/{len(queries)}...")
+
+            # Structure prompt to enable caching
+            # Put static content (document) before dynamic content (query)
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"Here is a document to reference:\n\n{document}",
+                            "cache_control": {"type": "ephemeral"}  # Mark for caching
+                        },
+                        {
+                            "type": "text",
+                            "text": f"\n\nQuestion: {query}"
+                        }
+                    ]
+                }
+            ]
+
+            response = self.client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=2000,
+                system=[
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}
+                    }
+                ],
+                messages=messages
+            )
+
+            # Check cache usage
+            usage = response.usage
+
+            if hasattr(usage, 'cache_creation_input_tokens'):
+                print(f"Cache creation: {usage.cache_creation_input_tokens} tokens")
+
+            if hasattr(usage, 'cache_read_input_tokens'):
+                print(f"Cache read: {usage.cache_read_input_tokens} tokens")
+
+            results.append(response.content[0].text)
+
+        return results
+
+    def estimate_caching_savings(
+        self,
+        document_tokens: int,
+        num_queries: int,
+        output_tokens_per_query: int = 500
+    ) -> Dict[str, float]:
+        """Estimate cost savings from caching"""
+
+        # Without caching
+        cost_per_input_token = 0.015 / 1000  # Claude 3 Opus
+        cost_per_output_token = 0.075 / 1000
+
+        uncached_input_cost = (
+            document_tokens * num_queries * cost_per_input_token
+        )
+
+        # With caching (90% discount on cached tokens)
+        cached_input_cost = (
+            document_tokens * cost_per_input_token +  # First query (full price)
+            document_tokens * (num_queries - 1) * cost_per_input_token * 0.1  # Cached
+        )
+
+        output_cost = (
+            output_tokens_per_query * num_queries * cost_per_output_token
+        )
+
+        return {
+            "uncached_total": uncached_input_cost + output_cost,
+            "cached_total": cached_input_cost + output_cost,
+            "savings": uncached_input_cost - cached_input_cost,
+            "savings_percent": (
+                (uncached_input_cost - cached_input_cost) / uncached_input_cost * 100
+            )
+        }
+
+# Example usage
+cached_processor = CachedLongContextProcessor()
+
+# Long document
+document = "[Long document text...]" * 500
+
+# Multiple queries (second and later queries will use cache)
+queries = [
+    "Summarize the main points",
+    "What are the key findings?",
+    "List all mentioned technologies",
+    "What conclusions are drawn?"
+]
+
+# Process with caching
+answers = cached_processor.process_with_caching(document, queries)
+
+# Estimate savings
+analyzer = ContextAnalyzer()
+doc_tokens = analyzer.count_tokens(document)
+
+savings = cached_processor.estimate_caching_savings(
+    document_tokens=doc_tokens,
+    num_queries=len(queries)
+)
+
+print("\nCaching Savings:")
+print(f"Without caching: ${savings['uncached_total']:.4f}")
+print(f"With caching: ${savings['cached_total']:.4f}")
+print(f"Savings: ${savings['savings']:.4f} ({savings['savings_percent']:.1f}%)")
+```
+
+## Performance Optimization
+
+```python
+class LongContextOptimizer:
+    """Optimize long-context processing"""
+
+    @staticmethod
+    def compress_document(
+        document: str,
+        target_tokens: int,
+        method: str = "extractive"
+    ) -> str:
+        """
+        Compress document to fit in smaller context
+
+        Methods:
+        - extractive: Extract most important sentences
+        - abstractive: Use LLM to summarize
+        - hybrid: Combine both
+        """
+
+        if method == "extractive":
+            return LongContextOptimizer._extractive_compression(
+                document,
+                target_tokens
+            )
+        elif method == "abstractive":
+            return LongContextOptimizer._abstractive_compression(
+                document,
+                target_tokens
+            )
+        else:
+            # Hybrid: extract then summarize
+            extracted = LongContextOptimizer._extractive_compression(
+                document,
+                target_tokens * 2
+            )
+            return LongContextOptimizer._abstractive_compression(
+                extracted,
+                target_tokens
+            )
+
+    @staticmethod
+    def _extractive_compression(text: str, target_tokens: int) -> str:
+        """Extract most important sentences"""
+
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        import numpy as np
+
+        # Split into sentences
+        sentences = text.split('. ')
+
+        if len(sentences) <= 10:
+            return text
+
+        # Compute TF-IDF
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(sentences)
+
+        # Score sentences by average TF-IDF
+        sentence_scores = np.asarray(tfidf_matrix.mean(axis=1)).flatten()
+
+        # Select top sentences
+        encoding = tiktoken.encoding_for_model("gpt-4")
+        selected = []
+        current_tokens = 0
+
+        # Sort by score
+        sorted_indices = np.argsort(sentence_scores)[::-1]
+
+        for idx in sorted_indices:
+            sentence = sentences[idx]
+            tokens = len(encoding.encode(sentence))
+
+            if current_tokens + tokens <= target_tokens:
+                selected.append((idx, sentence))
+                current_tokens += tokens
+            else:
+                break
+
+        # Sort back by original order
+        selected.sort(key=lambda x: x[0])
+
+        return '. '.join([s[1] for s in selected]) + '.'
+
+    @staticmethod
+    def _abstractive_compression(text: str, target_tokens: int) -> str:
+        """Use LLM to summarize"""
+
+        processor = LongContextProcessor()
+
+        return processor.process_full_document(
+            text,
+            f"Summarize this text in approximately {target_tokens} tokens, "
+            "preserving all key information.",
+            max_tokens=target_tokens
+        )
+
+# Example
+optimizer = LongContextOptimizer()
+
+long_text = "[Very long text...]" * 1000
+
+# Compress to 5000 tokens
+compressed = optimizer.compress_document(
+    long_text,
+    target_tokens=5000,
+    method="extractive"
+)
+
+print(f"Original: {len(long_text)} chars")
+print(f"Compressed: {len(compressed)} chars")
+```
+
+## Quiz
+
+Test your understanding of long-context models:
+
+<Quiz questions={[
+  {
+    question: "What is the main advantage of using prompt caching with long-context models?",
+    options: [
+      "Improves model quality",
+      "Reduces cost and latency for repeated queries on the same document",
+      "Increases context window size",
+      "Enables streaming"
+    ],
+    correctAnswer: 1,
+    explanation: "Prompt caching stores the processed state of long prefixes (like documents), reducing cost by ~90% and latency by ~10x for subsequent queries that reuse the same prefix, since the model doesn't need to reprocess the cached content."
+  },
+  {
+    question: "When should you use hierarchical summarization instead of processing a full document?",
+    options: [
+      "Always, it's always better",
+      "When the document exceeds the model's context window",
+      "When you want better quality",
+      "When using GPT-4"
+    ],
+    correctAnswer: 1,
+    explanation: "Hierarchical summarization is necessary when documents exceed the context window, or when you want to balance quality and cost. It chunks the document, summarizes each chunk, then summarizes the summaries."
+  },
+  {
+    question: "What is semantic chunking and why is it better than simple token-based chunking?",
+    options: [
+      "It's faster to compute",
+      "It uses fewer tokens",
+      "It splits at natural boundaries (sentences, paragraphs) maintaining coherence",
+      "It works with all models"
+    ],
+    correctAnswer: 2,
+    explanation: "Semantic chunking splits text at natural boundaries (sentences, paragraphs, sections) rather than arbitrary token counts, preserving context coherence within chunks and improving retrieval accuracy and answer quality."
+  },
+  {
+    question: "For a 500k token document with Claude 2 (200k context), what's the best approach?",
+    options: [
+      "Process the full document anyway",
+      "Use retrieval to find relevant chunks, then process with full context",
+      "Give up, it's impossible",
+      "Only read the first 200k tokens"
+    ],
+    correctAnswer: 1,
+    explanation: "For documents exceeding the context window, the hybrid approach works best: chunk the document, use retrieval to find the most relevant sections for the query, then use the full context window to process those relevant chunks together."
+  }
+]} />
+
+## Summary
+
+In this lesson, you learned:
+
+- **Long-context capabilities**: Understanding 100k-1M token context windows
+- **Processing strategies**: Full document, chunking, and hierarchical approaches
+- **Smart retrieval**: Combining retrieval with long-context processing
+- **Prompt caching**: Leveraging caching for cost and latency optimization
+- **Compression techniques**: Extractive and abstractive document compression
+
+Long-context models enable entirely new applications, from analyzing entire codebases to processing books and research papers in a single prompt.

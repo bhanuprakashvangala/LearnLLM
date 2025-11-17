@@ -1,0 +1,977 @@
+---
+title: "Multimodal Models: Vision + Language"
+description: "Work with multimodal models including CLIP, BLIP, GPT-4V, and implement vision-language applications"
+order: 78
+duration: 30
+difficulty: "advanced"
+tags: ["multimodal", "vision", "CLIP", "GPT-4V", "image-understanding"]
+objectives:
+  - Understand multimodal model architectures
+  - Work with vision-language models (CLIP, BLIP, GPT-4V)
+  - Implement image understanding applications
+  - Build multimodal retrieval systems
+---
+
+# Multimodal Models: Vision + Language
+
+Master multimodal AI by working with models that understand both images and text, enabling powerful vision-language applications.
+
+<Callout type="info">
+**What You'll Learn**: Multimodal models combine vision and language understanding, enabling tasks like image captioning, visual question answering, and visual search. We'll explore CLIP, BLIP, GPT-4V, and build practical applications.
+</Callout>
+
+## Understanding Multimodal Models
+
+### Architecture Overview
+
+```python
+import torch
+import torch.nn as nn
+from typing import Tuple, Optional, List, Dict
+from PIL import Image
+import numpy as np
+
+class MultimodalConcepts:
+    """Demonstrate core multimodal concepts"""
+
+    @staticmethod
+    def explain_clip_architecture():
+        """
+        CLIP (Contrastive Language-Image Pre-training)
+
+        Architecture:
+        1. Image Encoder (Vision Transformer or ResNet)
+        2. Text Encoder (Transformer)
+        3. Shared embedding space
+        4. Contrastive learning objective
+        """
+
+        explanation = """
+        CLIP Architecture:
+
+        Images → Image Encoder → Image Embeddings (512-d)
+                                       ↓
+                                 Cosine Similarity
+                                       ↑
+        Text → Text Encoder → Text Embeddings (512-d)
+
+        Training:
+        - Match correct image-text pairs
+        - Separate incorrect pairs
+        - Contrastive loss on batch of pairs
+
+        Result:
+        - Images and text in same embedding space
+        - Can find images for text queries
+        - Can find text descriptions for images
+        - Zero-shot classification
+        """
+
+        return explanation
+
+    @staticmethod
+    def explain_blip_architecture():
+        """
+        BLIP (Bootstrapping Language-Image Pre-training)
+
+        Key features:
+        1. Unified vision-language understanding and generation
+        2. Captioning, VQA, retrieval
+        3. Synthetic caption generation
+        """
+
+        explanation = """
+        BLIP Architecture:
+
+        Image → Vision Transformer → Visual Features
+                                          ↓
+                        ┌─────────────────┴─────────────────┐
+                        ↓                                   ↓
+                Text Encoder                        Text Decoder
+                (Understanding)                     (Generation)
+                        ↓                                   ↓
+                Image-Text Matching              Caption Generation
+                Retrieval                        VQA
+
+        Capabilities:
+        - Image captioning
+        - Visual question answering
+        - Image-text retrieval
+        - Zero-shot classification
+        """
+
+        return explanation
+
+    @staticmethod
+    def compare_models():
+        """Compare different multimodal models"""
+
+        models = {
+            "CLIP": {
+                "strengths": ["Zero-shot classification", "Image-text retrieval", "Fast"],
+                "limitations": ["No text generation", "No visual reasoning"],
+                "use_cases": ["Image search", "Classification", "Embedding"]
+            },
+            "BLIP": {
+                "strengths": ["Captioning", "VQA", "Unified architecture"],
+                "limitations": ["Slower than CLIP", "Limited reasoning"],
+                "use_cases": ["Image captioning", "VQA", "Retrieval"]
+            },
+            "GPT-4V": {
+                "strengths": ["Advanced reasoning", "Detailed understanding", "Multi-image"],
+                "limitations": ["Expensive", "API-only", "Rate limits"],
+                "use_cases": ["Complex analysis", "OCR", "Document understanding"]
+            },
+            "LLaVA": {
+                "strengths": ["Open-source", "Good reasoning", "Customizable"],
+                "limitations": ["Needs good GPU", "Not as capable as GPT-4V"],
+                "use_cases": ["Research", "Custom deployments", "Education"]
+            }
+        }
+
+        return models
+
+# Display information
+concepts = MultimodalConcepts()
+print(concepts.explain_clip_architecture())
+print("\n" + "="*60 + "\n")
+print(concepts.explain_blip_architecture())
+print("\n" + "="*60 + "\n")
+
+comparison = concepts.compare_models()
+for model, info in comparison.items():
+    print(f"\n{model}:")
+    print(f"  Strengths: {', '.join(info['strengths'])}")
+    print(f"  Use cases: {', '.join(info['use_cases'])}")
+```
+
+## Working with CLIP
+
+<Callout type="tip">
+**CLIP**: OpenAI's CLIP is the foundation of many multimodal applications, enabling zero-shot image classification and powerful image-text retrieval.
+</Callout>
+
+### CLIP Image-Text Retrieval
+
+```python
+from transformers import CLIPProcessor, CLIPModel
+import torch
+from PIL import Image
+import requests
+from io import BytesIO
+
+class CLIPImageSearch:
+    """Image search using CLIP embeddings"""
+
+    def __init__(self, model_name: str = "openai/clip-vit-base-patch32"):
+        """Initialize CLIP model"""
+
+        self.model = CLIPModel.from_pretrained(model_name)
+        self.processor = CLIPProcessor.from_pretrained(model_name)
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model.to(self.device)
+
+    def encode_images(self, images: List[Image.Image]) -> torch.Tensor:
+        """Encode images to embeddings"""
+
+        inputs = self.processor(
+            images=images,
+            return_tensors="pt",
+            padding=True
+        ).to(self.device)
+
+        with torch.no_grad():
+            image_features = self.model.get_image_features(**inputs)
+
+        # Normalize embeddings
+        image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+
+        return image_features
+
+    def encode_text(self, texts: List[str]) -> torch.Tensor:
+        """Encode text to embeddings"""
+
+        inputs = self.processor(
+            text=texts,
+            return_tensors="pt",
+            padding=True
+        ).to(self.device)
+
+        with torch.no_grad():
+            text_features = self.model.get_text_features(**inputs)
+
+        # Normalize embeddings
+        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+
+        return text_features
+
+    def search_images(
+        self,
+        query: str,
+        images: List[Image.Image],
+        top_k: int = 5
+    ) -> List[Tuple[int, float]]:
+        """
+        Search images using text query
+
+        Args:
+            query: Text search query
+            images: List of PIL images
+            top_k: Number of results to return
+
+        Returns:
+            List of (image_index, similarity_score) tuples
+        """
+
+        # Encode query
+        text_features = self.encode_text([query])
+
+        # Encode images
+        image_features = self.encode_images(images)
+
+        # Calculate similarity
+        similarity = (text_features @ image_features.T).squeeze(0)
+
+        # Get top-k
+        top_indices = similarity.argsort(descending=True)[:top_k]
+
+        results = [
+            (idx.item(), similarity[idx].item())
+            for idx in top_indices
+        ]
+
+        return results
+
+    def zero_shot_classification(
+        self,
+        image: Image.Image,
+        labels: List[str]
+    ) -> Dict[str, float]:
+        """
+        Zero-shot image classification
+
+        Args:
+            image: PIL image
+            labels: List of potential labels
+
+        Returns:
+            Dictionary of label -> probability
+        """
+
+        # Create prompts
+        prompts = [f"a photo of a {label}" for label in labels]
+
+        # Encode
+        image_features = self.encode_images([image])
+        text_features = self.encode_text(prompts)
+
+        # Calculate similarity
+        similarity = (image_features @ text_features.T).squeeze(0)
+
+        # Softmax to get probabilities
+        probs = torch.softmax(similarity, dim=0)
+
+        return {
+            label: prob.item()
+            for label, prob in zip(labels, probs)
+        }
+
+    def find_similar_images(
+        self,
+        query_image: Image.Image,
+        candidate_images: List[Image.Image],
+        top_k: int = 5
+    ) -> List[Tuple[int, float]]:
+        """Find similar images"""
+
+        # Encode all images
+        all_images = [query_image] + candidate_images
+
+        image_features = self.encode_images(all_images)
+
+        # Query is first image
+        query_features = image_features[0:1]
+        candidate_features = image_features[1:]
+
+        # Calculate similarity
+        similarity = (query_features @ candidate_features.T).squeeze(0)
+
+        # Get top-k
+        top_indices = similarity.argsort(descending=True)[:top_k]
+
+        results = [
+            (idx.item(), similarity[idx].item())
+            for idx in top_indices
+        ]
+
+        return results
+
+# Example usage
+def demonstrate_clip():
+    """Demonstrate CLIP capabilities"""
+
+    clip = CLIPImageSearch()
+
+    # Load sample images (replace with real images)
+    # For demonstration, we'll create dummy images
+    images = [Image.new('RGB', (224, 224), color=(i*30, i*30, i*30)) for i in range(10)]
+
+    # Text search
+    print("Text-to-Image Search:")
+    query = "a photo of a cat"
+    results = clip.search_images(query, images, top_k=3)
+
+    for idx, score in results:
+        print(f"  Image {idx}: {score:.4f}")
+
+    # Zero-shot classification
+    print("\nZero-shot Classification:")
+    test_image = images[0]
+    labels = ["cat", "dog", "car", "tree", "person"]
+
+    predictions = clip.zero_shot_classification(test_image, labels)
+
+    for label, prob in sorted(predictions.items(), key=lambda x: x[1], reverse=True):
+        print(f"  {label}: {prob*100:.2f}%")
+
+    # Similar image search
+    print("\nSimilar Image Search:")
+    query_image = images[0]
+    similar = clip.find_similar_images(query_image, images[1:], top_k=3)
+
+    for idx, score in similar:
+        print(f"  Image {idx+1}: {score:.4f}")
+
+demonstrate_clip()
+```
+
+## BLIP for Image Captioning and VQA
+
+<Callout type="info">
+**BLIP**: Bootstrapping Language-Image Pre-training provides both understanding (retrieval) and generation (captioning, VQA) capabilities.
+</Callout>
+
+```python
+from transformers import BlipProcessor, BlipForConditionalGeneration, BlipForQuestionAnswering
+
+class BLIPMultimodal:
+    """BLIP for captioning and visual question answering"""
+
+    def __init__(self):
+        # Model for captioning
+        self.caption_processor = BlipProcessor.from_pretrained(
+            "Salesforce/blip-image-captioning-base"
+        )
+        self.caption_model = BlipForConditionalGeneration.from_pretrained(
+            "Salesforce/blip-image-captioning-base"
+        )
+
+        # Model for VQA
+        self.vqa_processor = BlipProcessor.from_pretrained(
+            "Salesforce/blip-vqa-base"
+        )
+        self.vqa_model = BlipForQuestionAnswering.from_pretrained(
+            "Salesforce/blip-vqa-base"
+        )
+
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.caption_model.to(self.device)
+        self.vqa_model.to(self.device)
+
+    def generate_caption(
+        self,
+        image: Image.Image,
+        max_length: int = 50,
+        num_beams: int = 5
+    ) -> str:
+        """
+        Generate image caption
+
+        Args:
+            image: PIL image
+            max_length: Maximum caption length
+            num_beams: Beam search width
+
+        Returns:
+            Generated caption
+        """
+
+        inputs = self.caption_processor(image, return_tensors="pt").to(self.device)
+
+        outputs = self.caption_model.generate(
+            **inputs,
+            max_length=max_length,
+            num_beams=num_beams
+        )
+
+        caption = self.caption_processor.decode(outputs[0], skip_special_tokens=True)
+
+        return caption
+
+    def generate_detailed_caption(
+        self,
+        image: Image.Image,
+        prompt: str = "a detailed description of"
+    ) -> str:
+        """Generate detailed caption with prompt"""
+
+        inputs = self.caption_processor(
+            image,
+            text=prompt,
+            return_tensors="pt"
+        ).to(self.device)
+
+        outputs = self.caption_model.generate(
+            **inputs,
+            max_length=100,
+            num_beams=5
+        )
+
+        caption = self.caption_processor.decode(outputs[0], skip_special_tokens=True)
+
+        return caption
+
+    def answer_question(
+        self,
+        image: Image.Image,
+        question: str
+    ) -> str:
+        """
+        Visual Question Answering
+
+        Args:
+            image: PIL image
+            question: Question about the image
+
+        Returns:
+            Answer to the question
+        """
+
+        inputs = self.vqa_processor(
+            image,
+            question,
+            return_tensors="pt"
+        ).to(self.device)
+
+        outputs = self.vqa_model.generate(**inputs, max_length=50)
+
+        answer = self.vqa_processor.decode(outputs[0], skip_special_tokens=True)
+
+        return answer
+
+    def batch_caption(
+        self,
+        images: List[Image.Image],
+        batch_size: int = 4
+    ) -> List[str]:
+        """Generate captions for multiple images efficiently"""
+
+        captions = []
+
+        for i in range(0, len(images), batch_size):
+            batch = images[i:i + batch_size]
+
+            inputs = self.caption_processor(
+                images=batch,
+                return_tensors="pt",
+                padding=True
+            ).to(self.device)
+
+            outputs = self.caption_model.generate(
+                **inputs,
+                max_length=50,
+                num_beams=3
+            )
+
+            batch_captions = self.caption_processor.batch_decode(
+                outputs,
+                skip_special_tokens=True
+            )
+
+            captions.extend(batch_captions)
+
+        return captions
+
+    def interactive_vqa(
+        self,
+        image: Image.Image,
+        questions: List[str]
+    ) -> Dict[str, str]:
+        """Answer multiple questions about an image"""
+
+        answers = {}
+
+        for question in questions:
+            answer = self.answer_question(image, question)
+            answers[question] = answer
+
+        return answers
+
+# Example usage
+def demonstrate_blip():
+    """Demonstrate BLIP capabilities"""
+
+    blip = BLIPMultimodal()
+
+    # Create sample image (replace with real image)
+    image = Image.new('RGB', (224, 224), color=(100, 150, 200))
+
+    # Generate caption
+    print("Image Captioning:")
+    caption = blip.generate_caption(image)
+    print(f"  Caption: {caption}")
+
+    # Detailed caption
+    detailed = blip.generate_detailed_caption(
+        image,
+        prompt="a detailed description of the scene including"
+    )
+    print(f"  Detailed: {detailed}")
+
+    # Visual Question Answering
+    print("\nVisual Question Answering:")
+    questions = [
+        "What is in the image?",
+        "What is the main color?",
+        "How many objects are there?"
+    ]
+
+    answers = blip.interactive_vqa(image, questions)
+
+    for question, answer in answers.items():
+        print(f"  Q: {question}")
+        print(f"  A: {answer}")
+
+demonstrate_blip()
+```
+
+## GPT-4 Vision Integration
+
+<Callout type="tip">
+**GPT-4V**: OpenAI's GPT-4 with vision offers the most advanced multimodal understanding, capable of complex reasoning about images.
+</Callout>
+
+```python
+import openai
+import base64
+from pathlib import Path
+
+class GPT4VisionAPI:
+    """Work with GPT-4 Vision API"""
+
+    def __init__(self, api_key: Optional[str] = None):
+        self.client = openai.OpenAI(api_key=api_key)
+
+    def encode_image(self, image_path: str) -> str:
+        """Encode image to base64"""
+
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+
+    def analyze_image(
+        self,
+        image_path: str,
+        prompt: str = "What's in this image?",
+        detail: str = "auto"
+    ) -> str:
+        """
+        Analyze image with GPT-4V
+
+        Args:
+            image_path: Path to image file
+            prompt: Question or instruction
+            detail: 'low', 'high', or 'auto' (affects cost and detail)
+
+        Returns:
+            Model response
+        """
+
+        base64_image = self.encode_image(image_path)
+
+        response = self.client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}",
+                                "detail": detail
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=500
+        )
+
+        return response.choices[0].message.content
+
+    def analyze_multiple_images(
+        self,
+        image_paths: List[str],
+        prompt: str
+    ) -> str:
+        """Analyze multiple images together"""
+
+        # Build content with multiple images
+        content = [{"type": "text", "text": prompt}]
+
+        for path in image_paths:
+            base64_image = self.encode_image(path)
+            content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{base64_image}"
+                }
+            })
+
+        response = self.client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[{"role": "user", "content": content}],
+            max_tokens=1000
+        )
+
+        return response.choices[0].message.content
+
+    def ocr_document(self, image_path: str) -> str:
+        """Extract text from document image"""
+
+        return self.analyze_image(
+            image_path,
+            prompt="Extract all text from this document. "
+                   "Maintain the structure and formatting.",
+            detail="high"
+        )
+
+    def describe_for_accessibility(self, image_path: str) -> str:
+        """Generate accessibility description"""
+
+        return self.analyze_image(
+            image_path,
+            prompt="Provide a detailed description of this image for "
+                   "visually impaired users. Include all relevant details "
+                   "about objects, people, text, and context.",
+            detail="high"
+        )
+
+    def analyze_chart(self, image_path: str) -> str:
+        """Analyze charts and graphs"""
+
+        return self.analyze_image(
+            image_path,
+            prompt="Analyze this chart or graph. Describe the data, "
+                   "trends, key insights, and any notable patterns. "
+                   "Provide specific numbers when visible.",
+            detail="high"
+        )
+
+    def compare_images(
+        self,
+        image_path1: str,
+        image_path2: str,
+        aspect: str = "general"
+    ) -> str:
+        """Compare two images"""
+
+        return self.analyze_multiple_images(
+            [image_path1, image_path2],
+            f"Compare these two images focusing on {aspect}. "
+            "What are the similarities and differences?"
+        )
+
+# Example usage (requires actual images and API key)
+def demonstrate_gpt4v():
+    """Demonstrate GPT-4V capabilities"""
+
+    # Initialize (set your API key)
+    gpt4v = GPT4VisionAPI()
+
+    # Note: Replace with actual image paths
+    # image_path = "path/to/image.jpg"
+
+    # Basic analysis
+    # description = gpt4v.analyze_image(
+    #     image_path,
+    #     prompt="Describe this image in detail"
+    # )
+    # print(f"Description: {description}")
+
+    # OCR
+    # text = gpt4v.ocr_document(image_path)
+    # print(f"Extracted text: {text}")
+
+    # Chart analysis
+    # analysis = gpt4v.analyze_chart(image_path)
+    # print(f"Chart analysis: {analysis}")
+
+    print("GPT-4V demonstration (requires API key and images)")
+
+demonstrate_gpt4v()
+```
+
+## Building a Multimodal Application
+
+```python
+class MultimodalImageGallery:
+    """
+    Complete multimodal image gallery with:
+    - Image search (CLIP)
+    - Auto-captioning (BLIP)
+    - Advanced analysis (GPT-4V)
+    """
+
+    def __init__(self):
+        self.clip = CLIPImageSearch()
+        self.blip = BLIPMultimodal()
+        self.gpt4v = GPT4VisionAPI()
+
+        # Image database
+        self.images: List[Dict] = []
+
+    def add_image(
+        self,
+        image: Image.Image,
+        metadata: Optional[Dict] = None
+    ):
+        """Add image to gallery with automatic processing"""
+
+        # Generate caption
+        caption = self.blip.generate_caption(image)
+
+        # Generate embeddings
+        embedding = self.clip.encode_images([image])[0]
+
+        # Store
+        image_data = {
+            "image": image,
+            "caption": caption,
+            "embedding": embedding,
+            "metadata": metadata or {}
+        }
+
+        self.images.append(image_data)
+
+        return len(self.images) - 1  # Return index
+
+    def search(
+        self,
+        query: str,
+        top_k: int = 5,
+        use_captions: bool = True
+    ) -> List[Tuple[int, float, str]]:
+        """
+        Search images by text
+
+        Args:
+            query: Search query
+            top_k: Number of results
+            use_captions: Also search in generated captions
+
+        Returns:
+            List of (index, score, caption) tuples
+        """
+
+        if not self.images:
+            return []
+
+        # Encode query
+        query_embedding = self.clip.encode_text([query])[0]
+
+        # Calculate similarities
+        results = []
+
+        for idx, img_data in enumerate(self.images):
+            # Image-text similarity
+            img_similarity = (query_embedding @ img_data["embedding"]).item()
+
+            # Caption-text similarity (if enabled)
+            caption_score = 0.0
+            if use_captions:
+                caption_embedding = self.clip.encode_text([img_data["caption"]])[0]
+                caption_score = (query_embedding @ caption_embedding).item()
+
+            # Combined score
+            combined_score = max(img_similarity, caption_score)
+
+            results.append((idx, combined_score, img_data["caption"]))
+
+        # Sort and return top-k
+        results.sort(key=lambda x: x[1], reverse=True)
+
+        return results[:top_k]
+
+    def ask_about_image(
+        self,
+        image_idx: int,
+        question: str,
+        use_advanced: bool = False
+    ) -> str:
+        """
+        Ask question about specific image
+
+        Args:
+            image_idx: Image index
+            question: Question
+            use_advanced: Use GPT-4V for complex questions
+
+        Returns:
+            Answer
+        """
+
+        if image_idx >= len(self.images):
+            return "Image not found"
+
+        image_data = self.images[image_idx]
+
+        if use_advanced:
+            # Use GPT-4V (requires saving image temporarily)
+            # For demo, we'll use BLIP
+            return self.blip.answer_question(image_data["image"], question)
+        else:
+            # Use BLIP
+            return self.blip.answer_question(image_data["image"], question)
+
+    def get_recommendations(
+        self,
+        image_idx: int,
+        top_k: int = 3
+    ) -> List[Tuple[int, float]]:
+        """Get similar images"""
+
+        if image_idx >= len(self.images):
+            return []
+
+        query_embedding = self.images[image_idx]["embedding"]
+
+        similarities = []
+
+        for idx, img_data in enumerate(self.images):
+            if idx == image_idx:
+                continue
+
+            similarity = (query_embedding @ img_data["embedding"]).item()
+            similarities.append((idx, similarity))
+
+        similarities.sort(key=lambda x: x[1], reverse=True)
+
+        return similarities[:top_k]
+
+    def get_statistics(self) -> Dict:
+        """Get gallery statistics"""
+
+        return {
+            "total_images": len(self.images),
+            "avg_caption_length": sum(
+                len(img["caption"].split()) for img in self.images
+            ) / max(len(self.images), 1)
+        }
+
+# Example usage
+def demonstrate_gallery():
+    """Demonstrate multimodal gallery"""
+
+    gallery = MultimodalImageGallery()
+
+    # Add images (using dummy images for demo)
+    print("Adding images to gallery...")
+    for i in range(5):
+        dummy_image = Image.new('RGB', (224, 224), color=(i*50, i*40, i*30))
+        gallery.add_image(
+            dummy_image,
+            metadata={"source": f"demo_{i}"}
+        )
+
+    # Search
+    print("\nSearching for 'nature'...")
+    results = gallery.search("nature", top_k=3)
+
+    for idx, score, caption in results:
+        print(f"  Image {idx}: {score:.4f} - {caption}")
+
+    # Ask question
+    print("\nAsking about image 0...")
+    answer = gallery.ask_about_image(0, "What colors are in this image?")
+    print(f"  Answer: {answer}")
+
+    # Get recommendations
+    print("\nRecommendations for image 0:")
+    recommendations = gallery.get_recommendations(0, top_k=2)
+
+    for idx, score in recommendations:
+        print(f"  Image {idx}: {score:.4f}")
+
+    # Statistics
+    stats = gallery.get_statistics()
+    print(f"\nGallery statistics:")
+    print(f"  Total images: {stats['total_images']}")
+    print(f"  Avg caption length: {stats['avg_caption_length']:.1f} words")
+
+demonstrate_gallery()
+```
+
+## Quiz
+
+Test your understanding of multimodal models:
+
+<Quiz questions={[
+  {
+    question: "What is the key innovation that allows CLIP to perform zero-shot classification?",
+    options: [
+      "Larger model size",
+      "Learning a shared embedding space for images and text through contrastive learning",
+      "Pre-training on more data",
+      "Using a larger context window"
+    ],
+    correctAnswer: 1,
+    explanation: "CLIP learns a shared embedding space where images and their text descriptions are close together, while unrelated pairs are far apart. This allows comparing any text description to any image, enabling zero-shot classification without task-specific training."
+  },
+  {
+    question: "When should you use BLIP instead of CLIP?",
+    options: [
+      "For faster inference",
+      "When you need text generation capabilities like captioning or VQA",
+      "For zero-shot classification",
+      "BLIP is always better"
+    ],
+    correctAnswer: 1,
+    explanation: "BLIP includes a text decoder that can generate captions and answers, while CLIP only does retrieval and classification. Use BLIP when you need to generate text descriptions or answers about images."
+  },
+  {
+    question: "What is the 'detail' parameter in GPT-4V used for?",
+    options: [
+      "Output length",
+      "Controls image processing resolution and cost (low, high, auto)",
+      "Number of images to analyze",
+      "Model version"
+    ],
+    correctAnswer: 1,
+    explanation: "The 'detail' parameter controls how GPT-4V processes the image. 'low' uses fewer tokens and is cheaper but less detailed, 'high' provides more detailed analysis at higher cost, and 'auto' lets the model decide based on image size."
+  },
+  {
+    question: "What is the advantage of encoding images and text into the same embedding space?",
+    options: [
+      "Faster training",
+      "Enables semantic search across modalities and zero-shot transfer",
+      "Reduces model size",
+      "Improves image quality"
+    ],
+    correctAnswer: 1,
+    explanation: "A shared embedding space allows measuring semantic similarity between images and text directly through vector operations (cosine similarity), enabling cross-modal search, zero-shot classification, and semantic retrieval without additional training."
+  }
+]} />
+
+## Summary
+
+In this lesson, you learned:
+
+- **Multimodal architectures**: CLIP, BLIP, and GPT-4V designs
+- **CLIP**: Zero-shot classification and image-text retrieval
+- **BLIP**: Image captioning and visual question answering
+- **GPT-4V**: Advanced visual reasoning and document understanding
+- **Applications**: Building multimodal search and analysis systems
+
+Multimodal models are transforming how we work with visual content, enabling powerful applications from image search to document analysis to accessibility tools.

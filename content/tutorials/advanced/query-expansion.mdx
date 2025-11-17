@@ -1,0 +1,782 @@
+---
+title: "Query Expansion Techniques"
+description: "Learn advanced query expansion techniques including multi-query, HyDE, and step-back prompting to improve RAG retrieval quality"
+order: 68
+duration: 20
+difficulty: "advanced"
+tags: ["RAG", "Query Expansion", "HyDE", "Multi-Query", "Retrieval"]
+---
+
+# Query Expansion Techniques
+
+Query expansion improves retrieval by generating multiple variations of the original query, addressing vocabulary mismatch and capturing different aspects of information needs.
+
+<Callout type="info">
+**Query Expansion**: Techniques that transform a single user query into multiple queries or representations to improve retrieval coverage and relevance.
+</Callout>
+
+## The Problem: Query Limitations
+
+Single queries often miss relevant documents:
+
+```python
+# User query
+query = "How do I speed up my Python code?"
+
+# Might miss documents containing:
+# - "Python performance optimization"
+# - "Making Python faster"
+# - "Python profiling and benchmarking"
+# - "Efficient Python programming"
+
+# These are all relevant but use different vocabulary!
+```
+
+## Multi-Query Expansion
+
+Generate multiple query variations using an LLM:
+
+```python
+import openai
+from typing import List, Dict, Any
+import numpy as np
+
+
+class MultiQueryExpander:
+    """
+    Expands a single query into multiple variations.
+
+    Uses LLM to generate semantically similar queries from different perspectives.
+    """
+
+    def __init__(self, model: str = "gpt-3.5-turbo", num_queries: int = 3):
+        """
+        Initialize multi-query expander.
+
+        Args:
+            model: LLM model to use
+            num_queries: Number of query variations to generate
+        """
+        self.model = model
+        self.num_queries = num_queries
+
+    def expand(self, query: str) -> List[str]:
+        """
+        Expand query into multiple variations.
+
+        Args:
+            query: Original query
+
+        Returns:
+            List of query variations (including original)
+        """
+        prompt = f"""You are an AI assistant helping to improve search results.
+
+Generate {self.num_queries} different variations of the following search query.
+Each variation should:
+1. Express the same information need
+2. Use different wording or perspective
+3. Be a complete, standalone query
+
+Original query: {query}
+
+Provide only the query variations, one per line, without numbering."""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You are a search query expansion assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+
+        # Parse variations
+        variations_text = response.choices[0].message.content
+        variations = [q.strip() for q in variations_text.split('\n') if q.strip()]
+
+        # Include original query
+        all_queries = [query] + variations[:self.num_queries]
+
+        print(f"✅ Expanded to {len(all_queries)} queries:")
+        for i, q in enumerate(all_queries, 1):
+            print(f"   {i}. {q}")
+
+        return all_queries
+
+    def expand_and_retrieve(
+        self,
+        query: str,
+        retrieval_fn: callable,
+        top_k_per_query: int = 5,
+        final_top_k: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Expand query and retrieve documents for each variation.
+
+        Args:
+            query: Original query
+            retrieval_fn: Function that takes query and returns results
+            top_k_per_query: Results per query variation
+            final_top_k: Final number of unique results
+
+        Returns:
+            Deduplicated and ranked results
+        """
+        # Expand query
+        queries = self.expand(query)
+
+        # Retrieve for each query
+        all_results = []
+        seen_docs = set()
+
+        for q in queries:
+            results = retrieval_fn(q, top_k=top_k_per_query)
+
+            for result in results:
+                doc_text = result.get('document', result.get('content', ''))
+
+                # Deduplicate by document text
+                if doc_text not in seen_docs:
+                    seen_docs.add(doc_text)
+                    all_results.append(result)
+
+        # Return top-k by score
+        all_results.sort(
+            key=lambda x: x.get('score', 0),
+            reverse=True
+        )
+
+        return all_results[:final_top_k]
+
+
+# Usage example
+expander = MultiQueryExpander(num_queries=3)
+
+original_query = "How to optimize Python code performance?"
+
+expanded_queries = expander.expand(original_query)
+
+# Example output:
+# 1. How to optimize Python code performance?
+# 2. What are the best practices for making Python programs run faster?
+# 3. How can I improve the execution speed of my Python scripts?
+# 4. What techniques exist for Python performance tuning?
+```
+
+<Callout type="tip">
+**Best Practice**: Generate 3-5 query variations. More variations increase coverage but also add noise and computational cost.
+</Callout>
+
+## HyDE (Hypothetical Document Embeddings)
+
+Generate a hypothetical answer, then search for documents similar to that answer:
+
+```python
+class HyDERetriever:
+    """
+    Hypothetical Document Embeddings (HyDE) retrieval.
+
+    Instead of searching with the query, generate a hypothetical answer
+    and search with that. This can bridge the vocabulary gap between
+    questions and answers.
+    """
+
+    def __init__(
+        self,
+        model: str = "gpt-3.5-turbo",
+        embedding_model: str = "text-embedding-ada-002"
+    ):
+        self.model = model
+        self.embedding_model = embedding_model
+
+    def generate_hypothetical_document(self, query: str) -> str:
+        """
+        Generate a hypothetical answer to the query.
+
+        Args:
+            query: User query
+
+        Returns:
+            Hypothetical answer document
+        """
+        prompt = f"""Generate a detailed, factual answer to the following question.
+Write as if you are providing information from a knowledge base or documentation.
+
+Question: {query}
+
+Detailed answer:"""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a knowledgeable assistant providing detailed, factual answers."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=200
+        )
+
+        hypothetical_doc = response.choices[0].message.content
+
+        print(f"\n💭 Generated hypothetical document:")
+        print(f"{hypothetical_doc[:150]}...")
+
+        return hypothetical_doc
+
+    def retrieve(
+        self,
+        query: str,
+        documents: List[str],
+        embeddings: List[List[float]],
+        top_k: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve using HyDE approach.
+
+        Args:
+            query: Original query
+            documents: List of documents
+            embeddings: Precomputed document embeddings
+            top_k: Number of results
+
+        Returns:
+            Retrieved documents
+        """
+        # Generate hypothetical document
+        hypothetical_doc = self.generate_hypothetical_document(query)
+
+        # Embed hypothetical document
+        response = openai.Embedding.create(
+            model=self.embedding_model,
+            input=hypothetical_doc
+        )
+        hyde_embedding = response['data'][0]['embedding']
+
+        # Search using hypothetical document embedding
+        similarities = []
+        for i, doc_embedding in enumerate(embeddings):
+            similarity = np.dot(hyde_embedding, doc_embedding)
+            similarities.append((i, similarity, documents[i]))
+
+        # Sort and return top-k
+        similarities.sort(key=lambda x: x[1], reverse=True)
+
+        results = [
+            {
+                "document": doc,
+                "score": float(score),
+                "index": idx
+            }
+            for idx, score, doc in similarities[:top_k]
+        ]
+
+        return results
+
+
+# Usage
+hyde = HyDERetriever()
+
+query = "What are the benefits of using transformers?"
+
+# Assume we have documents and their embeddings
+documents = [
+    "Transformers use self-attention mechanisms for parallel processing.",
+    "The transformer architecture enables better long-range dependencies.",
+    "RNNs process sequences sequentially, which is slower than transformers.",
+    # ... more documents
+]
+
+# Precompute embeddings (shown simplified)
+embeddings = [...]  # List of embedding vectors
+
+results = hyde.retrieve(query, documents, embeddings, top_k=3)
+
+for i, result in enumerate(results, 1):
+    print(f"\n{i}. Score: {result['score']:.4f}")
+    print(f"   {result['document']}")
+```
+
+<Callout type="tip">
+**HyDE Insight**: Works well when queries and documents have different vocabulary. The hypothetical document bridges the gap by using the same language as the knowledge base.
+</Callout>
+
+## Step-Back Prompting
+
+Generate broader, more abstract queries to improve retrieval:
+
+```python
+class StepBackExpander:
+    """
+    Implements step-back prompting for query expansion.
+
+    Generates a more abstract, high-level version of the query
+    to retrieve broader context before specific details.
+    """
+
+    def __init__(self, model: str = "gpt-4"):
+        self.model = model
+
+    def generate_step_back_query(self, query: str) -> str:
+        """
+        Generate a step-back (more abstract) version of the query.
+
+        Args:
+            query: Original specific query
+
+        Returns:
+            Abstract step-back query
+        """
+        prompt = f"""You are an expert at abstracting specific questions into broader, more general questions.
+
+Given a specific question, provide a more abstract, high-level version that would help retrieve relevant background information.
+
+Example:
+Specific: "What was the exact date GPT-4 was released?"
+Step-back: "What is the history and timeline of GPT model releases?"
+
+Specific: "How do I fix a 'ModuleNotFoundError' in Python?"
+Step-back: "What are common Python import errors and their causes?"
+
+Now do this:
+Specific: {query}
+Step-back:"""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+
+        step_back_query = response.choices[0].message.content.strip()
+
+        print(f"\n🔄 Step-back query: {step_back_query}")
+
+        return step_back_query
+
+    def two_stage_retrieval(
+        self,
+        query: str,
+        retrieval_fn: callable,
+        k_broad: int = 5,
+        k_specific: int = 5
+    ) -> Dict[str, List]:
+        """
+        Perform two-stage retrieval: broad context + specific details.
+
+        Args:
+            query: Original query
+            retrieval_fn: Retrieval function
+            k_broad: Results for step-back query
+            k_specific: Results for original query
+
+        Returns:
+            Dictionary with both sets of results
+        """
+        # Get step-back query
+        step_back_query = self.generate_step_back_query(query)
+
+        # Retrieve for both queries
+        print(f"\n🔍 Retrieving broad context...")
+        broad_results = retrieval_fn(step_back_query, top_k=k_broad)
+
+        print(f"🔍 Retrieving specific information...")
+        specific_results = retrieval_fn(query, top_k=k_specific)
+
+        return {
+            "broad_context": broad_results,
+            "specific_details": specific_results,
+            "step_back_query": step_back_query,
+            "original_query": query
+        }
+
+
+# Usage
+step_back = StepBackExpander()
+
+query = "What is the learning rate used in GPT-3 training?"
+
+# This will generate something like:
+# "What are the key hyperparameters in large language model training?"
+
+results = step_back.two_stage_retrieval(
+    query=query,
+    retrieval_fn=lambda q, top_k: [...],  # Your retrieval function
+    k_broad=5,
+    k_specific=5
+)
+```
+
+## Query Decomposition
+
+Break complex queries into simpler sub-queries:
+
+```python
+class QueryDecomposer:
+    """
+    Decomposes complex queries into simpler sub-queries.
+
+    Useful for multi-hop questions that require multiple retrieval steps.
+    """
+
+    def __init__(self, model: str = "gpt-4"):
+        self.model = model
+
+    def decompose(self, query: str) -> List[str]:
+        """
+        Decompose a complex query into sub-queries.
+
+        Args:
+            query: Complex query
+
+        Returns:
+            List of sub-queries
+        """
+        prompt = f"""Decompose the following complex question into simpler sub-questions that can be answered independently.
+
+Complex question: {query}
+
+Provide 2-4 sub-questions that:
+1. Are simpler than the original
+2. Together help answer the original question
+3. Can be answered independently
+
+Sub-questions (one per line):"""
+
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+
+        sub_queries_text = response.choices[0].message.content
+        sub_queries = [q.strip() for q in sub_queries_text.split('\n') if q.strip()]
+
+        # Remove numbering if present
+        sub_queries = [q.lstrip('0123456789.-) ') for q in sub_queries]
+
+        print(f"\n📊 Decomposed into {len(sub_queries)} sub-queries:")
+        for i, sq in enumerate(sub_queries, 1):
+            print(f"   {i}. {sq}")
+
+        return sub_queries
+
+    def sequential_retrieval(
+        self,
+        query: str,
+        retrieval_fn: callable,
+        synthesis_fn: callable,
+        k_per_query: int = 3
+    ) -> Dict[str, Any]:
+        """
+        Sequentially retrieve and synthesize for sub-queries.
+
+        Args:
+            query: Complex query
+            retrieval_fn: Retrieval function
+            synthesis_fn: Function to synthesize sub-answers
+            k_per_query: Results per sub-query
+
+        Returns:
+            Final synthesized answer
+        """
+        # Decompose query
+        sub_queries = self.decompose(query)
+
+        # Retrieve for each sub-query
+        sub_results = []
+
+        for i, sub_query in enumerate(sub_queries, 1):
+            print(f"\n🔍 Retrieving for sub-query {i}...")
+            results = retrieval_fn(sub_query, top_k=k_per_query)
+            sub_results.append({
+                "sub_query": sub_query,
+                "results": results
+            })
+
+        # Synthesize final answer
+        print(f"\n🧬 Synthesizing final answer...")
+        final_answer = synthesis_fn(query, sub_results)
+
+        return {
+            "original_query": query,
+            "sub_queries": sub_queries,
+            "sub_results": sub_results,
+            "final_answer": final_answer
+        }
+
+
+# Usage
+decomposer = QueryDecomposer()
+
+complex_query = "How does the architecture of GPT-4 differ from GPT-3, and what impact did these changes have on performance?"
+
+# Might decompose to:
+# 1. What is the architecture of GPT-3?
+# 2. What is the architecture of GPT-4?
+# 3. What are the key architectural differences between GPT-3 and GPT-4?
+# 4. How did these changes affect model performance?
+
+sub_queries = decomposer.decompose(complex_query)
+```
+
+<Callout type="warning">
+**Complexity Trade-off**: Query expansion improves coverage but increases retrieval time and cost. Use it selectively for complex or critical queries.
+</Callout>
+
+## Complete Query Expansion Pipeline
+
+Combine multiple techniques:
+
+```python
+class AdvancedQueryExpansion:
+    """
+    Complete query expansion pipeline combining multiple techniques.
+    """
+
+    def __init__(
+        self,
+        model: str = "gpt-4",
+        embedding_model: str = "text-embedding-ada-002"
+    ):
+        self.multi_query = MultiQueryExpander(model=model, num_queries=2)
+        self.hyde = HyDERetriever(model=model, embedding_model=embedding_model)
+        self.step_back = StepBackExpander(model=model)
+        self.decomposer = QueryDecomposer(model=model)
+
+    def expand_comprehensive(
+        self,
+        query: str,
+        strategy: str = "auto"
+    ) -> Dict[str, List[str]]:
+        """
+        Comprehensive query expansion.
+
+        Args:
+            query: Original query
+            strategy: Expansion strategy (auto, multi, hyde, step_back, decompose)
+
+        Returns:
+            Dictionary of expanded queries by technique
+        """
+        expanded = {"original": [query]}
+
+        # Determine strategy
+        if strategy == "auto":
+            # Simple heuristic: use decomposition for complex questions
+            if len(query.split()) > 15 or "?" in query.count("?") > 1:
+                strategy = "decompose"
+            else:
+                strategy = "multi"
+
+        # Apply chosen strategy
+        if strategy in ["multi", "all"]:
+            expanded["multi_query"] = self.multi_query.expand(query)
+
+        if strategy in ["step_back", "all"]:
+            step_back_q = self.step_back.generate_step_back_query(query)
+            expanded["step_back"] = [step_back_q]
+
+        if strategy in ["decompose", "all"]:
+            expanded["decomposed"] = self.decomposer.decompose(query)
+
+        return expanded
+
+    def retrieve_with_expansion(
+        self,
+        query: str,
+        documents: List[str],
+        embeddings: List[List[float]],
+        strategy: str = "auto",
+        top_k: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve using query expansion.
+
+        Args:
+            query: Original query
+            documents: Document corpus
+            embeddings: Document embeddings
+            strategy: Expansion strategy
+            top_k: Final number of results
+
+        Returns:
+            Ranked results
+        """
+        # Expand queries
+        expanded = self.expand_comprehensive(query, strategy)
+
+        # Collect all queries
+        all_queries = []
+        for queries in expanded.values():
+            all_queries.extend(queries)
+
+        print(f"\n📊 Total queries after expansion: {len(all_queries)}")
+
+        # Retrieve for all queries
+        all_results = []
+        seen_docs = set()
+
+        for q in all_queries:
+            # Simple similarity search
+            response = openai.Embedding.create(
+                model=self.hyde.embedding_model,
+                input=q
+            )
+            q_embedding = response['data'][0]['embedding']
+
+            for i, doc_embedding in enumerate(embeddings):
+                doc = documents[i]
+                if doc in seen_docs:
+                    continue
+
+                similarity = np.dot(q_embedding, doc_embedding)
+
+                all_results.append({
+                    "document": doc,
+                    "score": float(similarity),
+                    "query": q
+                })
+
+                seen_docs.add(doc)
+
+        # Sort and return top-k
+        all_results.sort(key=lambda x: x['score'], reverse=True)
+
+        return all_results[:top_k]
+
+
+# Usage
+expander = AdvancedQueryExpansion()
+
+query = "What are the key innovations in transformer architectures?"
+
+# Auto-select strategy
+expanded = expander.expand_comprehensive(query, strategy="auto")
+
+print("\n📋 Expansion Results:")
+for technique, queries in expanded.items():
+    print(f"\n{technique.upper()}:")
+    for q in queries:
+        print(f"  - {q}")
+```
+
+## Evaluation
+
+Measure the impact of query expansion:
+
+```python
+class QueryExpansionEvaluator:
+    """Evaluate query expansion effectiveness."""
+
+    def evaluate(
+        self,
+        queries: List[str],
+        retrieval_fn_baseline: callable,
+        retrieval_fn_expanded: callable,
+        relevance_judgments: Dict[str, List[int]]
+    ) -> Dict[str, float]:
+        """
+        Compare baseline vs expanded retrieval.
+
+        Args:
+            queries: Test queries
+            retrieval_fn_baseline: Baseline retrieval
+            retrieval_fn_expanded: Retrieval with expansion
+            relevance_judgments: Ground truth relevant doc indices
+
+        Returns:
+            Evaluation metrics
+        """
+        baseline_recalls = []
+        expanded_recalls = []
+
+        for query in queries:
+            relevant_docs = set(relevance_judgments.get(query, []))
+
+            # Baseline
+            baseline_results = retrieval_fn_baseline(query)
+            baseline_retrieved = set([r['index'] for r in baseline_results])
+            baseline_recall = len(baseline_retrieved & relevant_docs) / len(relevant_docs)
+            baseline_recalls.append(baseline_recall)
+
+            # Expanded
+            expanded_results = retrieval_fn_expanded(query)
+            expanded_retrieved = set([r['index'] for r in expanded_results])
+            expanded_recall = len(expanded_retrieved & relevant_docs) / len(relevant_docs)
+            expanded_recalls.append(expanded_recall)
+
+        return {
+            "baseline_avg_recall": np.mean(baseline_recalls),
+            "expanded_avg_recall": np.mean(expanded_recalls),
+            "improvement": np.mean(expanded_recalls) - np.mean(baseline_recalls)
+        }
+```
+
+## Key Takeaways
+
+1. **Multi-query** - generate variations to capture different vocabulary
+2. **HyDE** - bridge vocabulary gap with hypothetical documents
+3. **Step-back** - retrieve broad context before specific details
+4. **Decomposition** - break complex queries into manageable parts
+5. **Strategy selection** - choose expansion technique based on query complexity
+
+## Quiz
+
+Test your understanding of query expansion:
+
+<Quiz
+  questions={[
+    {
+      question: "What problem does query expansion primarily address?",
+      options: [
+        "Slow retrieval speed",
+        "Vocabulary mismatch between queries and documents",
+        "Large document storage",
+        "Model hallucination"
+      ],
+      correctAnswer: 1,
+      explanation: "Query expansion addresses vocabulary mismatch - relevant documents may use different terms than the query, and expansion helps capture these variations."
+    },
+    {
+      question: "How does HyDE (Hypothetical Document Embeddings) work?",
+      options: [
+        "It generates multiple query variations",
+        "It generates a hypothetical answer and searches with that instead of the query",
+        "It breaks queries into sub-queries",
+        "It creates abstract versions of queries"
+      ],
+      correctAnswer: 1,
+      explanation: "HyDE generates a hypothetical answer to the query, then searches for documents similar to that answer, bridging the vocabulary gap between questions and answers."
+    },
+    {
+      question: "What is the purpose of step-back prompting?",
+      options: [
+        "To make queries more specific",
+        "To generate more abstract, broader queries that retrieve background context",
+        "To reduce the number of queries",
+        "To improve query speed"
+      ],
+      correctAnswer: 1,
+      explanation: "Step-back prompting creates more abstract versions of specific queries to retrieve broader context before diving into specific details."
+    },
+    {
+      question: "When is query decomposition most useful?",
+      options: [
+        "For simple, single-fact queries",
+        "For complex, multi-hop questions requiring multiple pieces of information",
+        "When you want faster retrieval",
+        "Only for mathematical queries"
+      ],
+      correctAnswer: 1,
+      explanation: "Query decomposition breaks complex questions into simpler sub-questions, making it ideal for multi-hop queries that require gathering and combining multiple pieces of information."
+    }
+  ]}
+/>

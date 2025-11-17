@@ -1,0 +1,1112 @@
+---
+title: "Project: Build Your Personal Prompt Library"
+description: "Hands-on project to create your own reusable prompt collection that saves hours of time"
+difficulty: "beginner"
+duration: 30
+order: 10
+tags: ["Project", "Hands-on", "Prompt Library", "Best Practices", "Real-World"]
+---
+
+## Your First Real AI Project!
+
+Congratulations on making it to the hands-on project! Everything you've learned comes together here. You're going to build something incredibly valuable: your own personal prompt library.
+
+<Callout type="tip">
+**What You're Building:** A curated collection of 10-15 prompts tailored to YOUR specific needs, organized by category, ready to copy and use whenever you need them. This will save you hours every week!
+</Callout>
+
+## Why a Prompt Library?
+
+Think about it: How much time do you spend figuring out how to phrase things to AI? Rewriting prompts when they don't work? Starting from scratch each time?
+
+<Callout type="info">
+**Prompt Library:** A curated collection of reusable, tested prompts organized by category and use case. Think of it as your personal cookbook of AI instructions that you can copy, customize, and reuse whenever needed.
+</Callout>
+
+**A prompt library solves this:**
+- ✅ Copy proven prompts instantly
+- ✅ Consistency across your work
+- ✅ Learn what works for YOU
+- ✅ Share with your team
+- ✅ Improve prompts over time
+
+<Callout type="info">
+**Real-World Impact:** Professional prompt engineers maintain libraries of 50-200+ prompts. Companies save thousands of hours by sharing prompt libraries across teams. Start your library now and build it over time!
+</Callout>
+
+## Project Overview
+
+### What You'll Create
+
+1. **10-15 Custom Prompts** organized into categories
+2. **Tested and Working** - you'll try each one
+3. **Documented** - with notes on when to use them
+4. **Ready to Scale** - structure that grows with you
+
+### Time Investment
+
+- **Initial Build:** 1-2 hours
+- **Testing:** 30 minutes
+- **Lifetime Value:** Saves 5-10 hours/month forever!
+
+### Tools You Need
+
+Pick ONE of these (all free):
+- **Notion** (recommended - best for organization)
+- **Google Docs** (simple, shareable)
+- **Obsidian** (great for linking notes)
+- **Plain text file** (minimalist)
+- **Spreadsheet** (structured)
+
+## Step-by-Step Build Guide
+
+### Step 1: Choose Your Categories
+
+Pick 3-5 categories based on what YOU do most. Here are common ones:
+
+<ComparisonTable
+  title="Common Prompt Categories"
+  columns={[
+    { title: "Category" },
+    { title: "Best For" },
+    { title: "Example Use Cases" }
+  ]}
+  rows={[
+    {
+      feature: "Learning & Research",
+      values: ["Understanding new topics", "Explain concepts, summarize articles, Q&A"]
+    },
+    {
+      feature: "Content Creation",
+      values: ["Writing anything", "Blog posts, emails, social media, ads"]
+    },
+    {
+      feature: "Coding & Technical",
+      values: ["Developers", "Debug code, write functions, explain errors"]
+    },
+    {
+      feature: "Decision Making",
+      values: ["Choosing between options", "Compare products, analyze pros/cons, plan"]
+    },
+    {
+      feature: "Communication",
+      values: ["Emails, messages, responses", "Professional emails, replies, negotiations"]
+    },
+    {
+      feature: "Creative",
+      values: ["Ideation and brainstorming", "Name ideas, taglines, story concepts"]
+    },
+    {
+      feature: "Analysis & Feedback",
+      values: ["Reviewing your work", "Get feedback, identify gaps, improve draft"]
+    }
+  ]}
+/>
+
+**Your Task:** Pick YOUR 3-5 categories. Think about what you do every day or week.
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Category Selection Helper"
+  initialCode={`// Help you choose your prompt library categories
+
+const categoryOptions = {
+  "Learning & Research": {
+    description: "Understanding new topics, summaries, explanations",
+    examples: [
+      "Explain complex concepts simply",
+      "Summarize long articles",
+      "Learn new skills step-by-step"
+    ],
+    goodFor: ["Students", "Professionals learning new fields", "Researchers"]
+  },
+
+  "Content Creation": {
+    description: "Writing blog posts, social media, marketing copy",
+    examples: [
+      "Blog post outlines and drafts",
+      "Social media posts",
+      "Email marketing"
+    ],
+    goodFor: ["Marketers", "Bloggers", "Content creators"]
+  },
+
+  "Coding & Technical": {
+    description: "Programming help, debugging, code review",
+    examples: [
+      "Debug error messages",
+      "Write functions",
+      "Code review and optimization"
+    ],
+    goodFor: ["Developers", "Students learning to code", "Technical writers"]
+  },
+
+  "Decision Making": {
+    description: "Comparing options, analyzing choices",
+    examples: [
+      "Product comparisons",
+      "Career decision analysis",
+      "Business strategy"
+    ],
+    goodFor: ["Managers", "Entrepreneurs", "Anyone making big decisions"]
+  },
+
+  "Communication": {
+    description: "Emails, messages, professional communication",
+    examples: [
+      "Professional emails",
+      "Meeting requests",
+      "Difficult conversations"
+    ],
+    goodFor: ["Professionals", "Managers", "Anyone who writes emails"]
+  },
+
+  "Creative": {
+    description: "Brainstorming, ideation, naming",
+    examples: [
+      "Product name ideas",
+      "Taglines and slogans",
+      "Story concepts"
+    ],
+    goodFor: ["Marketers", "Writers", "Entrepreneurs"]
+  },
+
+  "Analysis & Feedback": {
+    description: "Getting feedback on your work",
+    examples: [
+      "Review my writing",
+      "Critique this design",
+      "Analyze this strategy"
+    ],
+    goodFor: ["Anyone creating something", "Students", "Professionals"]
+  }
+};
+
+console.log("CHOOSE YOUR CATEGORIES");
+console.log("=".repeat(70) + "\\n");
+
+Object.entries(categoryOptions).forEach(([category, details]) => {
+  console.log(\`📁 \${category.toUpperCase()}\`);
+  console.log(\`   \${details.description}\`);
+  console.log();
+  console.log("   Examples:");
+  details.examples.forEach(ex => console.log(\`   - \${ex}\`));
+  console.log();
+  console.log(\`   Good for: \${details.goodFor.join(', ')}\`);
+  console.log("-".repeat(70));
+  console.log();
+});
+
+console.log("RECOMMENDATION:");
+console.log("Choose 3-5 categories that match YOUR daily work.");
+console.log("You can always add more later!");
+
+console.log("\\nQUICK SELECTOR:");
+console.log("If you're a...");
+console.log("  Developer → Coding, Learning, Analysis");
+console.log("  Marketer → Content, Creative, Communication");
+console.log("  Student → Learning, Communication, Analysis");
+console.log("  Manager → Decision Making, Communication, Analysis");
+console.log("  Entrepreneur → All categories! Start with top 3 needs.");`}
+/>
+
+### Step 2: Create Your Template Structure
+
+Here's a proven template for documenting each prompt:
+
+```markdown
+## [Prompt Name]
+
+**Category:** [Category]
+**Use When:** [Specific situation]
+**Time Saved:** ~[X] minutes per use
+
+### The Prompt
+
+[The actual prompt text, ready to copy]
+
+### Customization Points
+
+- [Variable 1]: [What to change]
+- [Variable 2]: [What to change]
+
+### Example Usage
+
+**Input/Context:** [What you fed it]
+**Output Quality:** [Brief note on result]
+
+### Tips
+
+- [Tip 1]
+- [Tip 2]
+
+### Variations
+
+**For [Different Use Case]:**
+[Modified prompt]
+
+---
+```
+
+**Your Task:** Copy this template into your chosen tool (Notion, Google Docs, etc.)
+
+### Step 3: Build Your First 5 "Starter Prompts"
+
+Let's build prompts everyone needs, regardless of their field:
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Starter Prompt Library Generator"
+  initialCode={`// Generate starter prompts for your library
+
+const starterPrompts = {
+  "01_explain_concept": {
+    name: "Explain Any Concept Simply",
+    category: "Learning & Research",
+    useWhen: "You need to understand something new",
+    timeSaved: "15-30 minutes of research",
+
+    prompt: \`I'm learning about [TOPIC] and need to understand it.
+
+My current knowledge level: [Complete beginner / Some basics / Intermediate]
+
+Explain [SPECIFIC CONCEPT] by:
+1. What it is in one simple sentence
+2. Why it exists (what problem it solves)
+3. A real-world analogy
+4. When/where it's used
+5. One common misconception to avoid
+
+Use [simple language / technical terms / mix of both].
+I learn best with [concrete examples / visual descriptions / step-by-step].
+
+Keep the entire explanation under 300 words.\`,
+
+    customization: [
+      "[TOPIC] - Replace with what you're learning",
+      "[SPECIFIC CONCEPT] - The exact thing you're confused about",
+      "[Knowledge level] - Be honest about what you know",
+      "[Language preference] - Match your understanding",
+      "[Learning style] - How you learn best"
+    ],
+
+    example: {
+      topic: "Machine Learning",
+      concept: "Neural Networks",
+      level: "Complete beginner",
+      result: "Clear explanation with brain analogy, explained why they're used, common misconception addressed"
+    }
+  },
+
+  "02_professional_email": {
+    name: "Professional Email Writer",
+    category: "Communication",
+    useWhen: "Writing important emails",
+    timeSaved: "10-20 minutes per email",
+
+    prompt: \`Write a professional email for this situation:
+
+**Context:** [What's the situation?]
+**To:** [Who - title/role]
+**Goal:** [What do you want them to do?]
+**Tone:** [Formal / Professional-friendly / Casual-professional]
+
+Key points to include:
+- [Point 1]
+- [Point 2]
+- [Point 3]
+
+Must avoid:
+- [Thing to avoid - e.g., sounding pushy]
+
+Length: [# paragraphs or word count]
+Subject line: [Yes/No - if yes, create one]
+
+Important context: [Any relationship/history that matters]\`,
+
+    customization: [
+      "[Context] - What's happening",
+      "[To] - Who you're emailing",
+      "[Goal] - Your objective",
+      "[Key points] - What must be said",
+      "[Tone] - Match the relationship"
+    ],
+
+    example: {
+      context: "Requesting extension on project deadline",
+      to: "Project manager",
+      goal: "Get 3 more days",
+      result: "Professional, gave valid reason, proposed solution, not defensive"
+    }
+  },
+
+  "03_content_outline": {
+    name: "Content Outline Generator",
+    category: "Content Creation",
+    useWhen: "Starting any piece of writing",
+    timeSaved: "20-30 minutes",
+
+    prompt: \`Create a detailed outline for: [CONTENT TYPE] about [TOPIC]
+
+**Target Audience:** [Who is this for?]
+**Length:** [Words/paragraphs]
+**Goal:** [What should readers do/understand/feel?]
+
+Structure needed:
+- Opening: [Hook type - question / stat / story / problem]
+- Main sections: [Number of sections]
+- Conclusion: [CTA / summary / thought-provoking / etc.]
+
+Each section should include:
+- Main point
+- 3-4 bullet points of what to cover
+- Suggested examples or evidence
+
+Tone: [Describe the voice]
+Must include: [Any required elements]
+Must avoid: [Any forbidden approaches]\`,
+
+    customization: [
+      "[CONTENT TYPE] - Blog post, article, email, etc.",
+      "[TOPIC] - What you're writing about",
+      "[Audience] - Who reads this",
+      "[Goal] - What you want to achieve",
+      "[Structure] - Adapt to content type"
+    ],
+
+    example: {
+      type: "Blog post",
+      topic: "Time management for remote workers",
+      audience: "Remote professionals feeling overwhelmed",
+      result: "5-section outline, each with clear purpose and talking points"
+    }
+  },
+
+  "04_decision_analyzer": {
+    name: "Decision Analysis Framework",
+    category: "Decision Making",
+    useWhen: "Facing important choices",
+    timeSaved: "30-60 minutes of analysis",
+
+    prompt: \`Help me analyze this decision: [DECISION]
+
+**Context:**
+- Current situation: [Where you are]
+- Timeline: [When to decide]
+- Constraints: [Money, time, resources, etc.]
+
+**Options:**
+1. [Option A]
+2. [Option B]
+3. [Option C - if applicable]
+
+Analyze using this framework:
+
+1. **Clarify the Decision**
+   - What am I really deciding?
+   - What's at stake?
+
+2. **Evaluate Each Option**
+   - Pros and cons
+   - Short-term vs long-term impact
+   - Reversibility (can I undo this?)
+
+3. **Consider Risks**
+   - What could go wrong?
+   - How likely? How bad?
+
+4. **Check Assumptions**
+   - What am I assuming?
+   - Are these assumptions valid?
+
+5. **Recommendation**
+   - Best option and why
+   - What to do first
+   - Warning signs to watch
+
+My values/priorities: [What matters most to you]\`,
+
+    customization: [
+      "[DECISION] - What you're deciding",
+      "[Context] - Your situation",
+      "[Options] - All choices you're considering",
+      "[Values] - What matters to you"
+    ],
+
+    example: {
+      decision: "Take new job vs stay at current company",
+      options: "New job (higher pay, unknown culture) vs Stay (comfortable, limited growth)",
+      result: "Thorough analysis, identified hidden assumptions, clear recommendation"
+    }
+  },
+
+  "05_feedback_request": {
+    name: "Get Constructive Feedback",
+    category: "Analysis & Feedback",
+    useWhen: "You created something and want improvement",
+    timeSaved: "Would cost $100+ for professional review",
+
+    prompt: \`Review this [THING] as if you were a [EXPERT ROLE].
+
+**What I Created:**
+[Paste your work here]
+
+**Context:**
+- Purpose: [Why this exists]
+- Audience: [Who it's for]
+- Stage: [Draft / Near-final / Final]
+- Main goal: [What success looks like]
+
+**Feedback Format:**
+
+1. **Strengths** (Be specific - what works and why?)
+
+2. **Weaknesses** (What doesn't work? Give examples)
+
+3. **Gaps** (What's missing that [EXPERT] would expect?)
+
+4. **Scoring** (Rate 1-10 on):
+   - [Criterion 1 relevant to this type of work]
+   - [Criterion 2]
+   - [Criterion 3]
+
+5. **Action Items** (3 concrete next steps to improve)
+
+Be [encouraging but honest / brutally honest / balanced].
+My experience level: [Beginner / Intermediate / Advanced]\`,
+
+    customization: [
+      "[THING] - What you created (resume, code, design, etc.)",
+      "[EXPERT ROLE] - Who should review it",
+      "[Context] - Why it exists",
+      "[Criteria] - What to evaluate"
+    ],
+
+    example: {
+      thing: "Landing page copy",
+      expert: "Conversion copywriter",
+      criteria: "Clarity, Compelling-ness, Call-to-action strength",
+      result: "Specific feedback on what to change, scored each criterion, 3 actionable improvements"
+    }
+  }
+};
+
+console.log("YOUR STARTER PROMPT LIBRARY");
+console.log("=".repeat(70));
+console.log("Copy these 5 prompts to get started!\\n");
+
+Object.entries(starterPrompts).forEach(([id, prompt]) => {
+  console.log(\`\n${"━".repeat(70)}\`);
+  console.log(\`📌 \${prompt.name.toUpperCase()}\`);
+  console.log(\`${"━".repeat(70)}\n\`);
+
+  console.log(\`Category: \${prompt.category}\`);
+  console.log(\`Use When: \${prompt.useWhen}\`);
+  console.log(\`Time Saved: \${prompt.timeSaved}\n\`);
+
+  console.log("THE PROMPT:");
+  console.log("-".repeat(70));
+  console.log(prompt.prompt);
+  console.log("-".repeat(70));
+
+  console.log(\`\nCUSTOMIZATION POINTS:\`);
+  prompt.customization.forEach(point => console.log(\`  • \${point}\`));
+
+  console.log(\`\nEXAMPLE RESULT:\`);
+  console.log(\`  Topic: \${prompt.example.topic || prompt.example.thing || 'N/A'}\`);
+  console.log(\`  Result: \${prompt.example.result}\`);
+});
+
+console.log(\`\n\n${"=".repeat(70)}\`);
+console.log("✅ NEXT STEPS:");
+console.log("1. Copy each prompt to your library");
+console.log("2. Test each one with YOUR real use case");
+console.log("3. Adjust based on results");
+console.log("4. Add your own prompts next!");`}
+/>
+
+**Your Task:**
+1. Copy all 5 starter prompts to your library
+2. Format them using the template from Step 2
+3. Test at least 2 of them with real situations
+
+### Step 4: Add 5 Specialized Prompts
+
+Now add prompts specific to YOUR work. Choose from these based on what you do:
+
+#### For Developers:
+
+**Debug Code**
+```
+I'm getting this error in [LANGUAGE]:
+
+Error message:
+[Paste error]
+
+My code:
+[Paste relevant code]
+
+What I'm trying to do: [Goal]
+What I've tried: [Your debugging attempts]
+
+Help me by:
+1. Explaining what this error means in plain English
+2. Identifying the exact line/section causing it
+3. Showing the fix with comments explaining why
+4. Teaching me how to avoid this error in future
+
+My experience level: [Beginner / Intermediate / Advanced in this language]
+```
+
+**Code Review**
+```
+Review this [LANGUAGE] code as if you were a senior developer:
+
+[Paste code]
+
+Purpose: [What it's supposed to do]
+
+Check for:
+1. Bugs or potential issues
+2. Performance problems
+3. Readability (naming, structure)
+4. Best practices violations
+5. Security concerns (if applicable)
+
+For each issue:
+- Severity: Critical / Important / Minor / Nitpick
+- Why it's a problem
+- How to fix it (with code example)
+
+Rate overall quality: 1-10
+My level: [Junior / Mid / Senior] so calibrate feedback accordingly
+```
+
+#### For Writers/Marketers:
+
+**Content Repurposing**
+```
+I have this [CONTENT TYPE]:
+
+[Paste original content]
+
+Repurpose it into:
+- [Format 1]: [Requirements]
+- [Format 2]: [Requirements]
+- [Format 3]: [Requirements]
+
+For each format:
+- Adapt tone/style for that platform
+- Keep core message
+- Optimize for [engagement / clicks / shares]
+
+Original audience: [Who]
+New audience (if different): [Who]
+```
+
+**Headline Generator**
+```
+Create 10 headlines for this [CONTENT TYPE]:
+
+**Topic:** [What it's about]
+**Angle:** [Main hook or unique perspective]
+**Audience:** [Who]
+**Goal:** [Click / share / read]
+
+Use these formulas (mix them):
+- Number lists (e.g., "7 Ways to...")
+- How-to (e.g., "How to X Without Y")
+- Question (e.g., "Why Do X?")
+- Contrarian (e.g., "Why X is Wrong About Y")
+- Curiosity (e.g., "The Secret to X")
+
+Make them:
+- Specific (not vague)
+- Benefit-focused (what's in it for reader)
+- Under 70 characters (for social media)
+
+Tone: [Playful / Serious / Professional / Provocative]
+```
+
+#### For Students/Learners:
+
+**Study Plan Creator**
+```
+I need to learn [TOPIC/SKILL] in [TIMEFRAME].
+
+**Current level:** [What you know now]
+**Goal level:** [Where you want to be]
+**Time available:** [Hours per week]
+**Learning style:** [Reading / Video / Hands-on / Mix]
+
+Create a week-by-week study plan with:
+- Weekly goals (specific and measurable)
+- Recommended resources for each week
+- Practice exercises or projects
+- How to know you've mastered each week's content
+
+Assumptions:
+- I have [resources/tools available]
+- I need to [any specific application - e.g., "pass exam" / "build project"]
+
+Make it realistic for someone with [time constraints or other commitments]
+```
+
+**Note-Taking Enhancement**
+```
+I took these notes from [SOURCE]:
+
+[Paste your raw notes]
+
+Improve them for study/review:
+
+1. **Summary** (3-5 sentences of key points)
+
+2. **Organized Notes**
+   - Main concepts
+   - Supporting details
+   - Important examples
+
+3. **Key Terms** (Define in simple language)
+
+4. **Self-Test Questions** (5 questions to check understanding)
+
+5. **Connections** (How does this relate to [other topic/concept]?)
+
+Format: Clean, scannable, perfect for review before exam
+```
+
+#### For Managers/Professionals:
+
+**Meeting Agenda Creator**
+```
+Create an agenda for a [MEETING TYPE] about [TOPIC]
+
+**Attendees:** [Who - roles]
+**Duration:** [Time limit]
+**Goal:** [What must be decided/achieved]
+
+Include:
+1. Pre-meeting prep (what attendees should review/bring)
+2. Agenda items with time allocations
+3. Decision-making method (vote, consensus, leader decides)
+4. Success criteria (how we know meeting was productive)
+
+Constraints:
+- Keep it [tight and efficient / collaborative and thorough]
+- Must address [specific issue]
+- Avoid [common meeting pitfall]
+```
+
+**Performance Feedback**
+```
+Help me write performance feedback for [ROLE] on my team.
+
+**Context:**
+- Time period: [Duration]
+- Overall performance: [Exceeds / Meets / Below expectations]
+- Key projects: [What they worked on]
+
+**Strengths (specific examples):**
+- [Example 1]
+- [Example 2]
+
+**Areas for improvement:**
+- [Area 1]: [Specific behavior/outcome]
+- [Area 2]: [Specific behavior/outcome]
+
+**Goals for next period:**
+- [Goal 1]
+- [Goal 2]
+
+Write feedback that is:
+- Specific (with examples)
+- Balanced (recognize strengths, address gaps)
+- Actionable (clear next steps)
+- [Encouraging / Direct but kind / Firm]
+- 200-300 words
+
+Remember: This person is [context about them - tenure, experience, etc.]
+```
+
+**Your Task:** Choose 5 prompts that match YOUR work and add them to your library.
+
+### Step 5: Document and Organize
+
+Now organize your 10 prompts (5 starter + 5 specialized):
+
+**Recommended Structure:**
+
+```
+📚 MY PROMPT LIBRARY
+├── 📁 Learning & Research
+│   ├── Explain Any Concept Simply
+│   └── Study Plan Creator
+├── 📁 Content Creation
+│   ├── Content Outline Generator
+│   ├── Headline Generator
+│   └── Content Repurposing
+├── 📁 Communication
+│   ├── Professional Email Writer
+│   └── Performance Feedback
+├── 📁 Decision Making
+│   └── Decision Analysis Framework
+├── 📁 Analysis & Feedback
+│   └── Get Constructive Feedback
+└── 📁 Coding (if applicable)
+    ├── Debug Code
+    └── Code Review
+```
+
+**Your Task:**
+1. Create folders/sections for your categories
+2. Move your 10 prompts into the right categories
+3. Add a "Quick Reference" section at the top with your most-used prompts
+
+### Step 6: Test and Refine
+
+**Testing Checklist:**
+
+For each prompt:
+- [ ] Used it with a real situation (not hypothetical)
+- [ ] Documented what worked
+- [ ] Noted what to improve
+- [ ] Created at least one variation
+- [ ] Estimated time saved
+
+**Refinement Process:**
+
+1. **Try the prompt as-is**
+2. **Note the result quality (1-10)**
+3. **If under 7, identify what's missing:**
+   - More context needed?
+   - Better examples?
+   - Clearer constraints?
+   - Different structure?
+4. **Adjust and re-test**
+5. **Update your library with the improved version**
+
+<Callout type="tip">
+**Pro Tip:** Add a "Version History" section to your best prompts. When you improve a prompt, keep the old version with a note about what changed and why. This helps you learn what makes prompts better!
+</Callout>
+
+## Bonus: Advanced Library Features
+
+### Feature 1: Prompt Chains
+
+Some tasks need multiple prompts in sequence. Document these as "workflows":
+
+<Callout type="info">
+**Prompt Chain:** A sequence of prompts where each step builds on the previous one's output. Like an assembly line, you break complex tasks into smaller steps, feeding each result into the next prompt for better overall quality.
+</Callout>
+
+**Example: Blog Post Creation Workflow**
+
+```
+WORKFLOW: Complete Blog Post (30 min total)
+
+Step 1: Outline (5 min)
+→ Use: "Content Outline Generator" prompt
+→ Input: Topic and audience
+→ Output: Detailed outline
+
+Step 2: Write Introduction (7 min)
+→ Use: "Write Engaging Intro" prompt
+→ Input: Outline + Topic
+→ Output: Hook, problem, preview
+
+Step 3: Write Main Content (15 min)
+→ For each section in outline:
+   Use: "Expand Section" prompt
+→ Output: Full paragraphs
+
+Step 4: Conclusion (3 min)
+→ Use: "Write Conclusion" prompt
+→ Input: Main points covered
+→ Output: Summary + CTA
+```
+
+### Feature 2: Prompt Variables
+
+Create "fill-in-the-blank" prompts with clear placeholders:
+
+```
+PLACEHOLDERS GUIDE
+
+When you see:
+[BRACKETS] = Replace with your specific info
+{BRACES} = Optional - include only if relevant
+<ANGLE BRACKETS> = Choose one option
+
+Example:
+Write a {friendly / formal} email to [RECIPIENT] about <requesting extension / declining offer / following up> on [SPECIFIC THING].
+```
+
+### Feature 3: Quality Checklist
+
+Add this to high-stakes prompts:
+
+```
+BEFORE SUBMITTING THIS PROMPT:
+
+✓ Did I include specific context?
+✓ Is my audience clearly defined?
+✓ Are constraints specified (length, tone, format)?
+✓ Did I give examples if the style matters?
+✓ Am I being specific, not vague?
+✓ Did I mention what to avoid?
+✓ Is my goal clear?
+
+If any ✗ → Improve prompt before sending!
+```
+
+## Example: A Complete Library Entry
+
+Here's what a polished library entry looks like:
+
+```markdown
+## Professional Cold Email Writer
+
+**Category:** Communication > Sales & Outreach
+**Use When:** Reaching out to potential clients, partners, or opportunities
+**Time Saved:** ~20 minutes per email
+**Success Rate:** ~40% response rate (track this!)
+**Last Updated:** 2024-01-15
+**Version:** 2.0 (improved personalization)
+
+### The Prompt
+
+You are a B2B sales consultant who writes cold emails that get 40%+ response rates.
+
+Write a cold outreach email with this context:
+
+**Recipient:**
+- Name: [FULL NAME]
+- Role: [TITLE]
+- Company: [COMPANY NAME]
+- Personalization hook: [Something specific you noticed - recent post, company news, etc.]
+
+**About Me:**
+- I'm: [YOUR ROLE]
+- Company: [YOUR COMPANY]
+- We help: [WHO] with [WHAT PROBLEM]
+- Relevant proof: [Metric, case study, or credential]
+
+**The Ask:**
+- Goal: [15-min call / demo / advice / intro]
+- Why now: [Reason this is timely]
+
+Email Requirements:
+- Subject line under 50 characters
+- Email body: 75-100 words (SHORT!)
+- Tone: Professional but human (not salesy)
+- Structure:
+  1. Personalized opening (mention the hook)
+  2. Quick value prop (what's in it for them)
+  3. Credibility signal (brief proof)
+  4. Specific, easy ask
+
+MUST AVOID:
+- Generic templates that feel mass-sent
+- Multiple paragraphs or walls of text
+- Talking too much about us instead of them
+- Vague or big asks ("let's chat sometime")
+
+### Customization Points
+
+- **[PERSONALIZATION HOOK]**: Research them on LinkedIn, recent company news, blog posts. Be specific!
+- **[RELEVANT PROOF]**: Choose what resonates with THEM (not just your biggest win)
+- **[THE ASK]**: Match their seniority (CEO = bigger ask OK, IC = smaller ask)
+
+### Example Usage
+
+**Context:** Reaching out to VP of Marketing at mid-size SaaS company
+
+**Hook Used:** "Saw your post about struggling with SEO content ROI"
+
+**Result:**
+- Subject: "Quick question about your SEO content strategy"
+- Body: 85 words, referenced their specific pain point
+- Response Rate: Got reply in 2 days asking for call
+
+**Output Quality:** 9/10 - Felt personalized, clear value prop
+
+### Tips for Best Results
+
+1. **Research First:** Spend 5 min researching them - their content, company news, recent wins
+2. **One Hook per Email:** Don't try to personalize multiple ways - pick the strongest one
+3. **Test Subjects:** If no response in 1 week, your subject likely failed - improve it
+4. **Follow-up Prompt:** Use "Write Follow-up Email" if no response in 4 days
+
+### Common Mistakes to Avoid
+
+❌ Making it about you instead of them
+❌ Being too long (over 100 words)
+❌ Generic subject lines ("Quick question" alone)
+❌ Asking for too much too soon
+
+### Variations
+
+**For LinkedIn Messages (modify prompt):**
+Replace "Email" with "LinkedIn message"
+Change length to "50-60 words (LinkedIn is shorter!)"
+Subject line → Not needed
+
+**For Warm Introductions:**
+Add: "Mutual connection: [NAME] suggested I reach out"
+Soften tone slightly (less formal)
+
+### Version History
+
+- v2.0 (2024-01): Added personalization hook requirement - improved response 15%
+- v1.0 (2023-11): Original version - generic, ~25% response rate
+
+---
+```
+
+**Your Task:** Pick your best prompt and document it to this level of detail.
+
+## Test Your Library Building
+
+<Quiz
+  title="Prompt Library Project Check"
+  questions={[
+    {
+      question: "What's the MOST important thing when choosing prompts for your library?",
+      options: [
+        "Pick the most complicated prompts to look impressive",
+        "Choose prompts YOU actually use frequently in YOUR work",
+        "Copy exactly what others use",
+        "Include every possible category"
+      ],
+      correctAnswer: 1,
+      explanation: "Your library should solve YOUR problems! If you never write sales emails, don't include email prompts just because they're 'important.' Focus on what you do daily/weekly. A library of 10 prompts you actually use beats 100 prompts you never touch."
+    },
+    {
+      question: "How should you test prompts before adding them to your library?",
+      options: [
+        "Just add them - testing wastes time",
+        "Use them with real situations, note quality, refine if needed",
+        "Test with hypothetical examples",
+        "Ask the AI if the prompt is good"
+      ],
+      correctAnswer: 1,
+      explanation: "Always test with REAL situations! Hypothetical tests don't reveal real problems. Use each prompt for actual work, rate the output quality (1-10), note what worked and what didn't, then refine. Only add to your library after testing and improving."
+    },
+    {
+      question: "What's the main benefit of documenting 'customization points' for each prompt?",
+      options: [
+        "Makes the documentation longer",
+        "Helps you remember what to change each time you use it",
+        "It's required for prompts to work",
+        "Makes you look professional"
+      ],
+      correctAnswer: 1,
+      explanation: "Customization points are YOUR future-self's best friend! When you use a prompt 3 months later, you'll forget what to change. Clear notes like '[AUDIENCE] - Replace with who you're writing for' save time and prevent mistakes. You copy, customize, and go!"
+    },
+    {
+      question: "How often should you update your prompt library?",
+      options: [
+        "Never - once created, it's done",
+        "Every day without fail",
+        "When you discover better versions or find prompts don't work well",
+        "Only when starting a new job"
+      ],
+      correctAnswer: 2,
+      explanation: "Your library is living, not static! Update when: (1) you improve a prompt and get better results, (2) a prompt stops working well, (3) you discover new patterns, (4) your work changes. Good practice: Review quarterly and update your top 5 most-used prompts."
+    },
+    {
+      question: "What's a 'prompt chain' and when should you use one?",
+      options: [
+        "Using multiple prompts in sequence for complex tasks",
+        "Linking prompts together randomly",
+        "A prompt that's very long",
+        "A backup prompt if the first fails"
+      ],
+      correctAnswer: 0,
+      explanation: "Prompt chains break complex work into steps! Example: Blog post = (1) Generate outline → (2) Write intro → (3) Expand each section → (4) Write conclusion. Each step is a separate prompt using output from the previous. Document your best workflows this way!"
+    }
+  ]}
+/>
+
+## Your Action Plan
+
+### This Week:
+
+- [ ] Day 1: Choose your tool and categories (30 min)
+- [ ] Day 2: Copy and customize the 5 starter prompts (45 min)
+- [ ] Day 3: Test 2-3 starter prompts with real work (30 min)
+- [ ] Day 4: Create 3 specialized prompts for YOUR work (1 hour)
+- [ ] Day 5: Test specialized prompts and refine (45 min)
+- [ ] Day 6: Add 2 more specialized prompts (45 min)
+- [ ] Day 7: Organize everything and create Quick Reference (30 min)
+
+**Total Time:** ~5.5 hours
+**Result:** 10-prompt library that saves 5-10 hours/month forever
+
+### Next Month:
+
+- [ ] Add 1-2 new prompts per week from daily work
+- [ ] Version-update your top 3 most-used prompts
+- [ ] Create your first prompt chain (multi-step workflow)
+- [ ] Track time saved and response quality
+- [ ] Share best prompts with colleagues (if appropriate)
+
+### In 3 Months:
+
+You'll have 25-30 tested prompts, organized by category, with usage notes. You've saved 15-30 hours. Your prompts are getting better because you're refining based on real results.
+
+**That's the power of a prompt library!**
+
+## Real-World Examples
+
+Here are examples of how professionals use their libraries:
+
+**Sarah (Content Marketer):**
+- 32 prompts in library
+- Top 5 used daily: Blog outlines, social posts, email subject lines, content repurposing, headline generator
+- Saves ~8 hours/week
+- Shares library with her team
+
+**Mike (Software Developer):**
+- 18 prompts in library
+- Top 5: Debug errors, code review, write tests, explain complex code, documentation generator
+- Saves ~6 hours/week
+- Created "Fix Common Bugs" workflow (prompt chain)
+
+**Elena (Student):**
+- 15 prompts in library
+- Top 5: Explain concept, study plan, summarize reading, practice questions, essay outline
+- Improved grades from B to A- average
+- Cut study time by 30% while learning more
+
+## What You've Achieved!
+
+Congratulations! You've completed Module 2: Prompt Mastery. You now have:
+
+✅ Deep understanding of effective prompts
+✅ Few-shot learning skills
+✅ Chain of Thought mastery
+✅ 15+ proven prompt patterns
+✅ Your own personal prompt library (10+ prompts)
+✅ Framework to keep improving
+
+<Callout type="tip">
+**You're Now a Prompt Engineer!** Most people never get this far. You have skills that companies pay $100k+ for. Keep building your library, refining your prompts, and you'll be in the top 1% of AI users.
+</Callout>
+
+## What's Next?
+
+In **Module 3: No-Code AI Tools**, you'll learn how to use AI tools beyond ChatGPT:
+
+- Comparing all major AI assistants
+- AI for content creation (writing, images, video)
+- AI for productivity and automation
+- Ethical AI use
+- Building complete AI-powered workflows
+
+<Callout type="tip">
+**Before moving on:** Spend this week building your library. The prompts you create now will serve you for years. Don't rush—this is an investment in your productivity forever!
+</Callout>

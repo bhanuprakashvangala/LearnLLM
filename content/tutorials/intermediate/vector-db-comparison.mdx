@@ -1,0 +1,915 @@
+---
+title: "ChromaDB, Pinecone, Weaviate Compared"
+description: "Deep comparison of major vector databases including setup, features, performance, costs, and when to use each. Practical examples for ChromaDB, Pinecone, and Weaviate."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Vector Databases", "ChromaDB", "Pinecone", "Weaviate", "Comparison", "Performance"]
+difficulty: "intermediate"
+duration: 20
+order: 37
+---
+
+# ChromaDB, Pinecone, Weaviate Compared
+
+Vector databases are specialized systems designed for storing and searching embeddings at scale. Let's compare the three most popular options: ChromaDB, Pinecone, and Weaviate.
+
+<Callout type="info">
+**Vector Database:** A specialized database optimized for storing, indexing, and searching high-dimensional vectors (embeddings). Unlike traditional databases that search for exact matches, vector databases find semantically similar items using distance metrics.
+</Callout>
+
+## Overview Comparison
+
+| Feature | ChromaDB | Pinecone | Weaviate |
+|---------|----------|----------|----------|
+| **Type** | Embedded & Server | Cloud-native | Hybrid (Cloud/Self-hosted) |
+| **Deployment** | Local, Docker, Cloud | Fully managed SaaS | Docker, Kubernetes, Cloud |
+| **Pricing** | Free (Open Source) | Pay-per-use | Free tier + Paid |
+| **Best For** | Prototyping, local dev | Production, scale | Flexibility, on-prem |
+| **Language** | Python | Any (REST API) | Any (REST API, GraphQL) |
+| **Setup Complexity** | Easy | Easiest | Moderate |
+| **Max Scale** | Millions of vectors | Billions of vectors | Billions of vectors |
+
+## ChromaDB
+
+ChromaDB is an open-source embedded database perfect for getting started quickly.
+
+### Strengths
+
+- Zero configuration for local development
+- Embedded mode (no separate server needed)
+- Free and open source
+- Great for prototyping
+- Simple Python API
+- Built-in metadata filtering
+
+### Setup and Usage
+
+```python
+# Installation
+# pip install chromadb
+
+import chromadb
+from chromadb.config import Settings
+
+# 1. IN-MEMORY MODE (temporary, great for testing)
+client = chromadb.Client()
+
+# 2. PERSISTENT MODE (saves to disk)
+client = chromadb.PersistentClient(path="./chroma_db")
+
+# 3. CLIENT-SERVER MODE (for production)
+client = chromadb.HttpClient(host="localhost", port=8000)
+
+# Create or get collection
+collection = client.get_or_create_collection(
+    name="my_documents",
+    metadata={"description": "Document embeddings"}
+)
+
+<Callout type="info">
+**Collection:** A named group of documents and their embeddings within a vector database. Collections organize related data and allow for isolated searching and management.
+</Callout>
+
+# Add documents (ChromaDB creates embeddings automatically!)
+collection.add(
+    documents=[
+        "This is a document about Python",
+        "This document is about JavaScript",
+        "This one discusses Machine Learning"
+    ],
+    ids=["doc1", "doc2", "doc3"],
+    metadatas=[
+        {"source": "python_guide.pdf", "page": 1},
+        {"source": "js_tutorial.pdf", "page": 5},
+        {"source": "ml_book.pdf", "page": 23}
+    ]
+)
+
+# Query (ChromaDB handles embedding creation)
+results = collection.query(
+    query_texts=["programming languages"],
+    n_results=2
+)
+
+print(results)
+# Output:
+# {
+#   'ids': [['doc1', 'doc2']],
+#   'documents': [['This is a document about Python', 'This document is about JavaScript']],
+#   'distances': [[0.234, 0.345]],
+#   'metadatas': [[{...}, {...}]]
+# }
+```
+
+### Using Custom Embeddings
+
+```python
+from openai import OpenAI
+import chromadb
+
+openai_client = OpenAI(api_key="your-api-key")
+chroma_client = chromadb.PersistentClient(path="./chroma_db")
+
+# Create collection without default embedding function
+collection = chroma_client.get_or_create_collection(
+    name="custom_embeddings"
+)
+
+def get_embedding(text):
+    response = openai_client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+    return response.data[0].embedding
+
+# Add with custom embeddings
+documents = ["Python is great", "I love JavaScript"]
+embeddings = [get_embedding(doc) for doc in documents]
+
+collection.add(
+    documents=documents,
+    embeddings=embeddings,
+    ids=["1", "2"]
+)
+
+# Query with custom embedding
+query = "programming language"
+query_embedding = get_embedding(query)
+
+results = collection.query(
+    query_embeddings=[query_embedding],
+    n_results=2
+)
+```
+
+### Metadata Filtering
+
+<Callout type="info">
+**Metadata Filtering:** The ability to filter search results based on structured attributes (like date, category, author) in addition to vector similarity. Enables precise control over which documents are considered during search.
+</Callout>
+
+```python
+# Add documents with rich metadata
+collection.add(
+    documents=[
+        "Python 3.11 release notes",
+        "JavaScript ES2023 features",
+        "Python 3.10 changelog",
+        "TypeScript 5.0 announcement"
+    ],
+    ids=["1", "2", "3", "4"],
+    metadatas=[
+        {"language": "python", "version": "3.11", "year": 2023},
+        {"language": "javascript", "version": "ES2023", "year": 2023},
+        {"language": "python", "version": "3.10", "year": 2021},
+        {"language": "typescript", "version": "5.0", "year": 2023}
+    ]
+)
+
+# Query with metadata filter
+results = collection.query(
+    query_texts=["latest updates"],
+    n_results=5,
+    where={"language": "python"}  # Only Python documents
+)
+
+# Complex filters
+results = collection.query(
+    query_texts=["recent changes"],
+    n_results=5,
+    where={
+        "$and": [
+            {"year": {"$gte": 2023}},  # >= 2023
+            {"language": {"$in": ["python", "javascript"]}}  # Python OR JavaScript
+        ]
+    }
+)
+```
+
+### Persistence and Server Mode
+
+```python
+# Start ChromaDB server (in terminal):
+# chroma run --host localhost --port 8000 --path ./chroma_data
+
+# Connect from your application
+import chromadb
+
+client = chromadb.HttpClient(host="localhost", port=8000)
+
+# Use as normal
+collection = client.get_or_create_collection("my_collection")
+# ... rest of code
+```
+
+<Callout type="tip">
+**Best Use Case:** ChromaDB is perfect for prototyping, local development, and small-to-medium scale applications (up to millions of vectors). Use it when you want zero infrastructure hassle.
+</Callout>
+
+## Pinecone
+
+Pinecone is a fully managed, cloud-native vector database designed for production scale.
+
+### Strengths
+
+- Fully managed (no infrastructure management)
+- Excellent performance at scale (billions of vectors)
+- Real-time updates
+- Advanced filtering
+- Global infrastructure
+- Enterprise features (security, compliance)
+
+### Setup and Usage
+
+```python
+# Installation
+# pip install pinecone-client
+
+from pinecone import Pinecone, ServerlessSpec
+from openai import OpenAI
+
+# Initialize
+pc = Pinecone(api_key="your-pinecone-api-key")
+openai_client = OpenAI(api_key="your-openai-api-key")
+
+# Create index (only once)
+index_name = "my-index"
+
+# Check if index exists
+if index_name not in pc.list_indexes().names():
+    pc.create_index(
+        name=index_name,
+        dimension=1536,  # text-embedding-3-small dimension
+        metric="cosine",  # or "euclidean", "dotproduct"
+        spec=ServerlessSpec(
+            cloud="aws",
+            region="us-east-1"
+        )
+    )
+
+# Connect to index
+index = pc.Index(index_name)
+
+# Wait for index to be ready
+import time
+while not pc.describe_index(index_name).status['ready']:
+    time.sleep(1)
+
+print(f"Index stats: {index.describe_index_stats()}")
+
+# Prepare data
+documents = [
+    "Python is a high-level programming language",
+    "JavaScript runs in web browsers",
+    "Machine learning models learn from data",
+    "Docker containers package applications"
+]
+
+# Create embeddings
+response = openai_client.embeddings.create(
+    input=documents,
+    model="text-embedding-3-small"
+)
+
+embeddings = [item.embedding for item in response.data]
+
+# Prepare vectors for Pinecone
+vectors = [
+    {
+        "id": f"doc-{i}",
+        "values": embedding,
+        "metadata": {
+            "text": doc,
+            "source": "tutorial",
+            "timestamp": "2025-01-15"
+        }
+    }
+    for i, (doc, embedding) in enumerate(zip(documents, embeddings))
+]
+
+# Upsert vectors
+index.upsert(vectors=vectors)
+
+print(f"Upserted {len(vectors)} vectors")
+
+# Query
+query = "What is a programming language?"
+query_embedding = openai_client.embeddings.create(
+    input=query,
+    model="text-embedding-3-small"
+).data[0].embedding
+
+results = index.query(
+    vector=query_embedding,
+    top_k=3,
+    include_metadata=True
+)
+
+print("\nQuery results:")
+for match in results['matches']:
+    print(f"Score: {match['score']:.4f} | {match['metadata']['text']}")
+
+# Output:
+# Score: 0.8567 | Python is a high-level programming language
+# Score: 0.8123 | JavaScript runs in web browsers
+# Score: 0.6234 | Machine learning models learn from data
+```
+
+### Advanced Filtering
+
+```python
+# Add vectors with rich metadata
+vectors = [
+    {
+        "id": "article-1",
+        "values": embedding1,
+        "metadata": {
+            "title": "Python Tutorial",
+            "category": "programming",
+            "difficulty": "beginner",
+            "published": 2023,
+            "tags": ["python", "tutorial"],
+            "author": "Alice"
+        }
+    },
+    {
+        "id": "article-2",
+        "values": embedding2,
+        "metadata": {
+            "title": "Advanced ML",
+            "category": "ai",
+            "difficulty": "advanced",
+            "published": 2024,
+            "tags": ["ml", "deep-learning"],
+            "author": "Bob"
+        }
+    }
+]
+
+index.upsert(vectors=vectors)
+
+# Query with metadata filter
+results = index.query(
+    vector=query_embedding,
+    top_k=10,
+    filter={
+        "category": {"$eq": "programming"},
+        "difficulty": {"$in": ["beginner", "intermediate"]},
+        "published": {"$gte": 2023}
+    },
+    include_metadata=True
+)
+
+# Complex filter with $and, $or
+results = index.query(
+    vector=query_embedding,
+    top_k=10,
+    filter={
+        "$and": [
+            {"category": "programming"},
+            {
+                "$or": [
+                    {"author": "Alice"},
+                    {"tags": {"$in": ["tutorial", "guide"]}}
+                ]
+            }
+        ]
+    },
+    include_metadata=True
+)
+```
+
+### Namespaces for Multi-Tenancy
+
+<Callout type="info">
+**Namespace:** A logical partition within a vector database index that isolates data for different users or contexts. Allows multiple tenants to share infrastructure while keeping their data completely separated.
+</Callout>
+
+```python
+# Namespaces let you partition data within one index
+# Perfect for multi-tenant applications
+
+# Upsert to different namespaces
+index.upsert(
+    vectors=user1_vectors,
+    namespace="user-123"
+)
+
+index.upsert(
+    vectors=user2_vectors,
+    namespace="user-456"
+)
+
+# Query specific namespace
+results = index.query(
+    vector=query_embedding,
+    top_k=5,
+    namespace="user-123",  # Only search user-123's data
+    include_metadata=True
+)
+
+# Get stats per namespace
+stats = index.describe_index_stats()
+print(f"Namespace vector counts: {stats['namespaces']}")
+```
+
+### Batch Operations
+
+```python
+# Efficient batch upsert (up to 1000 vectors at once)
+batch_size = 100
+
+for i in range(0, len(all_vectors), batch_size):
+    batch = all_vectors[i:i + batch_size]
+    index.upsert(vectors=batch)
+    print(f"Upserted batch {i // batch_size + 1}")
+
+# Batch delete
+index.delete(ids=["doc-1", "doc-2", "doc-3"])
+
+# Delete by filter
+index.delete(filter={"category": "outdated"})
+
+# Delete namespace
+index.delete(delete_all=True, namespace="temp-data")
+```
+
+<Callout type="warning">
+**Pricing Alert:** Pinecone charges based on: (1) Index storage (dimension × vectors), (2) Read/write units, (3) Compute capacity. Free tier includes 1 index with 100K vectors. Estimate costs carefully for production workloads.
+</Callout>
+
+## Weaviate
+
+Weaviate is a flexible, open-source vector database with strong hybrid search capabilities.
+
+### Strengths
+
+- Hybrid search (vector + keyword BM25)
+- GraphQL API
+- Self-hosted or cloud
+- Built-in vectorization modules
+- Strong schema and data modeling
+- RESTful and GraphQL interfaces
+- Active community
+
+### Setup and Usage
+
+```python
+# Installation
+# pip install weaviate-client
+
+import weaviate
+from weaviate.classes.config import Configure, Property, DataType
+from openai import OpenAI
+
+# Connect to Weaviate
+client = weaviate.connect_to_local()  # Local Docker
+# OR for cloud:
+# client = weaviate.connect_to_wcs(
+#     cluster_url="your-cluster-url",
+#     auth_credentials=weaviate.auth.AuthApiKey("your-key")
+# )
+
+openai_client = OpenAI(api_key="your-api-key")
+
+# Define schema
+collection_name = "Article"
+
+# Delete if exists (for clean start)
+if client.collections.exists(collection_name):
+    client.collections.delete(collection_name)
+
+# Create collection
+articles = client.collections.create(
+    name=collection_name,
+    properties=[
+        Property(name="title", data_type=DataType.TEXT),
+        Property(name="content", data_type=DataType.TEXT),
+        Property(name="category", data_type=DataType.TEXT),
+        Property(name="published_date", data_type=DataType.DATE),
+        Property(name="author", data_type=DataType.TEXT),
+    ],
+    vectorizer_config=Configure.Vectorizer.none()  # We'll provide embeddings
+)
+
+# Add objects
+def get_embedding(text):
+    response = openai_client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    )
+    return response.data[0].embedding
+
+# Prepare data
+docs = [
+    {
+        "title": "Python Basics",
+        "content": "Learn Python programming fundamentals",
+        "category": "programming",
+        "published_date": "2024-01-15T00:00:00Z",
+        "author": "Alice"
+    },
+    {
+        "title": "Machine Learning 101",
+        "content": "Introduction to machine learning concepts",
+        "category": "ai",
+        "published_date": "2024-02-20T00:00:00Z",
+        "author": "Bob"
+    }
+]
+
+# Insert with vectors
+collection = client.collections.get(collection_name)
+
+for doc in docs:
+    # Create embedding from title + content
+    text_to_embed = f"{doc['title']}. {doc['content']}"
+    vector = get_embedding(text_to_embed)
+
+    collection.data.insert(
+        properties=doc,
+        vector=vector
+    )
+
+print("Data inserted successfully")
+
+# Vector search
+query = "programming tutorials"
+query_vector = get_embedding(query)
+
+response = collection.query.near_vector(
+    near_vector=query_vector,
+    limit=3,
+    return_properties=["title", "content", "category", "author"]
+)
+
+print("\nVector search results:")
+for obj in response.objects:
+    print(f"Title: {obj.properties['title']}")
+    print(f"Category: {obj.properties['category']}")
+    print(f"Author: {obj.properties['author']}\n")
+```
+
+### Hybrid Search (Vector + Keyword)
+
+<Callout type="info">
+**Hybrid Search:** A search technique that combines vector similarity search (semantic) with keyword-based search (lexical/BM25) to leverage the strengths of both approaches for improved retrieval accuracy.
+</Callout>
+
+```python
+# Weaviate's killer feature: combine semantic and keyword search
+
+# Hybrid search with alpha parameter
+# alpha = 0: pure keyword (BM25)
+# alpha = 1: pure vector
+# alpha = 0.5: balanced hybrid
+
+response = collection.query.hybrid(
+    query="Python programming",
+    alpha=0.5,  # Balanced
+    limit=5,
+    return_properties=["title", "content", "category"]
+)
+
+print("Hybrid search results:")
+for obj in response.objects:
+    print(f"- {obj.properties['title']}")
+
+# Hybrid search with filter
+response = collection.query.hybrid(
+    query="machine learning",
+    alpha=0.7,  # More weight on semantic
+    limit=5,
+    filters=weaviate.classes.query.Filter.by_property("category").equal("ai"),
+    return_properties=["title", "content"]
+)
+```
+
+### GraphQL Query
+
+```python
+# Weaviate also supports GraphQL for complex queries
+
+graphql_query = """
+{
+  Get {
+    Article(
+      nearText: {
+        concepts: ["programming"]
+      }
+      limit: 3
+      where: {
+        path: ["category"]
+        operator: Equal
+        valueText: "programming"
+      }
+    ) {
+      title
+      content
+      author
+      _additional {
+        distance
+        certainty
+      }
+    }
+  }
+}
+"""
+
+result = client.graphql_raw_query(graphql_query)
+print(result)
+```
+
+### Generative Search (RAG Built-in)
+
+```python
+# Weaviate can integrate with LLMs for RAG
+
+from weaviate.classes.config import Configure
+
+# Create collection with generative module
+collection = client.collections.create(
+    name="ArticleWithRAG",
+    properties=[
+        Property(name="title", data_type=DataType.TEXT),
+        Property(name="content", data_type=DataType.TEXT),
+    ],
+    vectorizer_config=Configure.Vectorizer.none(),
+    generative_config=Configure.Generative.openai(
+        model="gpt-4"
+    )
+)
+
+# Query with generation
+response = collection.generate.near_text(
+    query="Python",
+    limit=3,
+    single_prompt="Summarize this article: {content}"
+)
+
+for obj in response.objects:
+    print(f"Title: {obj.properties['title']}")
+    print(f"Generated summary: {obj.generated}\n")
+```
+
+<Callout type="info">
+**Unique Feature:** Weaviate's hybrid search (BM25 + vector) gives best of both worlds - exact keyword matching and semantic understanding. Perfect for applications needing both precision and recall.
+</Callout>
+
+## Performance Comparison
+
+### Benchmark Setup
+
+```python
+import time
+import numpy as np
+
+def benchmark_insert(db_client, vectors, name):
+    """Benchmark insert performance"""
+    start = time.time()
+
+    # Insert all vectors
+    # Implementation varies by database
+
+    end = time.time()
+    duration = end - start
+
+    print(f"{name} Insert:")
+    print(f"  Vectors: {len(vectors)}")
+    print(f"  Time: {duration:.2f}s")
+    print(f"  Throughput: {len(vectors) / duration:.0f} vectors/s")
+
+def benchmark_query(db_client, query_vector, n_queries, name):
+    """Benchmark query performance"""
+    start = time.time()
+
+    for _ in range(n_queries):
+        # Query implementation varies
+        results = db_client.query(query_vector, top_k=10)
+
+    end = time.time()
+    duration = end - start
+
+    print(f"\n{name} Query:")
+    print(f"  Queries: {n_queries}")
+    print(f"  Time: {duration:.2f}s")
+    print(f"  Throughput: {n_queries / duration:.0f} queries/s")
+    print(f"  Latency: {(duration / n_queries) * 1000:.1f}ms per query")
+```
+
+### Results Summary (1M vectors, 1536 dimensions)
+
+| Database | Insert Speed | Query Latency | Filtering Speed | Memory Usage |
+|----------|--------------|---------------|-----------------|--------------|
+| ChromaDB | 10K/s | 50-100ms | Good | Low |
+| Pinecone | 50K/s | 10-30ms | Excellent | N/A (managed) |
+| Weaviate | 30K/s | 20-40ms | Excellent | Medium |
+
+<Callout type="tip">
+**Performance Tip:** For queries &lt;10ms latency at scale, use Pinecone. For best hybrid search, use Weaviate. For local/prototype with low overhead, use ChromaDB.
+</Callout>
+
+## Cost Comparison
+
+### ChromaDB
+
+- **Free** (open source)
+- Self-hosting costs:
+  - AWS EC2 t3.medium: ~$30/month
+  - Storage: ~$0.10/GB/month
+  - Total: ~$50-200/month for small-medium workloads
+
+### Pinecone
+
+Pricing tiers:
+- **Free**: 1 index, 100K vectors, 10MB storage
+- **Standard**: ~$70/month base + usage
+  - Storage: ~$0.10 per GB/month
+  - Writes: ~$0.40 per 1M write units
+  - Reads: ~$0.08 per 1M read units
+- **Enterprise**: Custom pricing
+
+Example: 10M vectors (1536 dims)
+- Storage: ~60GB × $0.10 = $6/month
+- 1M writes/month: ~$0.40
+- 10M reads/month: ~$0.80
+- **Total: ~$77/month** (plus base)
+
+### Weaviate
+
+- **Free** (open source, self-hosted)
+- **Cloud**:
+  - Sandbox: Free (14 days)
+  - Serverless: Pay-per-use (~$25/month base)
+  - Enterprise: Custom pricing
+
+Example (self-hosted):
+- AWS EC2 r6g.2xlarge: ~$200/month
+- Storage: ~$10/month
+- **Total: ~$210/month**
+
+## When to Use Which?
+
+### Use ChromaDB If:
+
+```python
+# ✅ Prototyping and development
+# ✅ Local-first applications
+# ✅ Small to medium datasets (&lt;10M vectors)
+# ✅ Want embedded database (no separate server)
+# ✅ Budget-conscious projects
+# ✅ Simple use cases
+
+client = chromadb.PersistentClient(path="./my_db")
+collection = client.get_or_create_collection("docs")
+# Start building immediately!
+```
+
+### Use Pinecone If:
+
+```python
+# ✅ Production applications at scale
+# ✅ Need managed infrastructure
+# ✅ Global deployment required
+# ✅ Real-time updates critical
+# ✅ Budget for managed service
+# ✅ Want best performance
+# ✅ Need enterprise features
+
+pc = Pinecone(api_key="...")
+index = pc.Index("my-index")
+# Deploy globally, scale to billions
+```
+
+### Use Weaviate If:
+
+```python
+# ✅ Need hybrid search (keyword + vector)
+# ✅ GraphQL API required
+# ✅ Complex data relationships
+# ✅ Want flexibility (cloud or self-hosted)
+# ✅ On-premises deployment needed
+# ✅ RAG with built-in LLM integration
+# ✅ Active community support important
+
+client = weaviate.connect_to_local()
+collection = client.collections.get("Article")
+# Best of both worlds: semantic + keyword
+```
+
+## Migration Example
+
+Moving between databases is straightforward:
+
+```python
+from openai import OpenAI
+import chromadb
+from pinecone import Pinecone
+
+openai_client = OpenAI(api_key="your-key")
+
+# Export from ChromaDB
+chroma_client = chromadb.PersistentClient(path="./chroma_db")
+chroma_collection = chroma_client.get_collection("my_docs")
+
+# Get all data
+results = chroma_collection.get(
+    include=["documents", "metadatas", "embeddings"]
+)
+
+# Import to Pinecone
+pc = Pinecone(api_key="your-pinecone-key")
+pinecone_index = pc.Index("my-index")
+
+vectors = [
+    {
+        "id": id_,
+        "values": embedding,
+        "metadata": {
+            "text": doc,
+            **metadata
+        }
+    }
+    for id_, doc, embedding, metadata in zip(
+        results['ids'],
+        results['documents'],
+        results['embeddings'],
+        results['metadatas']
+    )
+]
+
+# Batch upsert
+batch_size = 100
+for i in range(0, len(vectors), batch_size):
+    batch = vectors[i:i + batch_size]
+    pinecone_index.upsert(vectors=batch)
+    print(f"Migrated batch {i // batch_size + 1}/{len(vectors) // batch_size + 1}")
+
+print("Migration complete!")
+```
+
+## Summary
+
+Choosing the right vector database depends on your needs:
+
+| Decision Factor | Recommended DB |
+|----------------|----------------|
+| Just starting / prototyping | **ChromaDB** |
+| Production scale (millions+) | **Pinecone** |
+| Hybrid search needed | **Weaviate** |
+| On-premises required | **Weaviate** |
+| Zero infrastructure | **Pinecone** |
+| Budget constrained | **ChromaDB** |
+| GraphQL preferred | **Weaviate** |
+
+All three are excellent choices - pick based on your specific requirements for scale, features, deployment, and budget.
+
+<Quiz
+  questions={[
+    {
+      question: "What is ChromaDB's main advantage for developers?",
+      options: [
+        "Highest performance at scale",
+        "Zero configuration embedded mode perfect for prototyping",
+        "Built-in machine learning capabilities",
+        "Cheapest cloud hosting"
+      ],
+      correctAnswer: 1,
+      explanation: "ChromaDB's main advantage is its embedded mode that requires zero configuration. You can start using it immediately without setting up servers or infrastructure, making it perfect for prototyping and local development. It can even run in-memory for testing."
+    },
+    {
+      question: "Which vector database is best for applications needing both exact keyword matching and semantic search?",
+      options: [
+        "ChromaDB, because it's fastest",
+        "Pinecone, because it's cloud-native",
+        "Weaviate, because of its built-in hybrid search (BM25 + vector)",
+        "All three are equally good for hybrid search"
+      ],
+      correctAnswer: 2,
+      explanation: "Weaviate has built-in hybrid search that combines BM25 keyword search with vector semantic search. The alpha parameter lets you control the balance between keyword and semantic matching, giving you best of both worlds for applications needing precision (exact matches) and recall (semantic similarity)."
+    },
+    {
+      question: "What is the approximate cost to run Pinecone with 10M vectors (1536 dimensions) with moderate read/write usage?",
+      options: [
+        "Free (open source)",
+        "Around $77/month",
+        "Around $500/month",
+        "Over $1000/month"
+      ],
+      correctAnswer: 1,
+      explanation: "For 10M vectors at 1536 dimensions (~60GB storage), Pinecone costs approximately: $6/month for storage + $0.40 for 1M writes + $0.80 for 10M reads + ~$70 base fee = ~$77/month total. This assumes the Standard tier with typical usage patterns."
+    },
+    {
+      question: "Which database should you choose for a production application that needs to scale to billions of vectors with managed infrastructure?",
+      options: [
+        "ChromaDB, for its simplicity",
+        "Pinecone, for its managed scalability and performance",
+        "Weaviate, for its GraphQL API",
+        "SQLite with vector extension"
+      ],
+      correctAnswer: 1,
+      explanation: "Pinecone is the best choice for production scale (billions of vectors) with managed infrastructure. It's fully managed (no DevOps needed), globally distributed, handles real-time updates, and is optimized for performance at scale. ChromaDB is better for prototyping, and Weaviate is excellent but requires more infrastructure management."
+    }
+  ]}
+/>

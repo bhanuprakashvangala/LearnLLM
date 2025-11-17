@@ -1,0 +1,1099 @@
+---
+title: "Prompt Patterns: Solutions to Common Problems"
+description: "Master 15+ battle-tested prompt templates you can use immediately for any task"
+difficulty: "beginner"
+duration: 22
+order: 9
+tags: ["Prompt Patterns", "Templates", "Best Practices", "Reusable Prompts"]
+---
+
+## Your Prompt Pattern Library
+
+You've learned the techniques—now let's build your arsenal! This lesson gives you battle-tested prompt patterns for common tasks. Think of these as recipes: proven formulas you can customize for your needs.
+
+<Callout type="info">
+**What Are Prompt Patterns?** Just like design patterns in software or recipes in cooking, prompt patterns are proven solutions to common prompting challenges. Instead of reinventing the wheel, use these templates and adapt them to your specific situation!
+</Callout>
+
+## The Master List: 15 Essential Patterns
+
+<ComparisonTable
+  title="Prompt Patterns Quick Reference"
+  columns={[
+    { title: "Use When" },
+    { title: "Difficulty" }
+  ]}
+  rows={[
+    {
+      feature: "1. The Persona Pattern",
+      values: ["Need specific expertise or perspective", "Beginner"]
+    },
+    {
+      feature: "2. The Template Pattern",
+      values: ["Want consistent format/structure", "Beginner"]
+    },
+    {
+      feature: "3. The Audience Pattern",
+      values: ["Writing for specific people", "Beginner"]
+    },
+    {
+      feature: "4. The Example Pattern",
+      values: ["Showing is easier than telling", "Beginner"]
+    },
+    {
+      feature: "5. The Constraint Pattern",
+      values: ["Need specific boundaries", "Beginner"]
+    },
+    {
+      feature: "6. The Refinement Pattern",
+      values: ["Iterating to perfection", "Intermediate"]
+    },
+    {
+      feature: "7. The Comparison Pattern",
+      values: ["Evaluating options", "Intermediate"]
+    },
+    {
+      feature: "8. The Step-by-Step Pattern",
+      values: ["Complex processes", "Beginner"]
+    },
+    {
+      feature: "9. The Question-Cascade Pattern",
+      values: ["Exploring a topic deeply", "Intermediate"]
+    },
+    {
+      feature: "10. The Reverse Pattern",
+      values: ["Getting feedback on your work", "Beginner"]
+    },
+    {
+      feature: "11. The Meta Pattern",
+      values: ["Improving prompts themselves", "Advanced"]
+    },
+    {
+      feature: "12. The Simulation Pattern",
+      values: ["Role-playing scenarios", "Intermediate"]
+    },
+    {
+      feature: "13. The Chain Pattern",
+      values: ["Multi-stage workflows", "Intermediate"]
+    },
+    {
+      feature: "14. The Negative Pattern",
+      values: ["Defining what to avoid", "Beginner"]
+    },
+    {
+      feature: "15. The Verification Pattern",
+      values: ["Ensuring accuracy", "Intermediate"]
+    }
+  ]}
+/>
+
+Let's dive into each pattern with real examples you can use today!
+
+## 1. The Persona Pattern
+
+**When to use:** You want the AI to adopt a specific role, expertise, or perspective.
+
+**Template:**
+```
+You are a [SPECIFIC ROLE] with [EXPERTISE/EXPERIENCE].
+Your audience is [WHO].
+[TASK/QUESTION]
+```
+
+**Real Examples:**
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Persona Pattern Examples"
+  initialCode={`// Demonstrating how personas change responses
+
+const personaExamples = [
+  {
+    task: "Explain cloud computing",
+    personas: [
+      {
+        role: "You are a kindergarten teacher",
+        audience: "5-year-olds",
+        approach: "Use simple words, relatable analogies (toys, games)"
+      },
+      {
+        role: "You are a CTO",
+        audience: "business executives",
+        approach: "Focus on ROI, scalability, business value"
+      },
+      {
+        role: "You are a technical trainer",
+        audience: "junior developers",
+        approach: "Technical but accessible, with code examples"
+      }
+    ]
+  }
+];
+
+console.log("HOW PERSONAS CHANGE THE SAME TASK\n");
+console.log("=".repeat(70));
+
+personaExamples.forEach(example => {
+  console.log(\`\nTASK: \${example.task}\n\`);
+
+  example.personas.forEach((persona, i) => {
+    console.log(\`PERSONA \${i + 1}: \${persona.role}\`);
+    console.log(\`Audience: \${persona.audience}\`);
+    console.log(\`Expected approach: \${persona.approach}\`);
+    console.log("-".repeat(70));
+
+    // Simulated response preview
+    if (i === 0) {
+      console.log("Response preview:");
+      console.log('"Imagine you have a really big toy box at home. Cloud');
+      console.log(' computing is like having a HUGE toy box that everyone');
+      console.log(' in your neighborhood can share..."');
+    } else if (i === 1) {
+      console.log("Response preview:");
+      console.log('"Cloud computing reduces capital expenditure by 40%');
+      console.log(' while enabling elastic scaling. Your infrastructure');
+      console.log(' costs become operational expenses..."');
+    } else {
+      console.log("Response preview:");
+      console.log('"Cloud computing uses remote servers instead of local');
+      console.log(' infrastructure. Here\\'s a simple Express.js example');
+      console.log(' deploying to AWS Lambda..."');
+    }
+    console.log();
+  });
+});
+
+console.log("=".repeat(70));
+console.log("KEY INSIGHT: Same task, completely different responses!");
+console.log("The persona shapes language, examples, and focus.");`}
+/>
+
+**Your Turn—Copy and Customize:**
+```
+You are a [patient tutor / seasoned professional / curious beginner]
+with expertise in [your field].
+
+Your audience is [describe them: age, knowledge level, goals].
+
+[Your specific task or question]
+
+Tone: [friendly / professional / enthusiastic / etc.]
+```
+
+## 2. The Template Pattern
+
+**When to use:** You need consistent structure or format every time.
+
+**Template:**
+```
+Create a [TYPE OF CONTENT] about [TOPIC] using this exact structure:
+
+1. [Section 1 name]: [What it should contain]
+2. [Section 2 name]: [What it should contain]
+3. [Section 3 name]: [What it should contain]
+
+Requirements:
+- [Requirement 1]
+- [Requirement 2]
+```
+
+**Real Example—Blog Post Template:**
+```
+Create a blog post about "Getting Started with Python" using this structure:
+
+1. Hook (1 sentence): A surprising fact or question
+2. Problem (2-3 sentences): Why people struggle with this
+3. Solution Overview (1 paragraph): What this post will teach
+4. Main Content (3 sections):
+   - Section A: [specific subtopic]
+   - Section B: [specific subtopic]
+   - Section C: [specific subtopic]
+5. Call-to-Action (2 sentences): What to do next
+
+Requirements:
+- Total length: 400-500 words
+- Tone: Encouraging and beginner-friendly
+- Include one code example
+- End with a question to readers
+```
+
+**Real Example—Meeting Notes Template:**
+```
+Summarize this meeting transcript using this format:
+
+📌 KEY DECISIONS
+- [Decision 1]
+- [Decision 2]
+
+✅ ACTION ITEMS
+- [Person]: [Task] (Deadline: [Date])
+- [Person]: [Task] (Deadline: [Date])
+
+💡 IMPORTANT POINTS
+- [Point 1]
+- [Point 2]
+
+❓ OPEN QUESTIONS
+- [Question 1]
+- [Question 2]
+
+NEXT MEETING: [Date/Time/Topic]
+
+Transcript: [paste transcript here]
+```
+
+## 3. The Audience Pattern
+
+**When to use:** Same content, different audiences.
+
+**Template:**
+```
+Explain [TOPIC] to three different audiences:
+
+Audience 1: [Description]
+- Focus on: [What matters to them]
+- Avoid: [What they don't care about]
+- Tone: [Style]
+
+Audience 2: [Description]
+- Focus on: [What matters to them]
+- Avoid: [What they don't care about]
+- Tone: [Style]
+
+Audience 3: [Description]
+- Focus on: [What matters to them]
+- Avoid: [What they don't care about]
+- Tone: [Style]
+```
+
+**Real Example:**
+```
+Explain "Why we need to upgrade our database" to three audiences:
+
+Audience 1: The CEO
+- Focus on: Business impact, cost, risk, competitive advantage
+- Avoid: Technical jargon, implementation details
+- Tone: Strategic, ROI-focused
+- Length: 3 bullet points
+
+Audience 2: The Engineering Team
+- Focus on: Technical benefits, new capabilities, migration plan
+- Avoid: Business buzzwords, oversimplification
+- Tone: Technical, collaborative
+- Length: Detailed list
+
+Audience 3: Customer Support Team
+- Focus on: How it affects customers, what changes, when
+- Avoid: Deep technical details, database internals
+- Tone: Practical, reassuring
+- Length: Short paragraph with bullet points
+```
+
+## 4. The Example Pattern (Few-Shot)
+
+**When to use:** Showing is easier than explaining.
+
+<Callout type="info">
+**Few-Shot Learning:** A technique where you provide a few examples (typically 2-5) to demonstrate the pattern you want the AI to follow. The AI learns from these examples and applies the same pattern to new inputs.
+</Callout>
+
+**Template:**
+```
+[TASK DESCRIPTION]
+
+Examples:
+
+Input: [Example 1 input]
+Output: [Example 1 output]
+
+Input: [Example 2 input]
+Output: [Example 2 output]
+
+Input: [Example 3 input]
+Output: [Example 3 output]
+
+Now do the same for:
+Input: [Your actual input]
+```
+
+**Real Example—Tone Conversion:**
+```
+Convert formal business language to friendly, casual tone:
+
+Examples:
+
+Input: "We regret to inform you that your request has been denied."
+Output: "Sorry, we can't approve this request right now."
+
+Input: "Please be advised that the meeting has been rescheduled."
+Output: "Hey! Quick heads up—we moved the meeting."
+
+Input: "We are writing to confirm receipt of your application."
+Output: "Got your application! Thanks for sending it over."
+
+Now convert:
+Input: "We kindly request that you submit the required documentation at your earliest convenience."
+```
+
+## 5. The Constraint Pattern
+
+**When to use:** You need specific boundaries (length, style, what to avoid).
+
+**Template:**
+```
+[TASK]
+
+MUST INCLUDE:
+- [Requirement 1]
+- [Requirement 2]
+
+MUST AVOID:
+- [Restriction 1]
+- [Restriction 2]
+
+CONSTRAINTS:
+- Length: [Specific limit]
+- Tone: [Style]
+- Format: [Structure]
+```
+
+**Real Example:**
+```
+Write a product description for noise-canceling headphones
+
+MUST INCLUDE:
+- Main benefit (focus/concentration)
+- One specific technical detail
+- A use case scenario
+- Price justification
+
+MUST AVOID:
+- Technical jargon (Hz, dB, etc.)
+- Comparisons to competitors
+- Hyperbole ("world's best," "revolutionary")
+- More than 3 sentences
+
+CONSTRAINTS:
+- Length: 50-75 words
+- Tone: Professional but warm
+- Format: Single paragraph, no bullet points
+- Target: Busy professionals working from home
+```
+
+## 6. The Refinement Pattern
+
+**When to use:** Iterating toward perfection.
+
+**Template:**
+```
+Here's my [TYPE OF CONTENT]:
+[Your draft]
+
+Improve it by:
+1. [Specific improvement area]
+2. [Specific improvement area]
+3. [Specific improvement area]
+
+Keep: [What's working]
+Change: [What needs work]
+Target audience: [Who it's for]
+```
+
+**Real Example:**
+```
+Here's my email to a potential client:
+
+"Hi, I saw your company and thought we could work together.
+We do web development. Let me know if interested. Thanks."
+
+Improve it by:
+1. Making it more personal (reference something specific about their company)
+2. Clearly stating the value proposition
+3. Including a specific call-to-action
+4. Making it more professional yet friendly
+
+Keep: Brevity (don't make it longer than 100 words)
+Change: Everything else
+Target audience: Busy startup founder
+```
+
+## 7. The Comparison Pattern
+
+**When to use:** Deciding between options.
+
+**Template:**
+```
+Compare [OPTION A] vs [OPTION B] for [CONTEXT/USE CASE]
+
+Evaluate based on:
+1. [Criterion 1]
+2. [Criterion 2]
+3. [Criterion 3]
+
+For each option, provide:
+- Strengths
+- Weaknesses
+- Best for (when to choose it)
+- Deal-breakers (when NOT to choose it)
+
+Then recommend which option for my situation:
+[Your specific context]
+```
+
+**Real Example:**
+```
+Compare React vs Vue.js for a small team (3 developers) building a customer dashboard
+
+Evaluate based on:
+1. Learning curve (we're new to modern frameworks)
+2. Community support and resources
+3. Performance for data-heavy UIs
+4. Long-term maintenance burden
+
+For each framework, provide:
+- Strengths (what it does best)
+- Weaknesses (where it struggles)
+- Best for (ideal use cases)
+- Deal-breakers (when to avoid)
+
+Then recommend which for our situation:
+- Team: 1 senior, 2 junior developers
+- Timeline: 3 months to MVP
+- Requirements: Real-time data updates, complex tables, charts
+- Long-term: Will need to scale and add features
+```
+
+## 8. The Step-by-Step Pattern
+
+**When to use:** Explaining processes or procedures.
+
+**Template:**
+```
+Explain how to [TASK] step-by-step.
+
+For each step, provide:
+- What to do
+- Why it matters
+- Common mistakes to avoid
+- Estimated time
+
+Assumptions about user:
+- [Knowledge level]
+- [Available tools/resources]
+
+Format: Numbered list with clear instructions
+```
+
+**Real Example:**
+```
+Explain how to set up a professional LinkedIn profile step-by-step.
+
+For each step, provide:
+- Exact action to take
+- Why it increases profile visibility/impact
+- Common mistake people make here
+- Time needed
+
+Assumptions:
+- User has basic computer skills
+- User has a resume ready
+- User is a mid-career professional (5+ years experience)
+
+Goal: Create a profile that attracts recruiter attention
+Format: Numbered list, max 10 steps, each step 2-3 sentences
+```
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Pattern Combination Builder"
+  initialCode={`// Combine multiple patterns for powerful prompts
+
+class PromptPatternBuilder {
+  constructor() {
+    this.patterns = [];
+  }
+
+  addPersona(role, audience) {
+    this.patterns.push({
+      type: "Persona",
+      content: \`You are a \${role}. Your audience is \${audience}.\`
+    });
+    return this;
+  }
+
+  addTemplate(structure) {
+    this.patterns.push({
+      type: "Template",
+      content: \`Use this structure:\n\${structure}\`
+    });
+    return this;
+  }
+
+  addConstraints(constraints) {
+    this.patterns.push({
+      type: "Constraints",
+      content: \`Requirements:\n\${constraints.join('\\n')}\`
+    });
+    return this;
+  }
+
+  addExamples(examples) {
+    const formatted = examples.map((ex, i) =>
+      \`Example \${i + 1}:\nInput: "\${ex.input}"\nOutput: "\${ex.output}"\`
+    ).join('\n\n');
+
+    this.patterns.push({
+      type: "Examples",
+      content: formatted
+    });
+    return this;
+  }
+
+  build(task) {
+    let prompt = \`Task: \${task}\n\n\`;
+
+    this.patterns.forEach(pattern => {
+      prompt += \`--- \${pattern.type} ---\n\`;
+      prompt += \`\${pattern.content}\n\n\`;
+    });
+
+    return prompt;
+  }
+}
+
+// Example: Email writer combining multiple patterns
+const emailPrompt = new PromptPatternBuilder()
+  .addPersona(
+    "professional copywriter specializing in cold outreach",
+    "busy startup founders"
+  )
+  .addTemplate(\`
+1. Hook (1 sentence): Personalized observation about their company
+2. Value prop (2 sentences): What problem you solve for companies like theirs
+3. Proof (1 sentence): Brief credibility signal
+4. CTA (1 sentence): Specific, low-commitment ask\`)
+  .addExamples([
+    {
+      input: "Tech startup, just raised Series A, hiring fast",
+      output: "Saw you're scaling fast post-Series A—congrats! We help companies..."
+    },
+    {
+      input: "E-commerce company, focusing on customer retention",
+      output: "Noticed your focus on retention (loved the blog post!). We help..."
+    }
+  ])
+  .addConstraints([
+    "- Total length: 75-100 words",
+    "- Tone: Professional but conversational",
+    "- No buzzwords or hype",
+    "- Must feel personalized, not template"
+  ])
+  .build("Write a cold email to a SaaS company that just launched a new product");
+
+console.log("COMBINED PATTERN PROMPT:");
+console.log("=".repeat(70));
+console.log(emailPrompt);
+console.log("=".repeat(70));
+
+console.log("\nPATTERNS USED:");
+console.log("✓ Persona (professional copywriter)");
+console.log("✓ Template (4-part structure)");
+console.log("✓ Examples (2 sample emails)");
+console.log("✓ Constraints (length, tone, requirements)");
+
+console.log("\nRESULT: Highly specific, consistent, high-quality output!");`}
+/>
+
+## 9. The Question-Cascade Pattern
+
+**When to use:** Deep exploration of a topic.
+
+**Template:**
+```
+I want to understand [TOPIC] deeply.
+
+Start with: [Initial question]
+
+After answering, ask me 3 follow-up questions to explore further.
+Based on my answer, continue asking questions until I fully understand.
+
+Teaching style: [Socratic method / ELI5 / Technical / etc.]
+```
+
+**Real Example:**
+```
+I want to understand how APIs work deeply.
+
+Start with: "What is an API in the simplest terms?"
+
+After I confirm I understand, ask me 3 follow-up questions to deepen understanding.
+Continue this pattern for 5 rounds.
+
+Teaching style: Use analogies and real-world examples (like explaining to a smart teenager).
+My goal: Be able to explain APIs to my team and understand API documentation.
+```
+
+## 10. The Reverse Pattern
+
+**When to use:** Getting feedback on YOUR work.
+
+**Template:**
+```
+I created [THING] for [PURPOSE].
+
+Here it is:
+[Your work]
+
+Review it as if you were a [ROLE]:
+
+1. What works well? (Be specific)
+2. What could be improved? (With examples)
+3. What's missing that [ROLE] would expect?
+4. Rate it: [Criteria 1], [Criteria 2], [Criteria 3] (1-10 scale)
+5. Give 3 concrete next steps to improve it
+
+Context:
+- Target audience: [Who]
+- Current stage: [Draft / Final / etc.]
+- Main goal: [What success looks like]
+```
+
+**Real Example:**
+```
+I created a landing page headline for my productivity app.
+
+Headline: "Get More Done With Less Stress"
+Subheadline: "The smart task manager that actually works"
+
+Review it as if you were a conversion copywriter:
+
+1. What works well about this headline?
+2. What could be improved?
+3. What's missing that would increase conversions?
+4. Rate it:
+   - Clarity (1-10)
+   - Compelling-ness (1-10)
+   - Differentiation (1-10)
+5. Give 3 alternative headlines to test
+
+Context:
+- Target: Busy professionals feeling overwhelmed
+- Goal: 30% click-through rate
+- Competitors: Todoist, Asana, ClickUp
+```
+
+## 11. The Meta Pattern
+
+**When to use:** Improving prompts themselves.
+
+**Template:**
+```
+I wrote this prompt:
+[Your prompt]
+
+Analyze it and improve it.
+
+Current goal: [What you want it to achieve]
+
+Issues I'm facing:
+- [Problem 1]
+- [Problem 2]
+
+Suggest:
+1. What's unclear or missing?
+2. What could be more specific?
+3. How to structure it better?
+4. The improved version
+```
+
+**Real Example:**
+```
+I wrote this prompt to generate social media posts:
+"Write a post about our new feature"
+
+Analyze and improve it.
+
+Current goal: Get engaging LinkedIn posts that drive clicks
+
+Issues I'm facing:
+- Posts are generic and boring
+- Don't match our brand voice
+- Low engagement
+
+Suggest:
+1. What critical information is missing?
+2. How to make it produce consistent quality?
+3. How to capture our brand voice?
+4. Write the improved prompt that solves these issues
+```
+
+## 12. The Simulation Pattern
+
+**When to use:** Practice scenarios or role-play.
+
+**Template:**
+```
+Simulate a [SCENARIO] where you play [ROLE 1] and I play [ROLE 2].
+
+Scenario context:
+- [Detail 1]
+- [Detail 2]
+
+Your character:
+- Personality: [Traits]
+- Goals: [What they want]
+- Challenges: [Objections/concerns]
+
+Rules:
+- [Rule 1]
+- [Rule 2]
+
+Start the simulation and respond to my actions.
+```
+
+**Real Example:**
+```
+Simulate a difficult customer conversation where you play an angry customer and I practice customer support.
+
+Scenario: Customer's order arrived late and damaged.
+
+Your character (angry customer):
+- Personality: Frustrated, feels disrespected, but reasonable if heard
+- Goals: Get a refund AND replacement, get apology
+- Will escalate if: Blamed, given runarounds, not taken seriously
+
+Rules:
+- Stay in character but don't be abusive
+- Give me feedback after each of my responses (break character to coach me)
+- End simulation when issue is resolved or after 10 exchanges
+
+Customer's opening line: "This is absolutely unacceptable! I paid $200 and you sent me garbage!"
+```
+
+## 13. The Chain Pattern
+
+**When to use:** Multi-stage workflows.
+
+**Template:**
+```
+I need to complete a multi-step project: [PROJECT]
+
+Step 1: [First task]
+- Deliverable: [What you'll create]
+
+[Wait for completion]
+
+Step 2: [Second task, building on Step 1]
+- Input: [From Step 1]
+- Deliverable: [What you'll create]
+
+[Wait for completion]
+
+Step 3: [Third task]
+...
+
+After each step, pause for my review before proceeding.
+```
+
+**Real Example:**
+```
+I need to create a complete blog post workflow.
+
+Step 1: Brainstorm 5 blog post ideas about "AI for small businesses"
+- Deliverable: 5 headlines with brief descriptions
+
+[I'll choose one]
+
+Step 2: Create a detailed outline for the chosen topic
+- Deliverable: Intro, 5 main sections with bullet points, conclusion
+
+[I'll review and approve]
+
+Step 3: Write the introduction (150 words)
+- Deliverable: Hook, problem, solution overview, transition
+
+[I'll review]
+
+Step 4: Write Section 1
+...
+
+Tone: Practical, encouraging, no hype
+Audience: Small business owners, non-technical
+Goal: Position ourselves as helpful experts
+```
+
+## 14. The Negative Pattern
+
+**When to use:** Defining what to AVOID.
+
+**Template:**
+```
+[TASK]
+
+REQUIRED:
+- [Must-have 1]
+- [Must-have 2]
+
+FORBIDDEN (Do NOT include):
+- [Avoid 1] because [reason]
+- [Avoid 2] because [reason]
+- [Avoid 3] because [reason]
+
+This is important because: [Why avoiding these matters]
+```
+
+**Real Example:**
+```
+Write a product description for our financial planning software aimed at millennials
+
+REQUIRED:
+- Focus on financial freedom and goals (not retirement)
+- Mention mobile app
+- Include pricing ($12/month)
+
+FORBIDDEN:
+- Do NOT use "budget" (negative connotation for our audience)
+- Do NOT mention "retirement planning" (they're 25-35, not thinking about it)
+- Do NOT use jargon (401k, portfolio allocation, etc.)
+- Do NOT sound like a bank (stuffy, corporate)
+
+This matters because our audience has been turned off by traditional financial services.
+We need to sound like a friend, not a financial advisor.
+```
+
+## 15. The Verification Pattern
+
+**When to use:** Ensuring accuracy and catching errors.
+
+**Template:**
+```
+[TASK/QUESTION]
+
+Provide your answer, then verify it using:
+
+1. Logic Check: Does this make logical sense?
+2. Fact Check: Are there any factual claims to verify?
+3. Math Check: Are calculations correct?
+4. Bias Check: Are there assumptions to question?
+5. Completeness Check: What might be missing?
+
+Final confidence level: Low / Medium / High
+If Medium or Low, explain what's uncertain.
+```
+
+**Real Example:**
+```
+Calculate the ROI of hiring a content marketing manager
+
+Context:
+- Salary: $85,000/year
+- Currently spending: $30,000/year on freelancers
+- Average customer lifetime value: $12,000
+- Typical conversion rate from blog: 2%
+
+Provide ROI calculation, then verify:
+
+1. Logic Check: Does the business case make sense?
+2. Math Check: Are all calculations correct? Show your work.
+3. Assumptions Check: What assumptions am I making? Are they reasonable?
+4. Missing Data Check: What info would make this more accurate?
+5. Risk Check: What could make this ROI not materialize?
+
+Final confidence in this ROI estimate: [Low/Medium/High] because [reason]
+```
+
+<ComparisonTable
+  title="When to Use Which Pattern"
+  columns={[
+    { title: "Best Pattern" },
+    { title: "Why" }
+  ]}
+  rows={[
+    {
+      feature: "Need consistent output format",
+      values: ["Template Pattern", "Defines exact structure"]
+    },
+    {
+      feature: "Complex multi-step task",
+      values: ["Chain Pattern", "Breaks it into manageable pieces"]
+    },
+    {
+      feature: "Learning something new",
+      values: ["Question-Cascade Pattern", "Explores deeply through dialogue"]
+    },
+    {
+      feature: "Getting feedback",
+      values: ["Reverse Pattern", "AI reviews your work"]
+    },
+    {
+      feature: "Need specific expertise",
+      values: ["Persona Pattern", "Sets the right perspective"]
+    },
+    {
+      feature: "Comparing options",
+      values: ["Comparison Pattern", "Systematic evaluation"]
+    },
+    {
+      feature: "First draft is boring",
+      values: ["Refinement Pattern", "Iterative improvement"]
+    },
+    {
+      feature: "Style/format unclear",
+      values: ["Example Pattern (Few-Shot)", "Shows exactly what you want"]
+    }
+  ]}
+/>
+
+## Pattern Combinations
+
+The real power comes from combining patterns! Here's how:
+
+**Example: Product Description (Combining 4 Patterns)**
+
+```
+[PERSONA PATTERN]
+You are a conversion copywriter who's written $10M+ in sales copy.
+
+[AUDIENCE PATTERN]
+Target: Tech-savvy millennials (25-35) who value sustainability
+
+[EXAMPLE PATTERN]
+Write in this style:
+
+Example 1: "Not just fast. Instant. We're talking blink-and-you-miss-it fast."
+Example 2: "Your phone's not just protected. It's fortified. Drop it, kick it, we dare you."
+
+[CONSTRAINT PATTERN]
+Product: Sustainable phone case made from recycled ocean plastic
+
+Requirements:
+- 50-75 words
+- Focus on sustainability + protection (not "just" eco-friendly)
+- Include price ($29) but make it feel justified
+- Mention lifetime warranty
+
+Avoid:
+- Greenwashing language ("save the planet")
+- Being preachy
+- Boring feature lists
+```
+
+## Test Your Knowledge
+
+<Quiz
+  title="Prompt Patterns Mastery"
+  questions={[
+    {
+      question: "You need the AI to review your resume. Which pattern is best?",
+      options: [
+        "Template Pattern",
+        "Reverse Pattern",
+        "Question-Cascade Pattern",
+        "Simulation Pattern"
+      ],
+      correctAnswer: 1,
+      explanation: "Reverse Pattern is perfect for getting feedback on YOUR work! You provide what you created, specify the perspective (e.g., 'review as if you were a hiring manager'), and get structured feedback. It's designed specifically for this use case."
+    },
+    {
+      question: "You want consistent structure for all blog posts. Which pattern?",
+      options: [
+        "Persona Pattern",
+        "Refinement Pattern",
+        "Template Pattern",
+        "Negative Pattern"
+      ],
+      correctAnswer: 2,
+      explanation: "Template Pattern creates consistent structure! You define the exact format (Section 1: Hook, Section 2: Problem, etc.) and every output follows that structure. Perfect for maintaining consistency across multiple pieces of content."
+    },
+    {
+      question: "What's the main benefit of combining patterns?",
+      options: [
+        "Makes prompts longer",
+        "Confuses the AI into trying harder",
+        "Addresses multiple aspects (role, structure, constraints, examples) for more precise output",
+        "It's required for patterns to work"
+      ],
+      correctAnswer: 2,
+      explanation: "Combining patterns is powerful because each addresses a different aspect! Persona sets perspective, Template sets structure, Examples show style, Constraints set boundaries. Together they create highly specific, consistent, useful outputs. Use 2-4 patterns together for best results."
+    },
+    {
+      question: "You're learning a new topic and want to explore it deeply. Which pattern?",
+      options: [
+        "Template Pattern",
+        "Question-Cascade Pattern",
+        "Negative Pattern",
+        "Example Pattern"
+      ],
+      correctAnswer: 1,
+      explanation: "Question-Cascade Pattern creates a dialogue! The AI asks you questions based on your answers, exploring the topic progressively deeper. It's like having a tutor who adapts to your understanding, perfect for deep learning."
+    },
+    {
+      question: "What's the Negative Pattern best for?",
+      options: [
+        "Being mean to the AI",
+        "Defining what to AVOID (tone, words, approaches you don't want)",
+        "Testing if the AI can handle criticism",
+        "Making prompts shorter"
+      ],
+      correctAnswer: 1,
+      explanation: "Negative Pattern specifies what NOT to do! 'AVOID: corporate jargon, buzzwords, hype' is often as important as what TO include. It's perfect for preventing common mistakes or unwanted patterns, especially when you have specific things that turn off your audience."
+    }
+  ]}
+/>
+
+## Key Takeaways
+
+🎯 **Patterns Are Reusable Solutions**
+- Save time—don't start from scratch
+- Proven to work across many scenarios
+- Customize to your specific needs
+
+🎯 **Start With Core Patterns**
+- Persona (role/perspective)
+- Template (structure)
+- Example (few-shot)
+- Constraint (boundaries)
+
+🎯 **Combine Patterns for Power**
+- Use 2-4 patterns together
+- Each addresses different aspect
+- Results in precise, consistent output
+
+🎯 **Build Your Library**
+- Save patterns that work for you
+- Customize them over time
+- Share successful patterns with your team
+
+## Your Practice Assignment
+
+**Build Your Personal Prompt Pattern Library**
+
+Create a document with these sections:
+
+1. **My Top 5 Patterns** - Which ones do you use most?
+
+2. **Custom Templates** - Adapt patterns for YOUR common tasks:
+   - Email template
+   - Content creation template
+   - Learning template
+   - Decision-making template
+
+3. **Successful Combinations** - What pattern combos work best for you?
+
+4. **Before & After** - Take a weak prompt you've used, apply patterns, compare results
+
+<Callout type="tip">
+**Pro Tip:** Create a "Prompt Library" document (Google Doc, Notion, Obsidian, etc.) where you save these patterns with YOUR customizations. Add to it whenever you craft a great prompt. In 3 months, you'll have an incredible resource that saves hours of time!
+</Callout>
+
+## What's Next?
+
+In the final lesson of this module, **"Build Your Prompt Library Project"**, you'll create your own reusable prompt collection—a hands-on project that gives you a ready-to-use library for your specific needs!
+
+You'll create:
+- 10-15 customized prompts for YOUR use cases
+- Organized by category
+- With examples and variations
+- Ready to use immediately

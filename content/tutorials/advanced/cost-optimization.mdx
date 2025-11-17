@@ -1,0 +1,918 @@
+---
+title: "Cost Optimization for LLM Applications"
+description: "Implement comprehensive cost optimization strategies including model selection, batching, and intelligent routing"
+order: 74
+duration: 22
+difficulty: "advanced"
+tags: ["cost-optimization", "efficiency", "production", "batching", "routing"]
+objectives:
+  - Implement cost-effective model selection strategies
+  - Optimize costs through batching and caching
+  - Use model routing for cost-quality tradeoffs
+  - Monitor and reduce inference costs
+---
+
+# Cost Optimization for LLM Applications
+
+Master strategies to minimize LLM inference costs while maintaining quality and performance in production applications.
+
+<Callout type="info">
+**What You'll Learn**: LLM costs can quickly spiral in production. We'll explore proven strategies to optimize costs including smart model selection, batching, caching, and intelligent routing between models.
+</Callout>
+
+## Understanding LLM Costs
+
+### Cost Breakdown
+
+```python
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+from datetime import datetime, timedelta
+import pandas as pd
+
+@dataclass
+class ModelPricing:
+    """Pricing information for different models"""
+    name: str
+    input_price_per_1k: float  # USD per 1K input tokens
+    output_price_per_1k: float  # USD per 1K output tokens
+    context_window: int
+    avg_tokens_per_second: float
+
+# Current pricing (as of 2024 - check latest prices)
+MODELS = {
+    "gpt-4-turbo": ModelPricing(
+        name="GPT-4 Turbo",
+        input_price_per_1k=0.01,
+        output_price_per_1k=0.03,
+        context_window=128000,
+        avg_tokens_per_second=40
+    ),
+    "gpt-3.5-turbo": ModelPricing(
+        name="GPT-3.5 Turbo",
+        input_price_per_1k=0.0005,
+        output_price_per_1k=0.0015,
+        context_window=16000,
+        avg_tokens_per_second=90
+    ),
+    "claude-3-opus": ModelPricing(
+        name="Claude 3 Opus",
+        input_price_per_1k=0.015,
+        output_price_per_1k=0.075,
+        context_window=200000,
+        avg_tokens_per_second=35
+    ),
+    "claude-3-sonnet": ModelPricing(
+        name="Claude 3 Sonnet",
+        input_price_per_1k=0.003,
+        output_price_per_1k=0.015,
+        context_window=200000,
+        avg_tokens_per_second=60
+    ),
+    "claude-3-haiku": ModelPricing(
+        name="Claude 3 Haiku",
+        input_price_per_1k=0.00025,
+        output_price_per_1k=0.00125,
+        context_window=200000,
+        avg_tokens_per_second=100
+    ),
+    "llama-2-70b": ModelPricing(
+        name="Llama 2 70B (self-hosted)",
+        input_price_per_1k=0.0,  # Self-hosted
+        output_price_per_1k=0.0,
+        context_window=4096,
+        avg_tokens_per_second=25  # Depends on hardware
+    )
+}
+
+class CostCalculator:
+    """Calculate and analyze LLM costs"""
+
+    def __init__(self, model_pricing: Dict[str, ModelPricing]):
+        self.models = model_pricing
+
+    def calculate_request_cost(
+        self,
+        model_name: str,
+        input_tokens: int,
+        output_tokens: int
+    ) -> float:
+        """Calculate cost for a single request"""
+
+        model = self.models[model_name]
+
+        input_cost = (input_tokens / 1000) * model.input_price_per_1k
+        output_cost = (output_tokens / 1000) * model.output_price_per_1k
+
+        return input_cost + output_cost
+
+    def estimate_monthly_cost(
+        self,
+        model_name: str,
+        requests_per_day: int,
+        avg_input_tokens: int,
+        avg_output_tokens: int,
+        days: int = 30
+    ) -> Dict[str, float]:
+        """Estimate monthly costs"""
+
+        cost_per_request = self.calculate_request_cost(
+            model_name,
+            avg_input_tokens,
+            avg_output_tokens
+        )
+
+        total_requests = requests_per_day * days
+        total_cost = cost_per_request * total_requests
+
+        return {
+            "cost_per_request": cost_per_request,
+            "daily_cost": cost_per_request * requests_per_day,
+            "monthly_cost": total_cost,
+            "total_requests": total_requests
+        }
+
+    def compare_models(
+        self,
+        requests_per_day: int,
+        avg_input_tokens: int,
+        avg_output_tokens: int
+    ) -> pd.DataFrame:
+        """Compare costs across models"""
+
+        results = []
+
+        for model_name, model in self.models.items():
+            costs = self.estimate_monthly_cost(
+                model_name,
+                requests_per_day,
+                avg_input_tokens,
+                avg_output_tokens
+            )
+
+            results.append({
+                "Model": model.name,
+                "Cost per Request": f"${costs['cost_per_request']:.6f}",
+                "Daily Cost": f"${costs['daily_cost']:.2f}",
+                "Monthly Cost": f"${costs['monthly_cost']:.2f}",
+                "Tokens/sec": model.avg_tokens_per_second
+            })
+
+        return pd.DataFrame(results)
+
+    def find_optimal_model(
+        self,
+        budget: float,
+        requests_per_day: int,
+        avg_input_tokens: int,
+        avg_output_tokens: int,
+        min_quality_score: float = 0.0
+    ) -> List[str]:
+        """Find models within budget"""
+
+        affordable_models = []
+
+        for model_name in self.models.keys():
+            costs = self.estimate_monthly_cost(
+                model_name,
+                requests_per_day,
+                avg_input_tokens,
+                avg_output_tokens
+            )
+
+            if costs["monthly_cost"] <= budget:
+                affordable_models.append({
+                    "model": model_name,
+                    "monthly_cost": costs["monthly_cost"]
+                })
+
+        return sorted(affordable_models, key=lambda x: x["monthly_cost"])
+
+# Example usage
+calculator = CostCalculator(MODELS)
+
+# Calculate single request cost
+cost = calculator.calculate_request_cost(
+    "gpt-4-turbo",
+    input_tokens=500,
+    output_tokens=200
+)
+print(f"Single request cost: ${cost:.4f}")
+
+# Estimate monthly costs
+monthly = calculator.estimate_monthly_cost(
+    "gpt-3.5-turbo",
+    requests_per_day=10000,
+    avg_input_tokens=500,
+    avg_output_tokens=200
+)
+print(f"\nMonthly cost estimate: ${monthly['monthly_cost']:.2f}")
+
+# Compare models
+comparison = calculator.compare_models(
+    requests_per_day=10000,
+    avg_input_tokens=500,
+    avg_output_tokens=200
+)
+print("\nModel Comparison:")
+print(comparison)
+
+# Find models within budget
+affordable = calculator.find_optimal_model(
+    budget=1000,  # $1000/month
+    requests_per_day=10000,
+    avg_input_tokens=500,
+    avg_output_tokens=200
+)
+print(f"\nModels within $1000/month budget:")
+for model in affordable:
+    print(f"  {model['model']}: ${model['monthly_cost']:.2f}/month")
+```
+
+## Model Selection Strategies
+
+<Callout type="tip">
+**Smart Model Selection**: Use smaller, cheaper models when possible and reserve expensive models for complex tasks. This can reduce costs by 70-90%.
+</Callout>
+
+### Task-Based Model Routing
+
+```python
+from typing import Callable, Any
+import re
+
+class ModelRouter:
+    """Route requests to appropriate models based on task complexity"""
+
+    def __init__(self, cost_calculator: CostCalculator):
+        self.cost_calculator = cost_calculator
+        self.routing_rules = []
+        self.model_stats = {}
+
+    def add_rule(
+        self,
+        name: str,
+        condition: Callable[[str], bool],
+        model: str,
+        priority: int = 0
+    ):
+        """Add routing rule"""
+
+        self.routing_rules.append({
+            "name": name,
+            "condition": condition,
+            "model": model,
+            "priority": priority
+        })
+
+        # Sort by priority
+        self.routing_rules.sort(key=lambda x: x["priority"], reverse=True)
+
+    def route(self, prompt: str, metadata: Dict[str, Any] = None) -> str:
+        """Determine which model to use"""
+
+        metadata = metadata or {}
+
+        # Check rules in priority order
+        for rule in self.routing_rules:
+            if rule["condition"](prompt):
+                model = rule["model"]
+
+                # Track usage
+                if model not in self.model_stats:
+                    self.model_stats[model] = {"count": 0, "rule": rule["name"]}
+                self.model_stats[model]["count"] += 1
+
+                return model
+
+        # Default to cheapest model
+        return "gpt-3.5-turbo"
+
+    def get_stats(self) -> Dict:
+        """Get routing statistics"""
+        total = sum(stats["count"] for stats in self.model_stats.values())
+
+        return {
+            "total_requests": total,
+            "model_distribution": self.model_stats
+        }
+
+# Create router with rules
+router = ModelRouter(calculator)
+
+# Rule 1: Simple queries -> cheapest model
+router.add_rule(
+    name="simple_query",
+    condition=lambda p: len(p.split()) < 20,
+    model="claude-3-haiku",
+    priority=1
+)
+
+# Rule 2: Complex reasoning -> best model
+router.add_rule(
+    name="complex_reasoning",
+    condition=lambda p: any(word in p.lower() for word in [
+        "analyze", "reasoning", "complex", "explain in detail"
+    ]),
+    model="gpt-4-turbo",
+    priority=3
+)
+
+# Rule 3: Code generation -> good code model
+router.add_rule(
+    name="code_generation",
+    condition=lambda p: any(word in p.lower() for word in [
+        "code", "function", "class", "implement", "python", "javascript"
+    ]),
+    model="claude-3-sonnet",
+    priority=2
+)
+
+# Rule 4: Long context -> model with large context window
+router.add_rule(
+    name="long_context",
+    condition=lambda p: len(p.split()) > 1000,
+    model="claude-3-opus",
+    priority=2
+)
+
+# Test routing
+test_prompts = [
+    "What is the capital of France?",
+    "Implement a binary search tree in Python with insert, delete, and search methods",
+    "Analyze the geopolitical implications of climate change on global trade patterns",
+    "Hi there!"
+]
+
+print("Model Routing Examples:")
+for prompt in test_prompts:
+    model = router.route(prompt)
+    print(f"\nPrompt: {prompt[:60]}...")
+    print(f"Routed to: {model}")
+
+# Get routing stats
+stats = router.get_stats()
+print(f"\nRouting Statistics:")
+print(f"Total requests: {stats['total_requests']}")
+for model, info in stats['model_distribution'].items():
+    print(f"  {model}: {info['count']} ({info['rule']})")
+```
+
+### Adaptive Model Selection
+
+```python
+class AdaptiveModelSelector:
+    """Dynamically select models based on quality feedback"""
+
+    def __init__(self):
+        self.model_performance = {}  # Track quality scores
+        self.model_costs = {}  # Track actual costs
+        self.request_history = []
+
+    def select_model(
+        self,
+        task_type: str,
+        quality_threshold: float = 0.7,
+        budget_limit: Optional[float] = None
+    ) -> str:
+        """Select model based on historical performance"""
+
+        # Get candidate models for task type
+        candidates = self._get_candidate_models(task_type)
+
+        # Filter by quality threshold
+        qualified = [
+            model for model in candidates
+            if self._get_avg_quality(model, task_type) >= quality_threshold
+        ]
+
+        if not qualified:
+            # If no model meets quality, use best available
+            qualified = candidates
+
+        # Sort by cost efficiency (quality / cost)
+        ranked = sorted(
+            qualified,
+            key=lambda m: self._get_cost_efficiency(m, task_type),
+            reverse=True
+        )
+
+        # Apply budget constraint
+        if budget_limit:
+            ranked = [
+                m for m in ranked
+                if self._get_avg_cost(m, task_type) <= budget_limit
+            ]
+
+        return ranked[0] if ranked else "gpt-3.5-turbo"
+
+    def record_result(
+        self,
+        model: str,
+        task_type: str,
+        quality_score: float,
+        cost: float,
+        tokens_used: int
+    ):
+        """Record model performance"""
+
+        key = f"{model}:{task_type}"
+
+        if key not in self.model_performance:
+            self.model_performance[key] = []
+            self.model_costs[key] = []
+
+        self.model_performance[key].append(quality_score)
+        self.model_costs[key].append(cost)
+
+        self.request_history.append({
+            "model": model,
+            "task_type": task_type,
+            "quality": quality_score,
+            "cost": cost,
+            "tokens": tokens_used,
+            "timestamp": datetime.now()
+        })
+
+    def _get_candidate_models(self, task_type: str) -> List[str]:
+        """Get candidate models for task"""
+
+        # Simple rule-based candidates
+        if task_type == "simple":
+            return ["claude-3-haiku", "gpt-3.5-turbo"]
+        elif task_type == "complex":
+            return ["gpt-4-turbo", "claude-3-opus", "claude-3-sonnet"]
+        elif task_type == "code":
+            return ["gpt-4-turbo", "claude-3-sonnet"]
+        else:
+            return ["gpt-3.5-turbo", "claude-3-sonnet"]
+
+    def _get_avg_quality(self, model: str, task_type: str) -> float:
+        """Get average quality score for model on task type"""
+
+        key = f"{model}:{task_type}"
+
+        if key not in self.model_performance:
+            return 0.5  # Default assumption
+
+        scores = self.model_performance[key]
+        return sum(scores) / len(scores)
+
+    def _get_avg_cost(self, model: str, task_type: str) -> float:
+        """Get average cost for model on task type"""
+
+        key = f"{model}:{task_type}"
+
+        if key not in self.model_costs:
+            return float('inf')
+
+        costs = self.model_costs[key]
+        return sum(costs) / len(costs)
+
+    def _get_cost_efficiency(self, model: str, task_type: str) -> float:
+        """Calculate cost efficiency (quality per dollar)"""
+
+        quality = self._get_avg_quality(model, task_type)
+        cost = self._get_avg_cost(model, task_type)
+
+        if cost == 0:
+            return quality
+
+        return quality / cost
+
+    def get_recommendations(self) -> Dict:
+        """Get model recommendations based on history"""
+
+        recommendations = {}
+
+        for task_type in ["simple", "complex", "code"]:
+            candidates = self._get_candidate_models(task_type)
+
+            ranked = sorted(
+                candidates,
+                key=lambda m: self._get_cost_efficiency(m, task_type),
+                reverse=True
+            )
+
+            recommendations[task_type] = {
+                "best_model": ranked[0] if ranked else None,
+                "efficiency": self._get_cost_efficiency(ranked[0], task_type) if ranked else 0
+            }
+
+        return recommendations
+
+# Example usage
+selector = AdaptiveModelSelector()
+
+# Simulate some requests and record results
+selector.record_result("gpt-3.5-turbo", "simple", quality_score=0.9, cost=0.001, tokens_used=100)
+selector.record_result("claude-3-haiku", "simple", quality_score=0.85, cost=0.0005, tokens_used=100)
+selector.record_result("gpt-4-turbo", "complex", quality_score=0.95, cost=0.02, tokens_used=500)
+selector.record_result("claude-3-sonnet", "complex", quality_score=0.92, cost=0.008, tokens_used=500)
+
+# Select model for new request
+recommended = selector.select_model("simple", quality_threshold=0.8)
+print(f"Recommended model for simple task: {recommended}")
+
+recommendations = selector.get_recommendations()
+print("\nModel Recommendations:")
+for task, rec in recommendations.items():
+    print(f"{task}: {rec['best_model']} (efficiency: {rec['efficiency']:.2f})")
+```
+
+## Batching Optimization
+
+<Callout type="info">
+**Batching**: Process multiple requests together to amortize overhead and reduce per-request costs. This is especially effective for API-based models with per-request pricing.
+</Callout>
+
+### Intelligent Batching
+
+```python
+import asyncio
+from collections import defaultdict
+import time
+
+class IntelligentBatcher:
+    """Batch requests intelligently to minimize costs"""
+
+    def __init__(
+        self,
+        max_batch_size: int = 10,
+        max_wait_time: float = 1.0,
+        cost_calculator: CostCalculator = None
+    ):
+        self.max_batch_size = max_batch_size
+        self.max_wait_time = max_wait_time
+        self.cost_calculator = cost_calculator
+
+        self.queues = defaultdict(list)  # Separate queues per model
+        self.processing = False
+
+    async def add_request(
+        self,
+        prompt: str,
+        model: str,
+        **kwargs
+    ) -> str:
+        """Add request to batch queue"""
+
+        future = asyncio.Future()
+
+        self.queues[model].append({
+            "prompt": prompt,
+            "kwargs": kwargs,
+            "future": future,
+            "timestamp": time.time()
+        })
+
+        # Start processing if not already running
+        if not self.processing:
+            asyncio.create_task(self._process_queues())
+
+        return await future
+
+    async def _process_queues(self):
+        """Process all queues"""
+
+        self.processing = True
+
+        while any(self.queues.values()):
+            # Process each model's queue
+            for model, queue in list(self.queues.items()):
+                if queue:
+                    await self._process_batch(model, queue)
+
+            await asyncio.sleep(0.1)
+
+        self.processing = False
+
+    async def _process_batch(self, model: str, queue: List[Dict]):
+        """Process a batch for a specific model"""
+
+        # Determine batch size
+        batch_size = min(self.max_batch_size, len(queue))
+
+        # Check if we should wait for more requests
+        oldest_request_age = time.time() - queue[0]["timestamp"]
+
+        if batch_size < self.max_batch_size and oldest_request_age < self.max_wait_time:
+            return  # Wait for more requests
+
+        # Extract batch
+        batch = queue[:batch_size]
+        self.queues[model] = queue[batch_size:]
+
+        # Process batch (simulated)
+        prompts = [req["prompt"] for req in batch]
+
+        # Here you would call the actual model API with batching
+        # For demonstration, we'll simulate
+        await asyncio.sleep(0.5)  # Simulate API call
+
+        # Calculate cost savings from batching
+        individual_costs = sum(
+            self.cost_calculator.calculate_request_cost(
+                model,
+                len(req["prompt"].split()),
+                50  # Estimated output tokens
+            )
+            for req in batch
+        )
+
+        # Batching reduces overhead (simulated 20% savings)
+        batch_cost = individual_costs * 0.8
+
+        savings = individual_costs - batch_cost
+
+        print(f"Processed batch of {len(batch)} for {model}")
+        print(f"  Individual cost: ${individual_costs:.4f}")
+        print(f"  Batch cost: ${batch_cost:.4f}")
+        print(f"  Savings: ${savings:.4f} ({savings/individual_costs*100:.1f}%)")
+
+        # Return results to futures
+        for i, req in enumerate(batch):
+            response = f"Response for: {req['prompt'][:50]}..."
+            req["future"].set_result(response)
+
+# Example usage with batching
+async def test_batching():
+    calculator = CostCalculator(MODELS)
+    batcher = IntelligentBatcher(
+        max_batch_size=5,
+        max_wait_time=2.0,
+        cost_calculator=calculator
+    )
+
+    # Send multiple requests
+    tasks = []
+    for i in range(10):
+        task = batcher.add_request(
+            f"Question {i}: What is the meaning of life?",
+            model="gpt-3.5-turbo"
+        )
+        tasks.append(task)
+
+        # Small delay to simulate requests arriving over time
+        await asyncio.sleep(0.3)
+
+    # Wait for all responses
+    responses = await asyncio.gather(*tasks)
+
+    print(f"\nReceived {len(responses)} responses")
+
+# asyncio.run(test_batching())
+```
+
+## Caching for Cost Reduction
+
+```python
+class CostOptimizedCache:
+    """Cache with cost tracking"""
+
+    def __init__(self, redis_cache=None):
+        self.cache = {}
+        self.redis_cache = redis_cache
+        self.cost_saved = 0.0
+        self.cost_calculator = CostCalculator(MODELS)
+
+    def get(
+        self,
+        prompt: str,
+        model: str,
+        expected_tokens: int = 100
+    ) -> Optional[str]:
+        """Get from cache and track savings"""
+
+        key = hashlib.sha256(f"{model}:{prompt}".encode()).hexdigest()
+
+        if key in self.cache:
+            # Calculate cost that would have been incurred
+            saved_cost = self.cost_calculator.calculate_request_cost(
+                model,
+                len(prompt.split()),
+                expected_tokens
+            )
+
+            self.cost_saved += saved_cost
+
+            print(f"Cache HIT - Saved ${saved_cost:.4f}")
+            return self.cache[key]
+
+        return None
+
+    def set(self, prompt: str, model: str, response: str):
+        """Store in cache"""
+
+        key = hashlib.sha256(f"{model}:{prompt}".encode()).hexdigest()
+        self.cache[key] = response
+
+    def get_savings_report(self) -> Dict:
+        """Get cost savings report"""
+
+        return {
+            "total_saved": self.cost_saved,
+            "cache_size": len(self.cache),
+            "avg_saved_per_hit": self.cost_saved / max(len(self.cache), 1)
+        }
+
+# Example
+cache = CostOptimizedCache()
+
+# First request - miss
+response = cache.get("What is AI?", "gpt-4-turbo")
+if not response:
+    response = "AI is artificial intelligence..."  # Simulated API call
+    cache.set("What is AI?", "gpt-4-turbo", response)
+
+# Second request - hit
+response = cache.get("What is AI?", "gpt-4-turbo")
+
+# Get report
+report = cache.get_savings_report()
+print(f"\nCost Savings Report:")
+print(f"Total saved: ${report['total_saved']:.4f}")
+print(f"Cache entries: {report['cache_size']}")
+```
+
+## Monitoring and Optimization
+
+```python
+class CostMonitor:
+    """Monitor and analyze costs"""
+
+    def __init__(self):
+        self.requests = []
+        self.daily_costs = defaultdict(float)
+
+    def log_request(
+        self,
+        model: str,
+        input_tokens: int,
+        output_tokens: int,
+        cost: float,
+        cached: bool = False
+    ):
+        """Log request for analysis"""
+
+        self.requests.append({
+            "timestamp": datetime.now(),
+            "model": model,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost": cost,
+            "cached": cached
+        })
+
+        # Update daily cost
+        date = datetime.now().date()
+        self.daily_costs[date] += cost
+
+    def get_cost_analysis(self, days: int = 30) -> Dict:
+        """Analyze costs over period"""
+
+        cutoff = datetime.now() - timedelta(days=days)
+        recent_requests = [
+            r for r in self.requests
+            if r["timestamp"] > cutoff
+        ]
+
+        total_cost = sum(r["cost"] for r in recent_requests)
+        cached_requests = sum(1 for r in recent_requests if r["cached"])
+        total_requests = len(recent_requests)
+
+        # Cost by model
+        model_costs = defaultdict(float)
+        for r in recent_requests:
+            model_costs[r["model"]] += r["cost"]
+
+        return {
+            "period_days": days,
+            "total_cost": total_cost,
+            "total_requests": total_requests,
+            "avg_cost_per_request": total_cost / max(total_requests, 1),
+            "cache_hit_rate": cached_requests / max(total_requests, 1),
+            "daily_avg_cost": total_cost / days,
+            "model_breakdown": dict(model_costs),
+            "projected_monthly": total_cost / days * 30
+        }
+
+    def get_optimization_suggestions(self) -> List[str]:
+        """Get cost optimization suggestions"""
+
+        analysis = self.get_cost_analysis()
+        suggestions = []
+
+        # Check cache hit rate
+        if analysis["cache_hit_rate"] < 0.3:
+            suggestions.append(
+                f"Cache hit rate is only {analysis['cache_hit_rate']*100:.1f}%. "
+                "Consider implementing semantic caching."
+            )
+
+        # Check model distribution
+        model_costs = analysis["model_breakdown"]
+        total = analysis["total_cost"]
+
+        for model, cost in model_costs.items():
+            percentage = cost / total * 100
+            if percentage > 50 and "gpt-4" in model:
+                suggestions.append(
+                    f"{model} accounts for {percentage:.1f}% of costs. "
+                    "Consider routing simple queries to cheaper models."
+                )
+
+        # Check projected monthly cost
+        if analysis["projected_monthly"] > 1000:
+            suggestions.append(
+                f"Projected monthly cost is ${analysis['projected_monthly']:.2f}. "
+                "Consider implementing request batching and aggressive caching."
+            )
+
+        return suggestions
+
+# Example usage
+monitor = CostMonitor()
+
+# Simulate some requests
+monitor.log_request("gpt-4-turbo", 500, 200, 0.011, cached=False)
+monitor.log_request("gpt-3.5-turbo", 300, 150, 0.00045, cached=False)
+monitor.log_request("gpt-4-turbo", 500, 200, 0.0, cached=True)
+
+# Get analysis
+analysis = monitor.get_cost_analysis(days=7)
+print("Cost Analysis (7 days):")
+print(f"Total cost: ${analysis['total_cost']:.4f}")
+print(f"Average per request: ${analysis['avg_cost_per_request']:.4f}")
+print(f"Cache hit rate: {analysis['cache_hit_rate']*100:.1f}%")
+print(f"Projected monthly: ${analysis['projected_monthly']:.2f}")
+
+# Get suggestions
+suggestions = monitor.get_optimization_suggestions()
+print("\nOptimization Suggestions:")
+for i, suggestion in enumerate(suggestions, 1):
+    print(f"{i}. {suggestion}")
+```
+
+## Quiz
+
+Test your understanding of cost optimization:
+
+<Quiz questions={[
+  {
+    question: "What is typically the most effective strategy for reducing LLM costs?",
+    options: [
+      "Using only open-source models",
+      "Implementing caching and smart model routing",
+      "Reducing response quality",
+      "Limiting user access"
+    ],
+    correctAnswer: 1,
+    explanation: "Caching and smart model routing (using cheaper models for simple tasks, expensive models only when needed) typically provides 70-90% cost reduction while maintaining quality, making it the most effective optimization strategy."
+  },
+  {
+    question: "How does request batching reduce costs?",
+    options: [
+      "It uses smaller models",
+      "It caches responses",
+      "It amortizes API overhead across multiple requests",
+      "It reduces token usage"
+    ],
+    correctAnswer: 2,
+    explanation: "Batching reduces per-request costs by amortizing API overhead (connection, authentication, initialization) across multiple requests processed together, typically saving 10-30% on API costs."
+  },
+  {
+    question: "What is the benefit of adaptive model selection based on quality feedback?",
+    options: [
+      "It always uses the cheapest model",
+      "It learns which models perform best for different task types and optimizes cost-quality tradeoff",
+      "It reduces latency",
+      "It eliminates the need for caching"
+    ],
+    correctAnswer: 1,
+    explanation: "Adaptive model selection tracks quality scores for different models on different tasks, learning over time which models provide the best cost-quality tradeoff for each use case, automatically optimizing spend."
+  },
+  {
+    question: "For a production app with 10,000 requests/day, what would likely provide the biggest cost savings?",
+    options: [
+      "Switching all requests to the cheapest model",
+      "Implementing a 40% cache hit rate",
+      "Reducing max_tokens by 10",
+      "Using async processing"
+    ],
+    correctAnswer: 1,
+    explanation: "A 40% cache hit rate means 4,000 requests/day avoid inference entirely, typically saving 40% of total costs. This is usually the single biggest cost optimization, especially for applications with repetitive queries."
+  }
+]} />
+
+## Summary
+
+In this lesson, you learned:
+
+- **Cost analysis**: Understanding and calculating LLM costs
+- **Model routing**: Intelligently selecting models based on task complexity
+- **Batching**: Reducing per-request costs through efficient batching
+- **Caching strategies**: Maximizing cache hit rates for cost savings
+- **Monitoring**: Tracking costs and identifying optimization opportunities
+
+Effective cost optimization can reduce LLM inference costs by 70-90% while maintaining quality, making production applications economically viable.

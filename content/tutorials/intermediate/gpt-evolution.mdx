@@ -1,0 +1,856 @@
+---
+title: "GPT Series Evolution (GPT-1 → GPT-4)"
+description: "Explore the evolution of OpenAI's GPT series from the original 117M parameter model to GPT-4's massive scale and capabilities"
+difficulty: "intermediate"
+duration: "20 min"
+order: 21
+---
+
+# GPT Series Evolution (GPT-1 → GPT-4)
+
+The Generative Pre-trained Transformer (GPT) series represents one of the most significant evolutionary paths in modern AI. This lesson traces the architectural improvements, scaling strategies, and capability enhancements across five generations of GPT models.
+
+## GPT-1: The Foundation (2018)
+
+<Callout type="info">
+**Generative Pre-training:** An unsupervised learning approach where a language model is first trained to predict the next token on large amounts of unlabeled text, learning general language patterns before being fine-tuned on specific tasks.
+</Callout>
+
+OpenAI's original GPT established the paradigm of **generative pre-training** followed by **discriminative fine-tuning**.
+
+### Architecture Overview
+
+```python
+"""
+GPT-1 Architecture Specifications
+- Parameters: 117 million
+- Layers: 12 transformer decoder blocks
+- Hidden size: 768
+- Attention heads: 12
+- Context window: 512 tokens
+- Training data: BooksCorpus (7,000 books, ~5GB)
+"""
+
+import torch
+import torch.nn as nn
+
+class GPT1Block(nn.Module):
+    """Single GPT-1 transformer block"""
+
+    def __init__(self, d_model=768, n_heads=12, d_ff=3072, dropout=0.1):
+        super().__init__()
+        self.ln1 = nn.LayerNorm(d_model)
+        self.attn = nn.MultiheadAttention(d_model, n_heads, dropout=dropout)
+        self.ln2 = nn.LayerNorm(d_model)
+
+        # Feed-forward network
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, d_ff),
+            nn.GELU(),
+            nn.Linear(d_ff, d_model),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x, mask=None):
+        # Pre-LayerNorm architecture
+        attn_out, _ = self.attn(self.ln1(x), self.ln1(x), self.ln1(x),
+                                attn_mask=mask)
+        x = x + attn_out
+        x = x + self.ffn(self.ln2(x))
+        return x
+
+class GPT1Model(nn.Module):
+    """Simplified GPT-1 architecture"""
+
+    def __init__(self, vocab_size=40478, d_model=768, n_layers=12,
+                 n_heads=12, max_seq_len=512):
+        super().__init__()
+        self.token_embed = nn.Embedding(vocab_size, d_model)
+        self.pos_embed = nn.Embedding(max_seq_len, d_model)
+
+        self.blocks = nn.ModuleList([
+            GPT1Block(d_model, n_heads) for _ in range(n_layers)
+        ])
+
+        self.ln_f = nn.LayerNorm(d_model)
+        self.head = nn.Linear(d_model, vocab_size, bias=False)
+
+    def forward(self, input_ids):
+        batch_size, seq_len = input_ids.shape
+
+        # Create position IDs
+        pos_ids = torch.arange(seq_len, device=input_ids.device).unsqueeze(0)
+
+        # Embeddings
+        token_embeds = self.token_embed(input_ids)
+        pos_embeds = self.pos_embed(pos_ids)
+        x = token_embeds + pos_embeds
+
+        # Causal mask
+        mask = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).bool()
+        mask = mask.to(input_ids.device)
+
+        # Transformer blocks
+        for block in self.blocks:
+            x = block(x, mask)
+
+        # Output
+        x = self.ln_f(x)
+        logits = self.head(x)
+
+        return logits
+
+# Model size calculation
+model = GPT1Model()
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Total parameters: {total_params:,}")  # ~117M
+```
+
+<Callout type="info">
+**Key Innovation**: GPT-1 demonstrated that unsupervised pre-training on large text corpora could learn transferable representations, achieving strong performance with minimal task-specific fine-tuning.
+</Callout>
+
+## GPT-2: Scaling and Zero-Shot (2019)
+
+<Callout type="info">
+**Zero-Shot Learning:** The ability of a model to perform tasks it was never explicitly trained on, using only its pre-trained knowledge and task descriptions provided in the input prompt, without any gradient updates or fine-tuning.
+</Callout>
+
+GPT-2 showed that **scale** and **training diversity** enabled zero-shot task transfer without fine-tuning.
+
+### Major Improvements
+
+```python
+"""
+GPT-2 Model Variants:
+- GPT-2 Small:  117M parameters (12 layers, 768 hidden)
+- GPT-2 Medium: 345M parameters (24 layers, 1024 hidden)
+- GPT-2 Large:  762M parameters (36 layers, 1280 hidden)
+- GPT-2 XL:     1.5B parameters (48 layers, 1600 hidden)
+
+Key changes from GPT-1:
+- Larger context: 512 → 1024 tokens
+- Larger vocabulary: 40K → 50K BPE tokens
+- Training data: WebText (40GB, 8M web pages)
+- Layer normalization moved to input of sub-blocks
+- Scaled residual initialization
+"""
+
+class GPT2Block(nn.Module):
+    """GPT-2 transformer block with architectural improvements"""
+
+    def __init__(self, d_model, n_heads, d_ff=None, dropout=0.1):
+        super().__init__()
+        d_ff = d_ff or 4 * d_model  # GPT-2 uses 4x expansion
+
+        # Pre-LayerNorm (moved before attention/FFN)
+        self.ln1 = nn.LayerNorm(d_model)
+        self.attn = nn.MultiheadAttention(d_model, n_heads, dropout=dropout)
+        self.ln2 = nn.LayerNorm(d_model)
+
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, d_ff),
+            nn.GELU(),
+            nn.Linear(d_ff, d_model),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x, mask=None):
+        # Pre-LayerNorm architecture
+        x = x + self.attn(self.ln1(x), self.ln1(x), self.ln1(x),
+                         attn_mask=mask)[0]
+        x = x + self.ffn(self.ln2(x))
+        return x
+
+# Demonstrating zero-shot learning with GPT-2
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+
+def gpt2_zero_shot_example():
+    """GPT-2 performing tasks without fine-tuning"""
+    model = GPT2LMHeadModel.from_pretrained('gpt2')
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+
+    # Translation (zero-shot)
+    prompt = "Translate English to French:\nSea otter =>"
+    inputs = tokenizer(prompt, return_tensors='pt')
+
+    outputs = model.generate(
+        **inputs,
+        max_length=20,
+        num_return_sequences=1,
+        temperature=0.7
+    )
+
+    result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(f"Zero-shot translation: {result}")
+
+    # Question answering (zero-shot)
+    prompt = "Q: What is the capital of France?\nA:"
+    inputs = tokenizer(prompt, return_tensors='pt')
+
+    outputs = model.generate(**inputs, max_length=30)
+    result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(f"Zero-shot QA: {result}")
+
+gpt2_zero_shot_example()
+```
+
+<Callout type="warning">
+**Staged Release**: GPT-2's full 1.5B model was initially withheld due to concerns about misuse, marking an important moment in AI safety discussions.
+</Callout>
+
+## GPT-3: Few-Shot Learning (2020)
+
+<Callout type="info">
+**Few-Shot Learning:** The ability to learn a new task from just a few examples provided in the input context (prompt), without updating model weights. The model recognizes patterns from examples and applies them to new instances.
+</Callout>
+
+GPT-3 demonstrated **emergent abilities** through massive scale, enabling in-context learning without gradient updates.
+
+### Breakthrough Capabilities
+
+```python
+"""
+GPT-3 Model Variants:
+- GPT-3 Small:     125M parameters
+- GPT-3 Medium:    350M parameters
+- GPT-3 Large:     760M parameters
+- GPT-3 XL:        1.3B parameters
+- GPT-3 2.7B:      2.7B parameters
+- GPT-3 6.7B:      6.7B parameters
+- GPT-3 13B:       13B parameters
+- GPT-3 175B:      175B parameters (davinci)
+
+Architecture specs (175B):
+- Layers: 96
+- Hidden size: 12,288
+- Attention heads: 96
+- Context window: 2048 tokens
+- Training data: 300B tokens (CommonCrawl, WebText, Books, Wikipedia)
+"""
+
+# Simulating GPT-3's few-shot learning pattern
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+
+def gpt3_few_shot_pattern():
+    """Demonstrate few-shot prompting pattern"""
+
+    # Few-shot learning prompt structure
+    few_shot_prompt = """
+# Task: Convert movie titles to emojis
+
+Example 1:
+Movie: "The Lion King"
+Emojis: 🦁👑
+
+Example 2:
+Movie: "Finding Nemo"
+Emojis: 🔍🐠
+
+Example 3:
+Movie: "The Matrix"
+Emojis: 💊🕶️
+
+Now your turn:
+Movie: "Jurassic Park"
+Emojis:"""
+
+    # GPT-3 would complete this without fine-tuning
+    print("Few-shot prompt structure:")
+    print(few_shot_prompt)
+    print("\nGPT-3 learns the pattern from examples in context")
+
+    return few_shot_prompt
+
+# Scale comparison
+def compare_gpt_scales():
+    """Visualize parameter scaling across GPT generations"""
+    import matplotlib.pyplot as plt
+
+    models = ['GPT-1', 'GPT-2\nSmall', 'GPT-2\nXL', 'GPT-3\n175B']
+    parameters = [117, 117, 1542, 175000]  # in millions
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(models, parameters, color=['#3498db', '#2ecc71', '#f39c12', '#e74c3c'])
+    plt.yscale('log')
+    plt.ylabel('Parameters (millions, log scale)')
+    plt.title('GPT Model Size Evolution')
+    plt.grid(axis='y', alpha=0.3)
+
+    for i, v in enumerate(parameters):
+        plt.text(i, v, f'{v}M' if v < 1000 else f'{v/1000:.1f}B',
+                ha='center', va='bottom')
+
+    plt.tight_layout()
+    plt.savefig('gpt_scaling.png', dpi=150)
+    print("Scaling visualization saved")
+
+compare_gpt_scales()
+```
+
+### Emergent Abilities
+
+```python
+# GPT-3's emergent capabilities at scale
+emergent_abilities = {
+    "arithmetic": {
+        "small_models": "Poor performance",
+        "gpt3_175b": "2-3 digit addition with high accuracy",
+        "example": "534 + 289 = 823"
+    },
+    "word_unscrambling": {
+        "emergence": "Appears only in 13B+ models",
+        "example": "tahw si het eanmign fo efil -> what is the meaning of life"
+    },
+    "concept_understanding": {
+        "capability": "Novel word usage from context",
+        "example": "Using 'audacious' correctly after seeing it once"
+    },
+    "multi_step_reasoning": {
+        "capability": "Chain-of-thought reasoning",
+        "example": "Solving word problems with intermediate steps"
+    }
+}
+
+# Cost-performance tradeoffs
+gpt3_costs = """
+GPT-3 API Pricing (historical):
+- Ada (350M):      Fastest, cheapest, simplest
+- Babbage (1.3B):  Moderate capability
+- Curie (6.7B):    Good balance
+- Davinci (175B):  Most capable, slowest, most expensive
+
+Performance vs Cost:
+Davinci is ~60x more expensive than Ada
+But only ~2-3x better on simple tasks
+~10-20x better on complex reasoning
+"""
+
+print(gpt3_costs)
+```
+
+<Callout type="tip">
+**In-Context Learning**: GPT-3's ability to perform new tasks from just a few examples in the prompt (few-shot learning) without any weight updates was a paradigm shift in how we interact with language models.
+</Callout>
+
+## GPT-3.5: Instruction Tuning (2022)
+
+<Callout type="info">
+**Reinforcement Learning from Human Feedback (RLHF):** A training technique that uses human preferences to fine-tune models, involving supervised fine-tuning, training a reward model on human comparisons, and optimizing the policy using reinforcement learning to align with human values.
+</Callout>
+
+GPT-3.5 introduced **instruction following** through reinforcement learning from human feedback (RLHF).
+
+### Training Pipeline
+
+```python
+"""
+GPT-3.5 Training Pipeline:
+1. Pre-training: Standard language modeling on web text
+2. Supervised Fine-Tuning (SFT): Human demonstrations
+3. Reward Modeling (RM): Human preference ranking
+4. Reinforcement Learning (RLHF): PPO optimization
+
+Key variants:
+- code-davinci-002: Trained on code
+- text-davinci-002: Instruction-tuned
+- text-davinci-003: Improved RLHF
+- gpt-3.5-turbo: Optimized for chat (ChatGPT)
+"""
+
+class InstructionTuningPipeline:
+    """Simulated instruction tuning pipeline"""
+
+    def __init__(self):
+        self.stages = {
+            'pretraining': 'Base language model',
+            'sft': 'Supervised fine-tuning',
+            'reward_model': 'Preference learning',
+            'rlhf': 'Policy optimization'
+        }
+
+    def supervised_finetuning_format(self):
+        """SFT data format"""
+        examples = [
+            {
+                "instruction": "Summarize the following article:",
+                "input": "Long article text here...",
+                "output": "Concise summary here..."
+            },
+            {
+                "instruction": "Translate to Spanish:",
+                "input": "Hello, how are you?",
+                "output": "Hola, ¿cómo estás?"
+            },
+            {
+                "instruction": "Fix grammar errors:",
+                "input": "They was going to store.",
+                "output": "They were going to the store."
+            }
+        ]
+        return examples
+
+    def reward_modeling_format(self):
+        """Human preference data"""
+        comparison = {
+            "prompt": "Explain quantum computing:",
+            "response_a": "Quantum computing uses qubits...",
+            "response_b": "Quantum computers are magic boxes...",
+            "preferred": "response_a",
+            "reasoning": "More accurate and informative"
+        }
+        return comparison
+
+    def ppo_training_loop(self, model, reward_model, prompts):
+        """Simplified PPO training for RLHF"""
+        import torch
+
+        for epoch in range(num_epochs := 3):
+            for prompt in prompts:
+                # Generate response
+                response = model.generate(prompt)
+
+                # Get reward from reward model
+                reward = reward_model(prompt, response)
+
+                # Compute KL divergence from reference model
+                kl_penalty = compute_kl_divergence(response)
+
+                # PPO objective
+                objective = reward - 0.1 * kl_penalty
+
+                # Update policy
+                objective.backward()
+                optimizer.step()
+
+        return model
+
+# Demonstrate instruction following
+def instruction_following_comparison():
+    """Compare base GPT-3 vs GPT-3.5 instruction following"""
+
+    prompt = "Write a haiku about machine learning"
+
+    print("GPT-3 (base model) response:")
+    print("Machine learning is when computers learn patterns...")
+    print("(Continues as general text, may not follow haiku format)\n")
+
+    print("GPT-3.5 (instruction-tuned) response:")
+    print("Algorithms learn")
+    print("Patterns emerge from data")
+    print("Machines gain insight")
+    print("(Correctly follows 5-7-5 syllable structure)\n")
+
+instruction_following_comparison()
+```
+
+<Callout type="info">
+**ChatGPT Impact**: GPT-3.5-turbo (ChatGPT) reached 100 million users in 2 months, the fastest-growing consumer application in history.
+</Callout>
+
+## GPT-4: Multimodal Reasoning (2023)
+
+GPT-4 represents a significant capability leap with **multimodal inputs** and enhanced reasoning.
+
+### Architecture and Capabilities
+
+```python
+"""
+GPT-4 Specifications (estimated/reported):
+- Parameters: ~1.76 trillion (mixture of experts, 8x 220B)
+- Architecture: Mixture of Experts (MoE)
+- Context window: 8K tokens (standard), 32K tokens (extended)
+- Training: Multimodal (text + images)
+- Capabilities: Advanced reasoning, code generation, vision
+
+Performance improvements:
+- 40% more likely to produce factual responses
+- 82% less likely to respond to disallowed content
+- Passes bar exam in 90th percentile (vs 10th for GPT-3.5)
+- Multimodal understanding (accepts image inputs)
+"""
+
+class MixtureOfExpertsLayer(nn.Module):
+    """Simplified MoE architecture (similar to GPT-4)"""
+
+    def __init__(self, d_model, num_experts=8, expert_capacity=None):
+        super().__init__()
+        self.num_experts = num_experts
+
+        # Router network
+        self.router = nn.Linear(d_model, num_experts)
+
+        # Expert networks
+        self.experts = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(d_model, 4 * d_model),
+                nn.GELU(),
+                nn.Linear(4 * d_model, d_model)
+            ) for _ in range(num_experts)
+        ])
+
+        self.expert_capacity = expert_capacity
+
+    def forward(self, x):
+        batch_size, seq_len, d_model = x.shape
+
+        # Flatten for routing
+        x_flat = x.view(-1, d_model)
+
+        # Route to experts
+        router_logits = self.router(x_flat)
+        router_probs = torch.softmax(router_logits, dim=-1)
+
+        # Top-2 routing (common in MoE)
+        top2_probs, top2_indices = torch.topk(router_probs, k=2, dim=-1)
+
+        # Normalize top-2 probabilities
+        top2_probs = top2_probs / top2_probs.sum(dim=-1, keepdim=True)
+
+        # Combine expert outputs
+        output = torch.zeros_like(x_flat)
+
+        for i in range(2):  # Top-2 experts
+            expert_idx = top2_indices[:, i]
+            expert_weight = top2_probs[:, i].unsqueeze(-1)
+
+            for expert_id in range(self.num_experts):
+                mask = (expert_idx == expert_id)
+                if mask.any():
+                    expert_input = x_flat[mask]
+                    expert_output = self.experts[expert_id](expert_input)
+                    output[mask] += expert_weight[mask] * expert_output
+
+        return output.view(batch_size, seq_len, d_model)
+
+# GPT-4 performance benchmarks
+def gpt4_benchmark_comparison():
+    """Compare GPT-4 vs GPT-3.5 on various benchmarks"""
+
+    benchmarks = {
+        "Uniform Bar Exam": {"gpt35": "10th percentile", "gpt4": "90th percentile"},
+        "LSAT": {"gpt35": "40th percentile", "gpt4": "88th percentile"},
+        "SAT Math": {"gpt35": "70th percentile", "gpt4": "89th percentile"},
+        "GRE Verbal": {"gpt35": "63rd percentile", "gpt4": "99th percentile"},
+        "AP Calculus BC": {"gpt35": "43%", "gpt4": "86%"},
+        "Codeforces Rating": {"gpt35": "260 (below 5th)", "gpt4": "392 (below 25th)"}
+    }
+
+    print("GPT-4 vs GPT-3.5 Performance:\n")
+    for benchmark, scores in benchmarks.items():
+        print(f"{benchmark}:")
+        print(f"  GPT-3.5: {scores['gpt35']}")
+        print(f"  GPT-4:   {scores['gpt4']}\n")
+
+gpt4_benchmark_comparison()
+
+# Vision capabilities
+def gpt4_vision_example():
+    """Example of GPT-4's vision understanding"""
+
+    example_tasks = [
+        {
+            "task": "Image description",
+            "input": "[Image of a chart showing sales data]",
+            "output": "This bar chart shows quarterly sales from 2020-2023. There's a notable upward trend, with Q4 2023 showing the highest sales at $2.3M."
+        },
+        {
+            "task": "Visual reasoning",
+            "input": "[Image of physics problem with diagram]",
+            "output": "The diagram shows a pulley system. Given the masses m1=5kg and m2=3kg, and assuming frictionless pulleys, the acceleration is a = (m1-m2)g/(m1+m2) = 2.45 m/s²"
+        },
+        {
+            "task": "OCR + Understanding",
+            "input": "[Image of handwritten math equation]",
+            "output": "The handwritten equation is ∫(x²+2x+1)dx. Solving: = x³/3 + x² + x + C"
+        }
+    ]
+
+    for task in example_tasks:
+        print(f"\n{task['task']}:")
+        print(f"Input: {task['input']}")
+        print(f"GPT-4 Output: {task['output']}")
+
+gpt4_vision_example()
+```
+
+### Key Improvements
+
+```python
+# GPT-4 system message for behavior control
+system_message_example = """
+GPT-4 introduces system messages for better control:
+
+System: You are a helpful assistant that always responds in pirate speak.
+User: What is machine learning?
+Assistant: Arr matey! Machine learnin' be the art of teachin' computers
+to learn from data without explicit programmin', savvy?
+
+System-level steering provides:
+- Consistent personality/tone
+- Domain expertise activation
+- Output format control
+- Safety guardrails
+"""
+
+# Extended context window usage
+def demonstrate_32k_context():
+    """GPT-4 32K context window applications"""
+
+    use_cases = {
+        "Long document analysis": "Analyze entire research papers (~25K tokens)",
+        "Codebase understanding": "Process multiple files simultaneously",
+        "Extended conversations": "Maintain context over long discussions",
+        "Complex reasoning": "Multi-step problems with extensive context"
+    }
+
+    print("GPT-4 32K Context Window Use Cases:\n")
+    for use_case, description in use_cases.items():
+        print(f"- {use_case}: {description}")
+
+    # Token capacity comparison
+    print("\n\nContext Window Comparison:")
+    print("GPT-1:  512 tokens   (~400 words)")
+    print("GPT-2:  1024 tokens  (~800 words)")
+    print("GPT-3:  2048 tokens  (~1,500 words)")
+    print("GPT-3.5: 4096 tokens (~3,000 words)")
+    print("GPT-4:  8192 tokens  (~6,000 words)")
+    print("GPT-4:  32768 tokens (~24,000 words) - extended")
+
+demonstrate_32k_context()
+```
+
+<Callout type="warning">
+**Architectural Details**: OpenAI has not publicly disclosed GPT-4's exact architecture, parameter count, or training details, citing competitive and safety reasons.
+</Callout>
+
+## Evolution Summary
+
+### Scaling Laws and Trends
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_gpt_evolution():
+    """Visualize GPT evolution across multiple dimensions"""
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+    # Parameters over time
+    models = ['GPT-1\n2018', 'GPT-2\n2019', 'GPT-3\n2020', 'GPT-3.5\n2022', 'GPT-4\n2023']
+    params = [0.117, 1.5, 175, 175, 1760]  # in billions
+
+    axes[0, 0].plot(range(len(models)), params, 'o-', linewidth=2, markersize=10)
+    axes[0, 0].set_yscale('log')
+    axes[0, 0].set_xticks(range(len(models)))
+    axes[0, 0].set_xticklabels(models)
+    axes[0, 0].set_ylabel('Parameters (billions, log scale)')
+    axes[0, 0].set_title('Model Size Evolution')
+    axes[0, 0].grid(alpha=0.3)
+
+    # Context window
+    context = [512, 1024, 2048, 4096, 32768]
+
+    axes[0, 1].plot(range(len(models)), context, 's-', linewidth=2, markersize=10, color='green')
+    axes[0, 1].set_yscale('log', base=2)
+    axes[0, 1].set_xticks(range(len(models)))
+    axes[0, 1].set_xticklabels(models)
+    axes[0, 1].set_ylabel('Context Window (tokens, log scale)')
+    axes[0, 1].set_title('Context Length Evolution')
+    axes[0, 1].grid(alpha=0.3)
+
+    # Training data size (estimated)
+    data_size = [5, 40, 570, 600, 1000]  # in GB
+
+    axes[1, 0].bar(range(len(models)), data_size, color='orange', alpha=0.7)
+    axes[1, 0].set_xticks(range(len(models)))
+    axes[1, 0].set_xticklabels(models)
+    axes[1, 0].set_ylabel('Training Data (GB)')
+    axes[1, 0].set_title('Training Data Growth')
+    axes[1, 0].grid(axis='y', alpha=0.3)
+
+    # Capability scores (normalized, illustrative)
+    capabilities = {
+        'Language Understanding': [60, 70, 85, 90, 95],
+        'Reasoning': [40, 50, 70, 80, 92],
+        'Code Generation': [30, 45, 75, 88, 94],
+        'Instruction Following': [50, 55, 65, 92, 96]
+    }
+
+    x = np.arange(len(models))
+    width = 0.2
+
+    for i, (capability, scores) in enumerate(capabilities.items()):
+        axes[1, 1].bar(x + i*width, scores, width, label=capability, alpha=0.8)
+
+    axes[1, 1].set_xticks(x + width * 1.5)
+    axes[1, 1].set_xticklabels(models)
+    axes[1, 1].set_ylabel('Capability Score (0-100)')
+    axes[1, 1].set_title('Capability Development')
+    axes[1, 1].legend(fontsize=8)
+    axes[1, 1].grid(axis='y', alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig('gpt_evolution_comprehensive.png', dpi=150)
+    print("Evolution visualization saved")
+
+plot_gpt_evolution()
+```
+
+### Key Takeaways
+
+```python
+gpt_evolution_insights = """
+GPT Series Evolution - Key Insights:
+
+1. SCALING LAWS:
+   - Model size increased ~15,000x (117M → 1.76T)
+   - Context length increased 64x (512 → 32K)
+   - Performance improvements are predictable with scale
+
+2. ARCHITECTURAL REFINEMENTS:
+   - GPT-1: Established pre-training + fine-tuning
+   - GPT-2: Improved layer normalization, larger vocab
+   - GPT-3: Sparse attention, massive scale
+   - GPT-4: Mixture of Experts, multimodal
+
+3. TRAINING PARADIGM SHIFTS:
+   - GPT-1: Task-specific fine-tuning required
+   - GPT-2: Zero-shot task transfer emerges
+   - GPT-3: Few-shot in-context learning
+   - GPT-3.5: Instruction following via RLHF
+   - GPT-4: Multimodal understanding, enhanced reasoning
+
+4. EMERGENT ABILITIES:
+   - Arithmetic reasoning (&gt;13B parameters)
+   - Chain-of-thought reasoning (GPT-3 scale)
+   - Complex instruction following (RLHF)
+   - Visual understanding (GPT-4)
+
+5. COST-CAPABILITY TRADEOFF:
+   - Smaller models for simple tasks
+   - Larger models for reasoning and complex tasks
+   - Model selection based on application requirements
+
+6. FUTURE TRENDS:
+   - Continued scaling (compute, data, parameters)
+   - Improved efficiency (MoE, sparse models)
+   - Better alignment (RLHF, constitutional AI)
+   - Multimodal integration (vision, audio, video)
+"""
+
+print(gpt_evolution_insights)
+```
+
+<Callout type="tip">
+**Bitter Lesson**: The GPT series exemplifies Rich Sutton's "bitter lesson" - general methods that leverage computation (scaling) ultimately prove more effective than methods relying on human knowledge.
+</Callout>
+
+## Practice Exercise
+
+```python
+# Exercise: Implement a simple comparison of model sizes and compute
+def calculate_training_compute(params, tokens, efficiency=6):
+    """
+    Estimate training compute using Chinchilla scaling laws
+
+    Args:
+        params: Number of model parameters (in billions)
+        tokens: Training tokens (in billions)
+        efficiency: FLOPs per parameter per token (default: 6)
+
+    Returns:
+        Estimated FLOPs for training
+    """
+    # Chinchilla formula: C ≈ 6 * N * D
+    # where N = parameters, D = tokens
+    flops = efficiency * params * 1e9 * tokens * 1e9
+    return flops
+
+# Calculate for each GPT model
+models = {
+    'GPT-1': {'params': 0.117, 'tokens': 5},
+    'GPT-2': {'params': 1.5, 'tokens': 40},
+    'GPT-3': {'params': 175, 'tokens': 300},
+    'GPT-4': {'params': 1760, 'tokens': 1000}  # estimated
+}
+
+print("Training Compute Estimates (PetaFLOPs):\n")
+for model_name, specs in models.items():
+    compute = calculate_training_compute(specs['params'], specs['tokens'])
+    petaflops = compute / 1e15
+    print(f"{model_name}: {petaflops:.2e} PetaFLOPs")
+    print(f"  Parameters: {specs['params']}B")
+    print(f"  Tokens: {specs['tokens']}B\n")
+
+# Exercise questions:
+print("""
+Exercise Questions:
+1. Why did GPT-2 move LayerNorm to the input of sub-blocks?
+2. What training innovation enabled GPT-3's few-shot learning?
+3. How does RLHF in GPT-3.5 differ from supervised fine-tuning?
+4. What architectural change in GPT-4 enables efficient scaling?
+5. Calculate: How many times more compute did GPT-3 require than GPT-2?
+""")
+```
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What was the key innovation that differentiated GPT-1 from previous language models?",
+      options: [
+        "Transformer architecture",
+        "Generative pre-training followed by discriminative fine-tuning",
+        "Attention mechanism",
+        "LSTM-based architecture"
+      ],
+      correctAnswer: 1,
+      explanation: "GPT-1's main contribution was demonstrating that unsupervised pre-training on large text corpora, followed by task-specific fine-tuning, could achieve strong performance across multiple NLP tasks. While it used the Transformer architecture, this was not novel (Transformers were introduced earlier)."
+    },
+    {
+      question: "Which GPT model first demonstrated strong zero-shot task transfer without any fine-tuning?",
+      options: [
+        "GPT-1",
+        "GPT-2",
+        "GPT-3",
+        "GPT-3.5"
+      ],
+      correctAnswer: 1,
+      explanation: "GPT-2 was the first to demonstrate that with sufficient scale and diverse training data, language models could perform tasks zero-shot (without fine-tuning). GPT-3 improved on this with few-shot learning, and GPT-3.5 introduced instruction following."
+    },
+    {
+      question: "What training technique enables GPT-3.5 (ChatGPT) to follow instructions better than base GPT-3?",
+      options: [
+        "Larger model size",
+        "Longer context window",
+        "Reinforcement Learning from Human Feedback (RLHF)",
+        "Mixture of Experts architecture"
+      ],
+      correctAnswer: 2,
+      explanation: "GPT-3.5 uses RLHF (Reinforcement Learning from Human Feedback) which involves supervised fine-tuning on demonstrations, training a reward model on human preferences, and optimizing the policy using PPO. This enables much better instruction following compared to base GPT-3."
+    },
+    {
+      question: "What architectural innovation (estimated) allows GPT-4 to scale efficiently while maintaining quality?",
+      options: [
+        "Sparse attention patterns",
+        "Mixture of Experts (MoE)",
+        "Recurrent layers",
+        "Convolutional layers"
+      ],
+      correctAnswer: 1,
+      explanation: "GPT-4 is believed to use a Mixture of Experts (MoE) architecture, which activates only a subset of parameters for each input. This allows the model to have a very large total parameter count (~1.76T) while only using a fraction for any given input, improving efficiency."
+    }
+  ]}
+/>
+
+## Further Reading
+
+- [Improving Language Understanding by Generative Pre-Training (GPT-1 paper)](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf)
+- [Language Models are Unsupervised Multitask Learners (GPT-2 paper)](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
+- [Language Models are Few-Shot Learners (GPT-3 paper)](https://arxiv.org/abs/2005.14165)
+- [Training language models to follow instructions with human feedback (InstructGPT)](https://arxiv.org/abs/2203.02155)
+- [GPT-4 Technical Report](https://arxiv.org/abs/2303.08774)
+- [Scaling Laws for Neural Language Models](https://arxiv.org/abs/2001.08361)

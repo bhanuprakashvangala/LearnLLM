@@ -1,0 +1,811 @@
+---
+title: "Effective Prompts: The Complete Guide"
+description: "Master the art of writing prompts that get you exactly what you need, every time"
+difficulty: "beginner"
+duration: 18
+order: 6
+tags: ["Prompt Engineering", "Best Practices", "Advanced Techniques"]
+---
+
+## Welcome to Prompt Mastery!
+
+You've learned the basics of prompt engineering in Module 1. Now it's time to level up and become a prompt master! In this module, you'll learn advanced techniques that separate beginners from experts.
+
+<Callout type="info">
+**What You'll Master:** By the end of this lesson, you'll know exactly how to craft prompts that get you the perfect response, every single time. We'll break down the psychology of effective prompting and give you battle-tested frameworks.
+</Callout>
+
+## The Anatomy of a Perfect Prompt
+
+Let's dissect what makes a prompt truly effective. Every great prompt has these 7 elements:
+
+<ComparisonTable
+  title="The 7 Elements of Effective Prompts"
+  columns={[
+    { title: "Purpose" },
+    { title: "Impact" }
+  ]}
+  rows={[
+    {
+      feature: "1. Role/Persona",
+      values: ["Sets AI's perspective and expertise", "High - Changes tone and depth"]
+    },
+    {
+      feature: "2. Context/Background",
+      values: ["Provides necessary information", "Critical - Prevents assumptions"]
+    },
+    {
+      feature: "3. Task/Objective",
+      values: ["States what you want clearly", "Essential - Core instruction"]
+    },
+    {
+      feature: "4. Format/Structure",
+      values: ["Specifies output organization", "High - Controls presentation"]
+    },
+    {
+      feature: "5. Constraints/Requirements",
+      values: ["Sets boundaries and limits", "Medium - Refines output"]
+    },
+    {
+      feature: "6. Tone/Style",
+      values: ["Defines communication style", "Medium - Affects readability"]
+    },
+    {
+      feature: "7. Examples (Optional)",
+      values: ["Shows desired output", "Very High - Demonstrates intent"]
+    }
+  ]}
+/>
+
+## The RESPECT Framework
+
+I created a framework that makes writing effective prompts easy to remember: **RESPECT**
+
+<Callout type="info">
+**RESPECT Framework Definition:** A systematic approach to prompt writing where you specify Role, Expectation, Structure, Parameters, Examples, Context, and Tone. This framework ensures your prompts include all the key elements that help AI models understand exactly what you want and how to deliver it.
+</Callout>
+
+- **R**ole - Who should the AI be?
+- **E**xpectation - What do you want?
+- **S**tructure - How should it be formatted?
+- **P**arameters - What are the constraints?
+- **E**xamples - Can you show what you want?
+- **C**ontext - What background information is needed?
+- **T**one - What style should be used?
+
+Let's see this framework in action:
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="RESPECT Framework Prompt Builder"
+  initialCode={`// Interactive RESPECT Framework Prompt Builder
+
+function buildPrompt(components) {
+  const {
+    role,
+    expectation,
+    structure,
+    parameters,
+    examples,
+    context,
+    tone
+  } = components;
+
+  let prompt = "";
+
+  if (role) prompt += \`ROLE: \${role}\n\n\`;
+  if (context) prompt += \`CONTEXT: \${context}\n\n\`;
+  if (expectation) prompt += \`TASK: \${expectation}\n\n\`;
+  if (structure) prompt += \`FORMAT: \${structure}\n\n\`;
+  if (parameters) prompt += \`CONSTRAINTS: \${parameters}\n\n\`;
+  if (examples) prompt += \`EXAMPLE: \${examples}\n\n\`;
+  if (tone) prompt += \`TONE: \${tone}\`;
+
+  return prompt;
+}
+
+// Example 1: Marketing Email
+const marketingEmail = buildPrompt({
+  role: "You are a marketing copywriter for a SaaS company",
+  context: "We're launching a new AI-powered analytics tool for small businesses",
+  expectation: "Write a promotional email to our existing customers",
+  structure: "Subject line (max 50 chars), 3 short paragraphs, clear CTA",
+  parameters: "Keep it under 150 words, mention limited-time 20% discount",
+  examples: "Subject like: 'Your data just got smarter ✨'",
+  tone: "Exciting but not pushy, helpful and value-focused"
+});
+
+console.log("=== MARKETING EMAIL PROMPT ===");
+console.log(marketingEmail);
+console.log("\n" + "=".repeat(50) + "\n");
+
+// Example 2: Code Review
+const codeReview = buildPrompt({
+  role: "You are a senior Python developer doing code review",
+  context: "Junior dev submitted a data processing function",
+  expectation: "Review the code and provide constructive feedback",
+  structure: "1. What works well, 2. Issues found, 3. Specific improvements",
+  parameters: "Focus on readability and performance, max 200 words",
+  tone: "Encouraging and educational, not harsh"
+});
+
+console.log("=== CODE REVIEW PROMPT ===");
+console.log(codeReview);
+console.log("\n" + "=".repeat(50) + "\n");
+
+// Example 3: Learning Explanation
+const learningPrompt = buildPrompt({
+  role: "You are a patient teacher explaining to a curious 12-year-old",
+  expectation: "Explain how the internet works",
+  structure: "3 paragraphs: 1) Simple analogy, 2) Key components, 3) Fun fact",
+  parameters: "Use zero technical jargon, keep under 200 words",
+  examples: "Start with: 'Imagine the internet is like a huge library...'",
+  tone: "Warm, enthusiastic, and simple"
+});
+
+console.log("=== LEARNING PROMPT ===");
+console.log(learningPrompt);
+
+console.log("\n" + "=".repeat(50));
+console.log("\nTIP: Notice how each prompt is complete, clear, and specific!");
+console.log("Try modifying the components above to create your own prompts.");`}
+/>
+
+## Common Prompt Problems and Solutions
+
+Let's identify and fix common mistakes that make prompts ineffective:
+
+### Problem 1: The Vague Request
+
+**❌ Bad Prompt:**
+```
+Help me write better
+```
+
+**Why it fails:**
+- No context (write WHAT better?)
+- No current level specified
+- No specific goal
+- No format preference
+
+**✅ Fixed Prompt:**
+```
+I'm a college student writing essays for my English Literature class.
+I often get feedback that my arguments lack depth and my paragraphs
+don't flow well.
+
+Help me improve my essay writing by:
+1. Explaining how to develop stronger arguments (with an example)
+2. Teaching me paragraph transition techniques
+3. Giving me a checklist to review my essays before submitting
+
+I learn best with concrete examples. Keep explanations simple and
+practical.
+```
+
+**Why it works:** Specific problem, clear goals, context provided, learning style mentioned
+
+### Problem 2: The Multi-Task Confusion
+
+**❌ Bad Prompt:**
+```
+Explain machine learning and also help me with Python and tell me
+about data science careers and what should I learn first
+```
+
+**Why it fails:**
+- Too many unrelated tasks
+- No clear priority
+- AI won't know what to focus on
+- Response will be scattered
+
+**✅ Fixed Approach - Break Into Separate Prompts:**
+```
+Prompt 1: "I'm a complete beginner interested in data science.
+Explain the relationship between Python, machine learning, and
+data science careers in simple terms. Use a diagram/visual
+description if possible. Keep it under 200 words."
+
+Prompt 2: "Based on my interest in data science, create a
+learning roadmap. Start with what I should learn in Month 1,
+then Month 2-3, then Month 4-6. For each phase, suggest 1-2
+specific resources."
+```
+
+**Why it works:** One clear task per prompt, logical sequence, actionable
+
+<Callout type="tip">
+**Golden Rule:** One prompt = One clear task. If you find yourself using "and also" or "and then" multiple times, split it into separate prompts!
+</Callout>
+
+### Problem 3: The Assumption Trap
+
+**❌ Bad Prompt:**
+```
+Optimize this code:
+[code snippet]
+```
+
+**Why it fails:**
+- What language? (could be multiple)
+- Optimize for what? (speed? memory? readability?)
+- What's your skill level?
+- What's acceptable to change?
+
+**✅ Fixed Prompt:**
+```
+I'm a Python beginner and wrote this function to process customer
+data. It works but takes 30 seconds on 10,000 records.
+
+[code snippet]
+
+Please optimize for speed while keeping the code readable for
+beginners. Explain:
+1. What's making it slow
+2. Your optimization approach
+3. The improved code with comments
+4. How much faster it should be
+
+I'm comfortable with basic Python but haven't learned advanced
+concepts like decorators yet.
+```
+
+**Why it works:** Context, specific goal (speed), skill level, what to preserve, what you understand
+
+## Interactive Prompt Quality Checker
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Prompt Quality Analyzer"
+  initialCode={`// Analyze your prompts and get improvement suggestions
+
+function analyzePrompt(prompt) {
+  const analysis = {
+    score: 0,
+    maxScore: 100,
+    strengths: [],
+    weaknesses: [],
+    suggestions: []
+  };
+
+  // Check length (context)
+  if (prompt.length > 200) {
+    analysis.score += 15;
+    analysis.strengths.push("✓ Detailed and comprehensive");
+  } else if (prompt.length > 100) {
+    analysis.score += 10;
+    analysis.weaknesses.push("✗ Could use more detail");
+  } else {
+    analysis.weaknesses.push("✗ Too brief - add more context");
+    analysis.suggestions.push("Add background information and context");
+  }
+
+  // Check for role
+  if (/you are|act as|role:|persona:/i.test(prompt)) {
+    analysis.score += 15;
+    analysis.strengths.push("✓ Includes role/persona");
+  } else {
+    analysis.weaknesses.push("✗ No role specified");
+    analysis.suggestions.push("Start with 'You are a [role]...'");
+  }
+
+  // Check for structure indicators
+  if (/\\d+\\.|first|then|step|format:|structure:/i.test(prompt)) {
+    analysis.score += 15;
+    analysis.strengths.push("✓ Well-structured request");
+  } else {
+    analysis.weaknesses.push("✗ Lacks clear structure");
+    analysis.suggestions.push("Use numbered lists or clear sections");
+  }
+
+  // Check for constraints
+  if (/words|characters|paragraphs|sentences|under|maximum|limit/i.test(prompt)) {
+    analysis.score += 10;
+    analysis.strengths.push("✓ Includes constraints");
+  } else {
+    analysis.weaknesses.push("✗ No length/format constraints");
+    analysis.suggestions.push("Specify desired length or format");
+  }
+
+  // Check for tone/style
+  if (/tone:|style:|casual|formal|friendly|professional|simple/i.test(prompt)) {
+    analysis.score += 10;
+    analysis.strengths.push("✓ Specifies tone/style");
+  } else {
+    analysis.suggestions.push("Consider specifying the desired tone");
+  }
+
+  // Check for examples
+  if (/example|like this|such as|e\\.g\\.|for instance/i.test(prompt)) {
+    analysis.score += 15;
+    analysis.strengths.push("✓ Provides examples");
+  } else {
+    analysis.suggestions.push("Add examples to clarify your intent");
+  }
+
+  // Check for context/background
+  if (/context|background|because|currently|situation|problem/i.test(prompt)) {
+    analysis.score += 10;
+    analysis.strengths.push("✓ Provides context");
+  } else {
+    analysis.suggestions.push("Add background context");
+  }
+
+  // Check for audience
+  if (/for|audience|beginner|expert|student|professional/i.test(prompt)) {
+    analysis.score += 10;
+    analysis.strengths.push("✓ Specifies audience");
+  } else {
+    analysis.suggestions.push("Mention who this is for");
+  }
+
+  return analysis;
+}
+
+// Test prompts
+const testPrompts = {
+  "Poor": "Explain AI",
+
+  "Okay": "Explain AI in simple terms with examples for beginners",
+
+  "Good": \`You are a teacher. Explain artificial intelligence to high school
+students using simple language. Include:
+1. What AI is
+2. Two real-world examples
+3. Why it matters
+
+Keep it under 200 words. Use a friendly, encouraging tone.\`,
+
+  "Excellent": \`You are an engaging tech educator creating content for curious
+high school students who've never studied computer science.
+
+Context: This is for a 10-minute intro video on AI fundamentals.
+
+Task: Explain what artificial intelligence is and why it's transforming
+the world.
+
+Structure:
+1. Simple definition with an everyday analogy (2 sentences)
+2. Three real-world examples students use daily (WhatsApp, YouTube, etc.)
+3. One exciting future possibility (1 sentence)
+4. Why learning about AI matters for their generation (2 sentences)
+
+Requirements:
+- Zero technical jargon
+- Use "you" to make it personal
+- Keep under 250 words
+- Tone: Enthusiastic and inspiring, not intimidating
+
+Example opening: "Imagine having a super-smart assistant that learns
+from experience..."\`
+};
+
+Object.entries(testPrompts).forEach(([quality, prompt]) => {
+  console.log(\`\n${"=".repeat(60)}\`);
+  console.log(\`ANALYZING: \${quality.toUpperCase()} PROMPT\`);
+  console.log(\`${"=".repeat(60)}\`);
+  console.log(\`Prompt: "\${prompt.substring(0, 60)}..."\n\`);
+
+  const result = analyzePrompt(prompt);
+
+  console.log(\`SCORE: \${result.score}/100\n\`);
+
+  if (result.strengths.length > 0) {
+    console.log("STRENGTHS:");
+    result.strengths.forEach(s => console.log(\`  \${s}\`));
+  }
+
+  if (result.weaknesses.length > 0) {
+    console.log(\`\nWEAKNESSES:\`);
+    result.weaknesses.forEach(w => console.log(\`  \${w}\`));
+  }
+
+  if (result.suggestions.length > 0) {
+    console.log(\`\nSUGGESTIONS:\`);
+    result.suggestions.forEach(s => console.log(\`  → \${s}\`));
+  }
+});
+
+console.log(\`\n${"=".repeat(60)}\`);
+console.log("💡 TIP: Aim for 70+ score for effective prompts!");`}
+/>
+
+## Advanced Techniques
+
+### Technique 1: The Constraint Ladder
+
+Adding constraints progressively makes outputs better:
+
+<Callout type="info">
+**Constraints Definition:** Specific limitations or requirements you set in a prompt, such as word count, format, tone, what to include, or what to avoid. Constraints focus the AI's output and prevent it from going off-track or being too generic.
+</Callout>
+
+**Level 1 - No constraints:**
+```
+Write about healthy eating
+```
+
+**Level 2 - Basic constraints:**
+```
+Write a 300-word article about healthy eating for busy professionals
+```
+
+**Level 3 - Multiple constraints:**
+```
+Write a 300-word article about healthy eating for busy professionals.
+Include 3 practical tips. Use a motivating tone. Avoid diet fads.
+```
+
+**Level 4 - Comprehensive constraints:**
+```
+You are a nutritionist writing for busy professionals (25-40 years old)
+who want to eat healthier but have limited time and cooking skills.
+
+Write a 300-word blog post titled "Healthy Eating Hacks for Busy Lives"
+
+Include:
+- Opening hook about common struggles (1 sentence)
+- 3 practical tips that take under 5 minutes each
+- One simple recipe idea
+- Motivating conclusion
+
+Constraints:
+- Use "you" to make it personal
+- Each tip: max 2 sentences
+- Avoid mentioning expensive superfoods or complex meal prep
+- Tone: Encouraging friend, not lecturing expert
+- Include one specific time-saving number in each tip
+```
+
+<Callout type="info">
+**The Constraint Paradox:** More specific constraints = more creative and useful results! Constraints don't limit the AI—they focus it.
+</Callout>
+
+### Technique 2: The Negative Space
+
+Tell the AI what NOT to do:
+
+<Callout type="info">
+**Negative Prompting Definition:** A technique where you explicitly tell the AI what to avoid or not include in its response. For example, "Avoid technical jargon" or "Don't use complicated examples." This helps steer the AI away from common mistakes or unwanted patterns.
+</Callout>
+
+```
+You are a software engineer explaining Git to complete beginners.
+
+Explain what Git is and why developers use it. Include a simple
+metaphor to make it relatable.
+
+AVOID:
+- Technical jargon (repository, commit, merge, etc.)
+- Assuming they know command line
+- Comparing to other version control systems
+- Making it sound complicated
+
+Instead:
+- Use everyday language
+- Focus on the "why" not the "how"
+- Make it feel achievable, not intimidating
+```
+
+### Technique 3: The Perspective Shift
+
+Change the AI's perspective for better results:
+
+**Standard approach:**
+```
+Explain blockchain technology
+```
+
+**Perspective shift:**
+```
+You are a skeptical small business owner who's heard blockchain
+might help your business, but you think it's probably overhyped
+tech nonsense.
+
+A blockchain expert is explaining it to you. Write their explanation
+that would actually convince you it's worth learning about.
+```
+
+This creates more relatable, persuasive content!
+
+## Real-World Prompt Templates
+
+Here are proven templates for common tasks:
+
+### Template 1: Learning New Concepts
+```
+I'm learning [TOPIC] and currently understand [WHAT YOU KNOW].
+
+I'm confused about [SPECIFIC CONFUSION].
+
+Explain [CONCEPT] by:
+1. Using a simple analogy from [FAMILIAR DOMAIN]
+2. Breaking it into 3 key points
+3. Giving a practical example
+
+Assume I'm a [YOUR LEVEL] but don't oversimplify—I want to
+truly understand it.
+```
+
+### Template 2: Content Creation
+```
+You are a [ROLE] writing for [AUDIENCE] who [CONTEXT].
+
+Create a [FORMAT] about [TOPIC] that:
+1. [FIRST GOAL]
+2. [SECOND GOAL]
+3. [THIRD GOAL]
+
+Requirements:
+- Length: [X WORDS/PARAGRAPHS]
+- Tone: [STYLE]
+- Include: [MUST-HAVES]
+- Avoid: [MUST-NOT-HAVES]
+
+Example of desired style: [SHOW EXAMPLE]
+```
+
+### Template 3: Problem Solving
+```
+I'm trying to [GOAL] but facing [PROBLEM].
+
+Details:
+- Current situation: [CONTEXT]
+- What I've tried: [ATTEMPTS]
+- Constraints: [LIMITATIONS]
+
+Provide:
+1. 3-5 potential solutions, ordered by ease of implementation
+2. For each: pros, cons, estimated time
+3. Your recommended approach and why
+
+My skill level: [BEGINNER/INTERMEDIATE/ADVANCED]
+```
+
+### Template 4: Code Help
+```
+I'm a [SKILL LEVEL] working in [LANGUAGE] on [PROJECT TYPE].
+
+Current problem: [DESCRIPTION]
+
+Here's my code:
+[CODE]
+
+Error I'm getting: [ERROR MESSAGE]
+
+Help me:
+1. Identify what's wrong and why
+2. Show the corrected code with comments
+3. Explain the concept so I avoid this in future
+4. Suggest one related best practice
+
+I understand [CONCEPTS YOU KNOW] but haven't learned [WHAT YOU DON'T KNOW] yet.
+```
+
+## Practice Exercise: Prompt Transformation
+
+Let's transform weak prompts into powerful ones:
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Prompt Transformation Examples"
+  initialCode={`// Watch how weak prompts transform into powerful ones
+
+const transformations = [
+  {
+    weak: "Make my resume better",
+    strong: \`I'm a junior software developer (2 years experience) applying
+for mid-level positions at tech startups.
+
+My resume gets few responses. I think my achievements aren't
+compelling enough.
+
+Review my resume and:
+1. Identify weak points in how I describe my experience
+2. Rewrite 3 bullet points to be more impactful (use metrics/results)
+3. Suggest what's missing that mid-level roles expect
+
+My tech stack: React, Node.js, PostgreSQL
+Notable projects: Built real-time chat app (5k users), optimized
+API (40% faster)
+
+Tone: Professional but authentic—I want to stand out, not sound generic.\`,
+    improvements: [
+      "Added specific context (experience level, target)",
+      "Identified the problem clearly",
+      "Requested actionable help",
+      "Provided relevant details",
+      "Set expectation for tone"
+    ]
+  },
+
+  {
+    weak: "Explain React hooks",
+    strong: \`I'm learning React and comfortable with class components, props,
+and state. I just discovered hooks and I'm confused.
+
+I understand WHAT hooks are (functions starting with 'use') but not:
+- WHY we need them if class components work
+- WHEN to use which hook
+- How they're different from regular functions
+
+Explain:
+1. The problem hooks solve (2-3 sentences)
+2. useState and useEffect with simple examples
+3. A rule of thumb for when to use each
+
+Use simple code examples (not complex apps). I learn best by
+understanding the "why" before the "how".\`,
+    improvements: [
+      "Stated current knowledge level",
+      "Identified specific confusion points",
+      "Requested clear structure",
+      "Mentioned learning style",
+      "Set example complexity level"
+    ]
+  },
+
+  {
+    weak: "Write a marketing email",
+    strong: \`You are a SaaS marketing manager writing to free trial users
+on day 5 of their 14-day trial.
+
+Context: Our AI writing tool helps content creators. Analytics show
+users who create 3+ documents usually convert. This user created only 1.
+
+Write a re-engagement email that:
+1. Subject line (friendly, curiosity-driven, under 50 chars)
+2. Acknowledges their trial (not pushy)
+3. Highlights the #1 feature they haven't tried (AI templates)
+4. Includes one customer success story (2 sentences)
+5. Clear CTA to try AI templates
+
+Tone: Helpful friend, not salesperson
+Length: 120-150 words
+Avoid: Pressure tactics, mentioning pricing, multiple CTAs\`,
+    improvements: [
+      "Defined role and audience precisely",
+      "Provided behavioral context",
+      "Structured the request",
+      "Set tone and length constraints",
+      "Specified what to avoid"
+    ]
+  }
+];
+
+transformations.forEach((item, index) => {
+  console.log(\`\n${"=".repeat(70)}\`);
+  console.log(\`TRANSFORMATION #\${index + 1}\`);
+  console.log(\`${"=".repeat(70)}\n\`);
+
+  console.log("❌ WEAK PROMPT:");
+  console.log(\`"\${item.weak}"\n\`);
+
+  console.log("✅ STRONG PROMPT:");
+  console.log(item.strong);
+
+  console.log(\`\n🎯 KEY IMPROVEMENTS:\`);
+  item.improvements.forEach((imp, i) => {
+    console.log(\`   \${i + 1}. \${imp}\`);
+  });
+});
+
+console.log(\`\n${"=".repeat(70)}\`);
+console.log("💡 PATTERN: Strong prompts are specific, structured, and contextual!");
+console.log("   Your turn: Take any weak prompt and apply these principles!");`}
+/>
+
+## Test Your Mastery
+
+<Quiz
+  title="Effective Prompts Mastery Check"
+  questions={[
+    {
+      question: "What's the MOST important element of an effective prompt?",
+      options: [
+        "Making it as long as possible",
+        "Using fancy vocabulary",
+        "Providing clear context and specific instructions",
+        "Including the word 'please'"
+      ],
+      correctAnswer: 2,
+      explanation: "Clear context and specific instructions are fundamental. Length doesn't matter—clarity does. The AI needs to understand exactly what you want and why. Context prevents assumptions, and specific instructions guide the output format and content."
+    },
+    {
+      question: "You're getting generic responses from ChatGPT. What's the BEST fix?",
+      options: [
+        "Switch to a different AI model",
+        "Add specific constraints, examples, and context to your prompt",
+        "Make your prompt shorter",
+        "Use more technical language"
+      ],
+      correctAnswer: 1,
+      explanation: "Generic prompts = generic responses! The solution is to add specificity: Who's the audience? What format do you want? What tone? What constraints? Examples of desired output? Context about your situation? These transform generic into specific, useful responses."
+    },
+    {
+      question: "What does 'The Constraint Paradox' mean?",
+      options: [
+        "Too many constraints break the AI",
+        "Constraints make responses less creative",
+        "More specific constraints actually produce more creative and useful results",
+        "You should never use constraints"
+      ],
+      correctAnswer: 2,
+      explanation: "The Constraint Paradox: More constraints = BETTER results! Constraints don't limit the AI—they focus it. Saying 'write about dogs' is too broad. Saying 'write a 200-word guide for first-time dog owners about house training puppies, using encouraging tone' gets you exactly what you need."
+    },
+    {
+      question: "When should you split one prompt into multiple prompts?",
+      options: [
+        "Never—always ask everything at once",
+        "When you find yourself using 'and also' multiple times with unrelated tasks",
+        "Only when the AI says it's confused",
+        "Whenever a prompt is longer than 100 words"
+      ],
+      correctAnswer: 1,
+      explanation: "Golden rule: One prompt = One clear task. If you're asking about multiple unrelated topics ('explain ML AND help with my resume AND suggest careers'), split them. The AI performs much better with focused, single-purpose prompts. Length alone doesn't matter—task clarity does."
+    },
+    {
+      question: "What's the purpose of the 'Negative Space' technique (telling AI what NOT to do)?",
+      options: [
+        "It makes prompts longer",
+        "It helps the AI avoid common mistakes or unwanted patterns",
+        "It confuses the AI into trying harder",
+        "It's only useful for creative writing"
+      ],
+      correctAnswer: 1,
+      explanation: "Negative Space guides the AI away from predictable patterns. For example, 'Explain blockchain. AVOID: technical jargon, comparing to other tech, assuming knowledge of crypto' prevents the AI from defaulting to overly technical explanations. It's like guardrails that keep output on track."
+    }
+  ]}
+/>
+
+## Key Takeaways
+
+🎯 **Use the RESPECT Framework**
+- **R**ole, **E**xpectation, **S**tructure, **P**arameters, **E**xamples, **C**ontext, **T**one
+- Not every prompt needs all 7, but the more you include, the better the result
+- This framework works for ANY type of prompt
+
+🎯 **One Prompt = One Task**
+- Break complex requests into focused prompts
+- Each prompt should have a single clear objective
+- Better to send 3 focused prompts than 1 confusing one
+
+🎯 **Constraints Are Your Friend**
+- Specific constraints = Specific results
+- Tell the AI what to include AND what to avoid
+- Length, format, tone, style—define them all
+
+🎯 **Context Prevents Assumptions**
+- Always explain your situation, skill level, and goal
+- The AI can't read your mind—give it background
+- "I'm a beginner" vs "I'm experienced" changes everything
+
+## Your Challenge
+
+Before moving to the next lesson, practice the RESPECT framework:
+
+**Exercise 1:** Take this weak prompt and transform it using RESPECT:
+```
+"Help me learn Python"
+```
+
+**Exercise 2:** Write a prompt for YOUR real-world need right now using the framework. Test it with ChatGPT and compare the result to how you normally ask questions.
+
+**Exercise 3:** Find a prompt you've used recently that gave poor results. Analyze it with the Prompt Quality Analyzer mindset and rewrite it.
+
+<Callout type="tip">
+**Pro Insight:** The best prompt writers save their successful prompts in a document. Start your own "prompt library" now! When you craft a great prompt, save it as a template for future use. You'll build an arsenal of proven prompts over time.
+</Callout>
+
+## What's Next?
+
+In the next lesson, **"Few-Shot Learning: Teaching AI by Example"**, you'll learn how to show the AI exactly what you want through examples—one of the most powerful techniques in prompt engineering!
+
+You'll discover:
+- What few-shot learning is and why it works
+- How to write effective examples
+- When to use zero-shot vs few-shot vs many-shot
+- Real examples that demonstrate the power of this technique

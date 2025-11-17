@@ -1,0 +1,807 @@
+---
+title: "Few-Shot Learning: Teaching AI by Example"
+description: "Show the AI what you want instead of just telling it—master the power of examples"
+difficulty: "beginner"
+duration: 16
+order: 7
+tags: ["Few-Shot Learning", "Prompt Engineering", "Examples", "Advanced Techniques"]
+---
+
+## The Power of "Show, Don't Tell"
+
+You've probably heard the writing advice: "Show, don't tell." The same principle applies to prompting AI! Instead of describing what you want, you can SHOW the AI examples, and it will learn the pattern.
+
+This is called **Few-Shot Learning**—teaching the AI by giving it a few examples.
+
+<Callout type="info">
+**Real-World Example:** Instead of saying "write in a casual, friendly tone," you could show two examples of casual, friendly writing. The AI will match that exact style much better than following a description!
+</Callout>
+
+## What is Few-Shot Learning?
+
+Few-shot learning is a prompting technique where you provide examples of input-output pairs to demonstrate the pattern you want.
+
+<Callout type="info">
+**Few-Shot Learning Definition:** A prompting technique where you teach the AI by showing it a few examples (usually 2-5) of what you want, rather than just describing it. The AI learns the pattern from your examples and applies it to new inputs, resulting in more consistent and accurate outputs.
+</Callout>
+
+**The Three Types:**
+
+<ComparisonTable
+  title="Zero-Shot vs Few-Shot vs Many-Shot"
+  columns={[
+    { title: "# Examples" },
+    { title: "When to Use" }
+  ]}
+  rows={[
+    {
+      feature: "Zero-Shot",
+      values: ["0 examples", "Task is straightforward and common"],
+      description: "Just describe what you want"
+    },
+    {
+      feature: "One-Shot",
+      values: ["1 example", "Simple pattern, one example clarifies"],
+      description: "Show one example"
+    },
+    {
+      feature: "Few-Shot",
+      values: ["2-5 examples", "Pattern needs clarification, specific style wanted"],
+      description: "Show multiple examples"
+    },
+    {
+      feature: "Many-Shot",
+      values: ["6+ examples", "Complex pattern or very specific requirements"],
+      description: "Show extensive examples"
+    }
+  ]}
+/>
+
+<Callout type="info">
+**Zero-Shot Learning Definition:** Asking the AI to perform a task without providing any examples, relying only on its training and your description. For example, "Summarize this article" with no example summaries. Zero-shot works well for common tasks the AI already understands.
+</Callout>
+
+## Why Few-Shot Works So Well
+
+AI models are trained on patterns. When you give examples, you're showing the AI exactly what pattern to follow. It's like:
+
+- **Zero-shot:** "Cook me dinner" (vague)
+- **Few-shot:** "Cook me dinner. Yesterday you made pasta with tomato sauce. Tuesday you made stir-fried vegetables with rice." (now the AI knows your style!)
+
+Let's see this in action:
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Zero-Shot vs Few-Shot Comparison"
+  initialCode={`// Simulating how examples improve AI responses
+
+function simulateResponse(prompt, examples = []) {
+  const shotType = examples.length === 0 ? "ZERO-SHOT" :
+                   examples.length === 1 ? "ONE-SHOT" :
+                   examples.length <= 5 ? "FEW-SHOT" : "MANY-SHOT";
+
+  console.log(\`\n${"=".repeat(60)}\`);
+  console.log(\`\${shotType} PROMPTING\`);
+  console.log(\`${"=".repeat(60)}\n\`);
+
+  console.log("PROMPT:", prompt);
+
+  if (examples.length > 0) {
+    console.log(\`\nEXAMPLES PROVIDED (\${examples.length}):\`);
+    examples.forEach((ex, i) => {
+      console.log(\`  Example \${i + 1}:\`);
+      console.log(\`    Input: "\${ex.input}"\`);
+      console.log(\`    Output: "\${ex.output}"\`);
+    });
+  }
+
+  // Simulate quality improvement
+  const quality = examples.length === 0 ? "Generic" :
+                  examples.length === 1 ? "Better" :
+                  examples.length <= 5 ? "Great" : "Excellent";
+
+  console.log(\`\nRESPONSE QUALITY: \${quality}\`);
+  console.log(\`PATTERN MATCHING: \${examples.length > 0 ? "✓ Clear" : "✗ Unclear"}\`);
+
+  return { shotType, quality, exampleCount: examples.length };
+}
+
+// Scenario: Converting product features to customer benefits
+
+console.log("TASK: Convert product features into customer benefits\n");
+
+// Zero-shot attempt
+simulateResponse(
+  "Convert this feature to a customer benefit: '256GB storage'",
+  []
+);
+
+// One-shot
+simulateResponse(
+  "Convert this feature to a customer benefit: '256GB storage'",
+  [
+    {
+      input: "Waterproof to 50 meters",
+      output: "Take underwater photos without worry"
+    }
+  ]
+);
+
+// Few-shot
+simulateResponse(
+  "Convert this feature to a customer benefit: '256GB storage'",
+  [
+    {
+      input: "Waterproof to 50 meters",
+      output: "Take underwater photos without worry"
+    },
+    {
+      input: "12-hour battery life",
+      output: "Use all day without charging"
+    },
+    {
+      input: "4K video recording",
+      output: "Capture memories in stunning detail"
+    }
+  ]
+);
+
+console.log(\`\n${"=".repeat(60)}\`);
+console.log("OBSERVATION: More examples = More consistent pattern matching!");
+console.log("The AI learns your exact style and format from examples.");`}
+/>
+
+## How to Write Effective Examples
+
+Not all examples are created equal! Here's how to write examples that work:
+
+### Rule 1: Examples Should Be Similar to Your Target
+
+**❌ Bad Examples (Not Similar):**
+```
+Convert this product feature to a customer benefit:
+
+Example 1:
+Feature: "Bluetooth 5.0"
+Benefit: "Connect to devices"
+
+Example 2:
+Feature: "7-day battery life"
+Benefit: "Never worry about charging during your week"
+
+Example 3:
+Feature: "50MP camera"
+Benefit: "Pictures look good"
+
+Now convert: "IP68 water resistance"
+```
+
+**Problems:**
+- Example 1 is too vague
+- Example 2 is perfect (good!)
+- Example 3 is too simple
+- Inconsistent quality confuses the AI
+
+**✅ Good Examples (Consistent Quality):**
+```
+Convert this product feature to a customer benefit:
+
+Example 1:
+Feature: "7-day battery life"
+Benefit: "Go an entire week without charging—perfect for busy professionals"
+
+Example 2:
+Feature: "50MP camera"
+Benefit: "Capture every detail—print poster-sized photos without blur"
+
+Example 3:
+Feature: "5G connectivity"
+Benefit: "Download movies in seconds—never wait for content again"
+
+Now convert: "IP68 water resistance"
+```
+
+**Why it works:** Consistent format, consistent quality, consistent level of detail
+
+### Rule 2: Use 2-5 Examples (Sweet Spot)
+
+<ComparisonTable
+  title="Example Count Guide"
+  columns={[
+    { title: "Best For" },
+    { title: "Pros/Cons" }
+  ]}
+  rows={[
+    {
+      feature: "1 Example",
+      values: ["Simple patterns", "Pro: Concise, Con: Might not capture full pattern"]
+    },
+    {
+      feature: "2-3 Examples",
+      values: ["Most tasks", "Pro: Establishes pattern clearly, Con: None"],
+      description: "Recommended default"
+    },
+    {
+      feature: "4-5 Examples",
+      values: ["Complex patterns or specific style", "Pro: Very clear pattern, Con: Uses more tokens"]
+    },
+    {
+      feature: "6+ Examples",
+      values: ["Highly specific formats", "Pro: Maximum clarity, Con: Expensive (many tokens)"]
+    }
+  ]}
+/>
+
+### Rule 3: Cover Edge Cases
+
+If your task has variations, show examples of each:
+
+**Example: Sentiment Analysis**
+```
+Classify the sentiment of customer reviews as Positive, Negative, or Neutral:
+
+Example 1 (clearly positive):
+Review: "This product changed my life! Best purchase ever."
+Sentiment: Positive
+
+Example 2 (clearly negative):
+Review: "Broke after two days. Complete waste of money."
+Sentiment: Negative
+
+Example 3 (mixed/neutral):
+Review: "It works fine, but nothing special. Average product."
+Sentiment: Neutral
+
+Example 4 (subtle negative):
+Review: "I guess it's okay if you don't have high expectations."
+Sentiment: Negative
+
+Now classify: "Fast shipping, but the product itself is disappointing."
+```
+
+Why this works: Covers obvious cases AND edge cases (mixed reviews, subtle negativity)
+
+## Practical Examples by Use Case
+
+### Use Case 1: Data Formatting
+
+**Task:** Convert addresses to a specific format
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Few-Shot Data Formatting"
+  initialCode={`// Few-shot learning for data formatting
+
+function demonstrateFewShot() {
+  const prompt = \`
+Convert these addresses to the format: [Street] | [City], [State] [ZIP]
+
+Examples:
+Input: "123 Main Street, Springfield, IL 62701"
+Output: "123 Main Street | Springfield, IL 62701"
+
+Input: "456 Oak Ave, Austin, Texas 78701"
+Output: "456 Oak Ave | Austin, TX 78701"
+
+Input: "789 Pine Road, New York, NY 10001"
+Output: "789 Pine Road | New York, NY 10001"
+
+Now convert: "321 Elm Boulevard, Los Angeles, California 90001"
+\`;
+
+  console.log("FEW-SHOT PROMPT:");
+  console.log("=".repeat(60));
+  console.log(prompt);
+  console.log("=".repeat(60));
+
+  // Simulated AI response (in reality, would use actual AI)
+  const expectedOutput = "321 Elm Boulevard | Los Angeles, CA 90001";
+
+  console.log("\nEXPECTED OUTPUT:");
+  console.log(expectedOutput);
+
+  console.log("\n✓ The AI learned:");
+  console.log("  1. Use pipe (|) as separator");
+  console.log("  2. Keep street address as-is");
+  console.log("  3. Abbreviate state names (California → CA)");
+  console.log("  4. Format: [Street] | [City], [State] [ZIP]");
+
+  console.log("\nWITHOUT FEW-SHOT:");
+  console.log("The AI might format it differently each time!");
+}
+
+demonstrateFewShot();
+
+console.log("\n" + "=".repeat(60));
+console.log("KEY INSIGHT: Examples create consistency!");`}
+/>
+
+### Use Case 2: Tone Matching
+
+**Scenario:** You need the AI to match a specific writing style
+
+**❌ Without Examples:**
+```
+Write a product description for noise-canceling headphones.
+Make it casual and friendly.
+```
+
+**✅ With Examples:**
+```
+Write a product description in the same style as these examples:
+
+Example 1 (Coffee maker):
+"Your mornings just got 10x better. This little beauty brews
+barista-quality coffee while you're still half-asleep. One button.
+Perfect coffee. Every time."
+
+Example 2 (Fitness tracker):
+"Meet your new workout buddy. Tracks your steps, cheers you on,
+and never judges you for that midnight snack. (We've all been there.)"
+
+Example 3 (Bluetooth speaker):
+"Tiny but mighty. This speaker punches way above its weight class.
+Pool party? Check. Road trip? Check. Shower concert? Oh yeah."
+
+Now write for: Noise-canceling headphones
+```
+
+The AI will match:
+- Short, punchy sentences
+- Casual, conversational tone
+- Direct address ("you," "your")
+- Personality and humor
+- Benefit-focused, not feature-focused
+
+### Use Case 3: Code Generation with Specific Style
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Few-Shot Code Style Learning"
+  initialCode={`// Teaching AI your code style through examples
+
+const fewShotCodePrompt = \`
+Write JavaScript functions following this style:
+
+Example 1:
+Task: Check if number is even
+Code:
+/**
+ * Checks if a number is even
+ * @param {number} num - Number to check
+ * @returns {boolean} True if even
+ */
+const isEven = (num) => num % 2 === 0;
+
+Example 2:
+Task: Get array maximum
+Code:
+/**
+ * Finds maximum value in array
+ * @param {number[]} arr - Array of numbers
+ * @returns {number} Maximum value
+ */
+const getMax = (arr) => Math.max(...arr);
+
+Example 3:
+Task: Capitalize first letter
+Code:
+/**
+ * Capitalizes first letter of string
+ * @param {string} str - String to capitalize
+ * @returns {string} Capitalized string
+ */
+const capitalize = (str) =>
+  str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
+Now write: Function to sum all numbers in an array
+\`;
+
+console.log("FEW-SHOT CODE STYLE PROMPT:");
+console.log("=".repeat(60));
+console.log(fewShotCodePrompt);
+console.log("\n=".repeat(60));
+
+console.log("\nWHAT THE AI LEARNS:");
+console.log("✓ Use JSDoc comments");
+console.log("✓ Arrow function syntax");
+console.log("✓ Concise, one-line implementations when possible");
+console.log("✓ Descriptive parameter names");
+console.log("✓ Consistent naming (camelCase)");
+
+console.log("\nEXPECTED OUTPUT:");
+const exampleOutput = \`
+/**
+ * Sums all numbers in an array
+ * @param {number[]} arr - Array of numbers to sum
+ * @returns {number} Sum of all numbers
+ */
+const sumArray = (arr) => arr.reduce((sum, num) => sum + num, 0);
+\`;
+console.log(exampleOutput);`}
+/>
+
+## Common Mistakes and Fixes
+
+### Mistake 1: Too Many Examples
+
+**Problem:**
+```
+[Provides 15 examples for a simple task]
+```
+
+**Why it's bad:**
+- Wastes tokens (= higher cost)
+- Slower responses
+- Diminishing returns after 5-6 examples
+
+**Fix:** Start with 2-3 examples. Only add more if needed.
+
+### Mistake 2: Inconsistent Examples
+
+**Problem:**
+```
+Example 1: Very detailed, 3 paragraphs
+Example 2: One sentence
+Example 3: Medium detail
+```
+
+**Why it's bad:** AI doesn't know which style to match
+
+**Fix:** Make all examples similar in length, detail, and quality
+
+### Mistake 3: Examples That Don't Match the Task
+
+**Problem:**
+```
+Teaching AI to write emails, but examples are social media posts
+```
+
+**Why it's bad:** Different formats, different audiences, different conventions
+
+**Fix:** Examples should be from the same domain as your task
+
+<Callout type="warning">
+**Token Warning:** Each example uses tokens from your context window! If you have a 4,000-token limit and use 1,500 tokens on examples, you only have 2,500 left for your prompt and the AI's response. Balance thoroughness with efficiency.
+</Callout>
+
+## Advanced Few-Shot Patterns
+
+### Pattern 1: Progressive Difficulty
+
+Show examples from simple to complex:
+
+```
+Extract the main topic from these sentences:
+
+Example 1 (simple):
+Sentence: "I love pizza."
+Topic: Food
+
+Example 2 (medium):
+Sentence: "The new restaurant downtown serves amazing Italian food."
+Topic: Food/Dining
+
+Example 3 (complex):
+Sentence: "After trying the new Italian place, I'm convinced that authentic
+pizza requires a wood-fired oven and imported ingredients."
+Topic: Food/Cooking/Quality
+
+Now extract from: "Climate change affects global food supply chains."
+```
+
+### Pattern 2: Chain of Thought in Examples
+
+Show your reasoning:
+
+<Callout type="info">
+**Chain of Thought Definition:** A technique where you show the AI your step-by-step reasoning process in examples, not just the final answer. This helps the AI understand how to think through problems logically and produce more accurate, explainable results for complex tasks.
+</Callout>
+
+```
+Solve these word problems:
+
+Example:
+Problem: "Sarah has 5 apples. She gives 2 to John. How many does she have?"
+Reasoning: Start with 5, subtract 2 that were given away
+Answer: 3 apples
+
+Example:
+Problem: "A book costs $12. You buy 3 books. What's the total?"
+Reasoning: Multiply unit price ($12) by quantity (3)
+Answer: $36
+
+Now solve: "Tom runs 3 miles per day. How far in a week?"
+```
+
+### Pattern 3: Error Correction
+
+Show what's wrong and what's right:
+
+```
+Fix grammatical errors in these sentences:
+
+Example:
+Wrong: "Me and him went to the store."
+Right: "He and I went to the store."
+Reason: Use "I" not "me" as subject
+
+Example:
+Wrong: "The data shows a trend."
+Right: "The data show a trend."
+Reason: "Data" is plural (datum is singular)
+
+Now fix: "Between you and I, this seems wrong."
+```
+
+## Interactive Few-Shot Builder
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  title="Build Your Own Few-Shot Prompt"
+  initialCode={`// Interactive few-shot prompt builder
+
+class FewShotBuilder {
+  constructor(task) {
+    this.task = task;
+    this.examples = [];
+  }
+
+  addExample(input, output, explanation = "") {
+    this.examples.push({ input, output, explanation });
+    return this; // For chaining
+  }
+
+  build() {
+    let prompt = \`Task: \${this.task}\n\n\`;
+
+    if (this.examples.length === 0) {
+      prompt += "No examples provided (Zero-Shot)\n";
+    } else {
+      prompt += \`Examples (\${this.examples.length}):\n\n\`;
+
+      this.examples.forEach((ex, i) => {
+        prompt += \`Example \${i + 1}:\n\`;
+        prompt += \`Input: "\${ex.input}"\n\`;
+        prompt += \`Output: "\${ex.output}"\n\`;
+        if (ex.explanation) {
+          prompt += \`(Reason: \${ex.explanation})\n\`;
+        }
+        prompt += \`\n\`;
+      });
+    }
+
+    return prompt;
+  }
+
+  analyze() {
+    const shotType = this.examples.length === 0 ? "Zero-Shot" :
+                     this.examples.length === 1 ? "One-Shot" :
+                     this.examples.length <= 5 ? "Few-Shot" : "Many-Shot";
+
+    return {
+      type: shotType,
+      exampleCount: this.examples.length,
+      tokenEstimate: this.build().length / 4, // Rough estimate
+      quality: this.examples.length >= 2 ? "Good" : "Could improve"
+    };
+  }
+}
+
+// Example 1: Sentiment Analysis
+console.log("EXAMPLE 1: SENTIMENT ANALYSIS");
+console.log("=".repeat(60));
+
+const sentimentPrompt = new FewShotBuilder("Classify review sentiment")
+  .addExample(
+    "This product is amazing! Love it!",
+    "Positive",
+    "Enthusiastic language, exclamation marks"
+  )
+  .addExample(
+    "Terrible quality. Broke immediately.",
+    "Negative",
+    "Negative words, describes failure"
+  )
+  .addExample(
+    "It's okay. Does the job.",
+    "Neutral",
+    "Lukewarm language, no strong opinion"
+  );
+
+console.log(sentimentPrompt.build());
+
+const analysis1 = sentimentPrompt.analyze();
+console.log("ANALYSIS:");
+console.log(\`  Type: \${analysis1.type}\`);
+console.log(\`  Examples: \${analysis1.exampleCount}\`);
+console.log(\`  Estimated tokens: ~\${Math.round(analysis1.tokenEstimate)}\`);
+console.log(\`  Quality: \${analysis1.quality}\`);
+
+// Example 2: Email Subject Lines
+console.log(\`\n\n${"=".repeat(60)}\`);
+console.log("EXAMPLE 2: EMAIL SUBJECT LINE CREATION");
+console.log("=".repeat(60));
+
+const emailPrompt = new FewShotBuilder("Create engaging email subjects")
+  .addExample(
+    "Blog post about productivity tips",
+    "5 Productivity Hacks That Actually Work",
+    "Number list, promise of value, credibility"
+  )
+  .addExample(
+    "Product launch announcement",
+    "You Asked, We Built It: Introducing [Product]",
+    "Personal touch, builds anticipation"
+  )
+  .addExample(
+    "Limited-time sale",
+    "Last Chance: 50% Off Ends Tonight",
+    "Urgency, clear benefit, deadline"
+  );
+
+console.log(emailPrompt.build());
+
+const analysis2 = emailPrompt.analyze();
+console.log("ANALYSIS:");
+console.log(\`  Type: \${analysis2.type}\`);
+console.log(\`  Examples: \${analysis2.exampleCount}\`);
+console.log(\`  Quality: \${analysis2.quality}\`);
+
+console.log(\`\n${"=".repeat(60)}\`);
+console.log("💡 TIP: Build your own FewShotBuilder for your use cases!");
+console.log("   Save successful prompts for reuse.");`}
+/>
+
+## When to Use Few-Shot vs Zero-Shot
+
+<ComparisonTable
+  title="Choosing Your Approach"
+  columns={[
+    { title: "Situation" },
+    { title: "Recommended Approach" },
+    { title: "Why" }
+  ]}
+  rows={[
+    {
+      feature: "Common task (summarize, explain)",
+      values: ["Zero-Shot", "AI already knows how to do this"]
+    },
+    {
+      feature: "Specific format/style needed",
+      values: ["Few-Shot", "Examples show exact pattern"],
+      description: "Best choice for consistency"
+    },
+    {
+      feature: "Creative writing with tone",
+      values: ["Few-Shot (2-3 examples)", "Demonstrates voice and style"]
+    },
+    {
+      feature: "Data transformation",
+      values: ["Few-Shot (3-5 examples)", "Shows input/output mapping clearly"]
+    },
+    {
+      feature: "Classification task",
+      values: ["Few-Shot covering each category", "Defines each class with example"]
+    },
+    {
+      feature: "Very simple task",
+      values: ["Zero-Shot", "Don't waste tokens on examples"]
+    }
+  ]}
+/>
+
+## Test Your Understanding
+
+<Quiz
+  title="Few-Shot Learning Mastery"
+  questions={[
+    {
+      question: "What is the main benefit of few-shot learning over zero-shot?",
+      options: [
+        "It makes prompts longer",
+        "It shows the AI exactly what pattern/style you want",
+        "It's required for AI to work",
+        "It uses less tokens"
+      ],
+      correctAnswer: 1,
+      explanation: "Few-shot learning's power is in showing, not telling. Instead of describing 'write in a casual tone,' you show 2-3 examples of casual writing. The AI matches the pattern much more accurately than following a description."
+    },
+    {
+      question: "How many examples is typically optimal for few-shot prompting?",
+      options: [
+        "Always use exactly 1",
+        "2-5 examples (sweet spot for most tasks)",
+        "At least 10 examples",
+        "As many as possible"
+      ],
+      correctAnswer: 1,
+      explanation: "2-5 examples is the sweet spot! 1 example might not establish the pattern clearly. 2-3 usually works great. 4-5 for complex patterns. More than 6 has diminishing returns and wastes tokens. Start with 2-3 and add more only if needed."
+    },
+    {
+      question: "Your examples are inconsistent (one very detailed, one very brief). What happens?",
+      options: [
+        "The AI averages them out",
+        "The AI gets confused about which style to match",
+        "The AI ignores the brief one",
+        "Nothing—inconsistency doesn't matter"
+      ],
+      correctAnswer: 1,
+      explanation: "Inconsistent examples confuse the AI! If Example 1 is a detailed 3-paragraph response and Example 2 is one sentence, the AI doesn't know which to match. Keep examples consistent in length, detail level, and quality so the pattern is clear."
+    },
+    {
+      question: "When should you use zero-shot instead of few-shot?",
+      options: [
+        "Never—always use examples",
+        "When the task is common/straightforward and you don't need a specific format",
+        "Only when you're lazy",
+        "When you want worse results"
+      ],
+      correctAnswer: 1,
+      explanation: "Zero-shot is perfect for common, straightforward tasks where the AI already knows what to do and you don't need a specific format. Example: 'Summarize this article' or 'Translate to Spanish.' Save tokens, use few-shot only when you need to demonstrate a specific pattern or style."
+    },
+    {
+      question: "What's a key consideration when using many examples (6+)?",
+      options: [
+        "It always produces better results",
+        "It uses many tokens, potentially filling your context window and increasing cost",
+        "The AI can't handle that many",
+        "It confuses the AI"
+      ],
+      correctAnswer: 1,
+      explanation: "Token economics matter! Each example uses tokens. 10 examples might use 500-1000 tokens, leaving less room for your actual prompt and the AI's response. Plus, more tokens = higher cost. Use 2-5 examples for most tasks; only go higher for very complex patterns."
+    }
+  ]}
+/>
+
+## Key Takeaways
+
+🎯 **Show, Don't Tell**
+- Examples are more powerful than descriptions
+- 2-3 good examples > long explanations
+- AI learns patterns from examples naturally
+
+🎯 **Quality Over Quantity**
+- 2-5 examples is usually optimal
+- Keep examples consistent in quality and format
+- Cover edge cases if your task has variations
+
+🎯 **When to Use Few-Shot**
+- Specific format or style needed
+- Data transformation tasks
+- Tone/voice matching
+- Classification with multiple categories
+
+🎯 **Watch Your Tokens**
+- Each example uses tokens
+- Balance thoroughness with efficiency
+- Start with fewer examples, add more if needed
+
+## Practice Challenges
+
+**Challenge 1: Tone Matching**
+Find 3 pieces of writing you like (emails, blog posts, etc.). Create a few-shot prompt that teaches the AI to match that exact tone. Test it!
+
+**Challenge 2: Data Formatting**
+You have messy data (addresses, dates, names). Create a few-shot prompt that reformats it consistently. Start with 2 examples, test, then add a 3rd if needed.
+
+**Challenge 3: Creative Writing**
+Write 2-3 examples of very short stories (2-3 sentences each) in a specific style. Then have the AI write another in the same style.
+
+<Callout type="tip">
+**Next Level:** Start a "Few-Shot Library" where you save your best example sets. When you create a great few-shot prompt for email writing, save it! Reuse successful patterns for similar future tasks.
+</Callout>
+
+## What's Next?
+
+In the next lesson, **"Chain of Thought: Teaching AI to Think Step-by-Step"**, you'll learn how to make AI show its reasoning process—one of the most powerful techniques for complex problem-solving!
+
+You'll discover:
+- What Chain of Thought prompting is
+- When and why to use it
+- How to structure step-by-step reasoning
+- Real examples of complex problems solved with CoT

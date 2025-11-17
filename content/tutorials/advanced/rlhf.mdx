@@ -1,0 +1,828 @@
+---
+title: "RLHF: Reinforcement Learning from Human Feedback"
+description: "Deep dive into RLHF: train reward models from human preferences, use PPO to optimize language models, and align AI systems with human values. Complete implementation from scratch."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["RLHF", "Reinforcement Learning", "PPO", "Reward Model", "Alignment"]
+difficulty: "advanced"
+duration: 30
+order: 57
+---
+
+# RLHF: Reinforcement Learning from Human Feedback
+
+RLHF (Reinforcement Learning from Human Feedback) is the secret sauce behind ChatGPT's helpfulness and safety. It aligns models with human preferences through a three-stage process.
+
+## The Three Stages of RLHF
+
+```python
+import torch
+import torch.nn as nn
+from typing import List, Tuple
+
+class RLHFPipeline:
+    """
+    Complete RLHF pipeline overview.
+
+    Stage 1: Supervised Fine-Tuning (SFT)
+    Stage 2: Reward Model Training
+    Stage 3: RL Fine-Tuning with PPO
+    """
+
+    def __init__(self):
+        self.stages = {
+            1: "Supervised Fine-Tuning (SFT)",
+            2: "Reward Model Training",
+            3: "PPO Optimization"
+        }
+
+    def describe_pipeline(self):
+        """Describe the three-stage RLHF pipeline."""
+        print("RLHF Three-Stage Pipeline:\n")
+
+        print("Stage 1: Supervised Fine-Tuning (SFT)")
+        print("  - Start with pre-trained base model")
+        print("  - Fine-tune on high-quality demonstrations")
+        print("  - Creates initial 'helpful' policy")
+        print("  - Example: GPT-3 → GPT-3.5-Instruct (SFT)")
+        print()
+
+        print("Stage 2: Reward Model Training")
+        print("  - Collect human preferences (A vs B comparisons)")
+        print("  - Train reward model to predict human preferences")
+        print("  - Reward model assigns scores to responses")
+        print("  - Example: Given response, output reward score 0-1")
+        print()
+
+        print("Stage 3: RL Fine-Tuning (PPO)")
+        print("  - Use reward model as environment")
+        print("  - Optimize policy with PPO to maximize reward")
+        print("  - Add KL penalty to prevent drift from SFT model")
+        print("  - Example: ChatGPT = GPT-3.5-Instruct (SFT) + RLHF")
+
+pipeline = RLHFPipeline()
+pipeline.describe_pipeline()
+```
+
+<Callout type="info">
+**Why Three Stages?**
+
+1. **SFT first:** Provides good starting point, teaches basic instruction-following
+2. **Reward model:** Captures nuanced human preferences (what makes a response better)
+3. **PPO:** Optimizes for reward while preventing model from degenerating
+
+Can't skip stages: RL from scratch fails, SFT alone misses nuanced preferences.
+</Callout>
+
+## Stage 1: Supervised Fine-Tuning (SFT)
+
+Create initial policy from demonstrations:
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+class SFTStage:
+    """
+    Stage 1: Supervised Fine-Tuning on demonstrations.
+
+    Creates initial policy π_SFT that follows instructions.
+    """
+
+    def __init__(self, base_model_name: str):
+        """
+        Args:
+            base_model_name: Pre-trained model to start from
+        """
+        self.model = AutoModelForCausalLM.from_pretrained(base_model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(base_model_name)
+
+    def create_sft_dataset(self):
+        """
+        Create high-quality demonstration dataset.
+
+        For ChatGPT, this was ~13k human-written demonstrations.
+        """
+        demonstrations = [
+            {
+                "prompt": "Explain quantum computing to a beginner.",
+                "response": "Quantum computing is a new type of computing that uses quantum mechanics. Unlike regular computers that use bits (0 or 1), quantum computers use qubits that can be 0, 1, or both at once (superposition). This allows them to solve certain problems much faster than classical computers..."
+            },
+            {
+                "prompt": "Write a professional email declining a job offer.",
+                "response": "Dear [Hiring Manager],\n\nThank you for offering me the [Position] role at [Company]. After careful consideration, I have decided to decline the offer. This was a difficult decision, as I was impressed by the team and the opportunity. However, I have accepted another position that better aligns with my current career goals...\n\nBest regards,\n[Your name]"
+            }
+            # ... thousands more high-quality examples
+        ]
+
+        return demonstrations
+
+    def train_sft(self, demonstrations, epochs=3):
+        """
+        Train SFT model on demonstrations.
+
+        Standard supervised fine-tuning (covered in instruction tuning).
+        """
+        print(f"Training SFT model on {len(demonstrations)} demonstrations...")
+        print("This creates π_SFT: initial instruction-following policy")
+
+        # Implementation same as instruction tuning
+        # (see instruction-tuning.mdx)
+
+# Stage 1 creates π_SFT
+# sft = SFTStage("gpt2")
+# demonstrations = sft.create_sft_dataset()
+# sft.train_sft(demonstrations)
+```
+
+## Stage 2: Reward Model Training
+
+The most crucial and novel stage:
+
+### Collecting Preference Data
+
+```python
+from dataclasses import dataclass
+from typing import Tuple
+
+@dataclass
+class PreferenceExample:
+    """
+    Single preference comparison.
+
+    Human labelers rank multiple responses to same prompt.
+    """
+    prompt: str
+    response_chosen: str  # Preferred response
+    response_rejected: str  # Less preferred response
+
+
+def collect_preference_data(
+    sft_model,
+    prompts: List[str],
+    k_responses: int = 4
+) -> List[PreferenceExample]:
+    """
+    Collect preference data from human labelers.
+
+    Process:
+    1. Sample prompts from dataset
+    2. Generate k responses per prompt using SFT model
+    3. Human labelers rank responses
+    4. Create pairwise comparisons
+
+    Args:
+        sft_model: SFT model to generate responses
+        prompts: List of prompts
+        k_responses: Number of responses to generate per prompt
+
+    Returns:
+        List of preference examples
+    """
+    preference_data = []
+
+    for prompt in prompts:
+        # Generate k different responses
+        responses = []
+        for i in range(k_responses):
+            response = sft_model.generate(
+                prompt,
+                temperature=0.7 + i*0.1,  # Vary temperature for diversity
+                max_length=256
+            )
+            responses.append(response)
+
+        # Human labelers rank: response_1 > response_2 > response_3 > response_4
+        # Create pairwise comparisons from ranking
+        # If ranking is [A, B, C, D], we get:
+        # - A > B, A > C, A > D
+        # - B > C, B > D
+        # - C > D
+
+        # Simulated ranking (in practice, done by humans)
+        ranked_responses = rank_responses_human(prompt, responses)
+
+        # Create pairwise examples
+        for i in range(len(ranked_responses)):
+            for j in range(i+1, len(ranked_responses)):
+                preference_data.append(
+                    PreferenceExample(
+                        prompt=prompt,
+                        response_chosen=ranked_responses[i],
+                        response_rejected=ranked_responses[j]
+                    )
+                )
+
+    return preference_data
+
+
+def rank_responses_human(prompt: str, responses: List[str]) -> List[str]:
+    """
+    Simulate human ranking of responses.
+
+    In practice, this is done by human labelers who rank
+    responses based on helpfulness, harmlessness, and honesty.
+    """
+    # Placeholder: actual ranking done by humans
+    # For demonstration, return in order
+    return responses
+
+
+# For ChatGPT: ~33k preference comparisons collected
+# preference_data = collect_preference_data(sft_model, prompts, k_responses=4)
+```
+
+<Callout type="warning">
+**Preference Data Collection Challenges:**
+
+1. **Expensive:** Requires many human labelers ($100k-$1M+)
+2. **Subjective:** Labeler disagreement on what's "better"
+3. **Biased:** Reflects labeler demographics and values
+4. **Time-consuming:** Weeks to months of labeling
+5. **Quality critical:** Bad preferences → bad reward model → bad final model
+
+OpenAI uses detailed labeling guidelines and quality checks.
+</Callout>
+
+### Reward Model Architecture
+
+```python
+class RewardModel(nn.Module):
+    """
+    Reward model: predicts human preference score.
+
+    Architecture: LLM backbone → scalar reward head
+    """
+
+    def __init__(self, base_model_name: str):
+        """
+        Args:
+            base_model_name: Base model (usually same as SFT model)
+        """
+        super().__init__()
+
+        # Load base model (without LM head)
+        from transformers import AutoModel
+        self.backbone = AutoModel.from_pretrained(base_model_name)
+
+        # Get hidden size
+        hidden_size = self.backbone.config.hidden_size
+
+        # Reward head: projects to scalar score
+        self.reward_head = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_size, 1)  # Scalar reward
+        )
+
+    def forward(self, input_ids, attention_mask):
+        """
+        Compute reward for a response.
+
+        Args:
+            input_ids: Tokenized prompt + response
+            attention_mask: Attention mask
+
+        Returns:
+            Scalar reward score
+        """
+        # Get hidden states from backbone
+        outputs = self.backbone(
+            input_ids=input_ids,
+            attention_mask=attention_mask
+        )
+
+        # Use last token's hidden state (like value function)
+        # Find last non-padding token
+        sequence_lengths = attention_mask.sum(dim=1) - 1
+        batch_size = input_ids.shape[0]
+
+        # Get last hidden state for each sequence
+        last_hidden_states = outputs.last_hidden_state[
+            torch.arange(batch_size, device=input_ids.device),
+            sequence_lengths
+        ]
+
+        # Project to scalar reward
+        reward = self.reward_head(last_hidden_states)
+
+        return reward.squeeze(-1)  # (batch_size,)
+
+
+# Test reward model
+reward_model = RewardModel("gpt2")
+print(f"Reward model parameters: {sum(p.numel() for p in reward_model.parameters()):,}")
+```
+
+### Training the Reward Model
+
+```python
+class RewardModelTrainer:
+    """
+    Train reward model on preference data.
+
+    Loss: maximize log probability that chosen response has higher reward.
+    """
+
+    def __init__(self, model: RewardModel, tokenizer):
+        """
+        Args:
+            model: Reward model
+            tokenizer: Tokenizer
+        """
+        self.model = model
+        self.tokenizer = tokenizer
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model.to(self.device)
+
+    def compute_loss(
+        self,
+        reward_chosen: torch.Tensor,
+        reward_rejected: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Compute pairwise ranking loss.
+
+        Loss = -log(sigmoid(r_chosen - r_rejected))
+
+        This maximizes the probability that chosen response
+        has higher reward than rejected.
+
+        Args:
+            reward_chosen: Rewards for chosen responses
+            reward_rejected: Rewards for rejected responses
+
+        Returns:
+            Loss scalar
+        """
+        # Binary cross-entropy between rewards
+        # We want: r_chosen > r_rejected
+        # Equivalent to: sigmoid(r_chosen - r_rejected) → 1
+        loss = -torch.log(torch.sigmoid(reward_chosen - reward_rejected)).mean()
+
+        return loss
+
+    def train(
+        self,
+        preference_data: List[PreferenceExample],
+        epochs: int = 1,
+        batch_size: int = 4,
+        learning_rate: float = 1e-5
+    ):
+        """
+        Train reward model on preference comparisons.
+
+        Args:
+            preference_data: List of preference examples
+            epochs: Number of epochs
+            batch_size: Batch size
+            learning_rate: Learning rate
+        """
+        optimizer = torch.optim.AdamW(self.model.parameters(), lr=learning_rate)
+
+        for epoch in range(epochs):
+            total_loss = 0
+            num_batches = 0
+
+            # Process in batches
+            for i in range(0, len(preference_data), batch_size):
+                batch = preference_data[i:i+batch_size]
+
+                # Tokenize chosen and rejected responses
+                chosen_texts = [
+                    f"{ex.prompt}\n{ex.response_chosen}" for ex in batch
+                ]
+                rejected_texts = [
+                    f"{ex.prompt}\n{ex.response_rejected}" for ex in batch
+                ]
+
+                chosen_encodings = self.tokenizer(
+                    chosen_texts,
+                    padding=True,
+                    truncation=True,
+                    max_length=512,
+                    return_tensors='pt'
+                ).to(self.device)
+
+                rejected_encodings = self.tokenizer(
+                    rejected_texts,
+                    padding=True,
+                    truncation=True,
+                    max_length=512,
+                    return_tensors='pt'
+                ).to(self.device)
+
+                # Compute rewards
+                reward_chosen = self.model(
+                    chosen_encodings['input_ids'],
+                    chosen_encodings['attention_mask']
+                )
+
+                reward_rejected = self.model(
+                    rejected_encodings['input_ids'],
+                    rejected_encodings['attention_mask']
+                )
+
+                # Compute loss
+                loss = self.compute_loss(reward_chosen, reward_rejected)
+
+                # Backward pass
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                total_loss += loss.item()
+                num_batches += 1
+
+            avg_loss = total_loss / num_batches
+            print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}")
+
+            # Evaluate accuracy
+            accuracy = self.evaluate_accuracy(preference_data[:100])
+            print(f"  Accuracy on preferences: {accuracy:.2%}")
+
+    def evaluate_accuracy(self, preference_data: List[PreferenceExample]) -> float:
+        """
+        Evaluate how often reward model correctly ranks preferences.
+        """
+        self.model.eval()
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for ex in preference_data:
+                # Tokenize
+                chosen_text = f"{ex.prompt}\n{ex.response_chosen}"
+                rejected_text = f"{ex.prompt}\n{ex.response_rejected}"
+
+                chosen_enc = self.tokenizer(
+                    chosen_text, return_tensors='pt', truncation=True, max_length=512
+                ).to(self.device)
+                rejected_enc = self.tokenizer(
+                    rejected_text, return_tensors='pt', truncation=True, max_length=512
+                ).to(self.device)
+
+                # Get rewards
+                r_chosen = self.model(chosen_enc['input_ids'], chosen_enc['attention_mask'])
+                r_rejected = self.model(rejected_enc['input_ids'], rejected_enc['attention_mask'])
+
+                # Check if chosen > rejected
+                if r_chosen > r_rejected:
+                    correct += 1
+                total += 1
+
+        self.model.train()
+        return correct / total if total > 0 else 0.0
+
+
+# Example training
+# trainer = RewardModelTrainer(reward_model, tokenizer)
+# trainer.train(preference_data, epochs=1)
+```
+
+<Callout type="tip">
+**Reward Model Success Metrics:**
+
+- **Accuracy:** % of preferences correctly ranked (target: &gt;70%)
+- **Agreement with humans:** Inter-rater reliability
+- **Calibration:** Reward magnitudes meaningful
+- **Generalization:** Works on out-of-distribution prompts
+
+A good reward model is critical - garbage in, garbage out!
+</Callout>
+
+## Stage 3: PPO Optimization
+
+Use reward model to optimize policy with PPO (Proximal Policy Optimization):
+
+### PPO Algorithm
+
+```python
+class PPOTrainer:
+    """
+    PPO (Proximal Policy Optimization) for RLHF.
+
+    Objective: max E[reward(y|x)] - β * KL(π_θ || π_SFT)
+
+    Where:
+    - π_θ: Current policy (being optimized)
+    - π_SFT: Reference policy (from Stage 1)
+    - β: KL penalty coefficient
+    """
+
+    def __init__(
+        self,
+        policy_model,  # Model being optimized
+        ref_model,  # Reference model (frozen SFT model)
+        reward_model,  # Reward model (frozen)
+        tokenizer,
+        kl_coef: float = 0.1
+    ):
+        """
+        Args:
+            policy_model: Policy being optimized
+            ref_model: Reference policy (SFT model, frozen)
+            reward_model: Reward model (frozen)
+            tokenizer: Tokenizer
+            kl_coef: KL divergence penalty coefficient
+        """
+        self.policy = policy_model
+        self.ref_model = ref_model
+        self.reward_model = reward_model
+        self.tokenizer = tokenizer
+        self.kl_coef = kl_coef
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Freeze reference and reward models
+        for param in self.ref_model.parameters():
+            param.requires_grad = False
+        for param in self.reward_model.parameters():
+            param.requires_grad = False
+
+    def compute_rewards(
+        self,
+        prompts: List[str],
+        responses: List[str]
+    ) -> torch.Tensor:
+        """
+        Compute rewards for prompt-response pairs.
+
+        Args:
+            prompts: List of prompts
+            responses: List of generated responses
+
+        Returns:
+            Tensor of rewards
+        """
+        # Combine prompts and responses
+        texts = [f"{p}\n{r}" for p, r in zip(prompts, responses)]
+
+        # Tokenize
+        encodings = self.tokenizer(
+            texts,
+            padding=True,
+            truncation=True,
+            return_tensors='pt'
+        ).to(self.device)
+
+        # Get rewards from reward model
+        with torch.no_grad():
+            rewards = self.reward_model(
+                encodings['input_ids'],
+                encodings['attention_mask']
+            )
+
+        return rewards
+
+    def compute_kl_penalty(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Compute KL divergence between policy and reference.
+
+        KL(π_θ || π_ref) prevents policy from drifting too far from SFT.
+
+        Args:
+            input_ids: Token IDs
+            attention_mask: Attention mask
+
+        Returns:
+            KL divergence
+        """
+        # Get logits from both models
+        policy_logits = self.policy(
+            input_ids=input_ids,
+            attention_mask=attention_mask
+        ).logits
+
+        with torch.no_grad():
+            ref_logits = self.ref_model(
+                input_ids=input_ids,
+                attention_mask=attention_mask
+            ).logits
+
+        # Convert to log probabilities
+        policy_log_probs = torch.log_softmax(policy_logits, dim=-1)
+        ref_log_probs = torch.log_softmax(ref_logits, dim=-1)
+
+        # KL divergence: KL(π || π_ref) = E_π[log π - log π_ref]
+        # Compute per-token KL
+        kl_div = (
+            torch.exp(policy_log_probs) *
+            (policy_log_probs - ref_log_probs)
+        ).sum(dim=-1)
+
+        # Average over sequence (only non-padding tokens)
+        kl_div = (kl_div * attention_mask).sum(dim=1) / attention_mask.sum(dim=1)
+
+        return kl_div.mean()
+
+    def ppo_step(
+        self,
+        prompts: List[str],
+        batch_size: int = 4,
+        ppo_epochs: int = 4,
+        clip_range: float = 0.2
+    ):
+        """
+        Single PPO update step.
+
+        Args:
+            prompts: List of prompts
+            batch_size: Batch size
+            ppo_epochs: Number of PPO epochs per batch
+            clip_range: PPO clipping range
+        """
+        # Generate responses from current policy
+        responses = []
+        for prompt in prompts:
+            # Generate response
+            input_ids = self.tokenizer.encode(prompt, return_tensors='pt').to(self.device)
+
+            output_ids = self.policy.generate(
+                input_ids,
+                max_new_tokens=128,
+                temperature=0.7,
+                do_sample=True,
+                pad_token_id=self.tokenizer.eos_token_id
+            )
+
+            # Decode response (remove prompt)
+            response = self.tokenizer.decode(
+                output_ids[0][input_ids.shape[1]:],
+                skip_special_tokens=True
+            )
+            responses.append(response)
+
+        # Compute rewards
+        rewards = self.compute_rewards(prompts, responses)
+
+        # Prepare full sequences for training
+        texts = [f"{p}\n{r}" for p, r in zip(prompts, responses)]
+        encodings = self.tokenizer(
+            texts,
+            padding=True,
+            truncation=True,
+            return_tensors='pt'
+        ).to(self.device)
+
+        # PPO updates
+        for epoch in range(ppo_epochs):
+            # Forward pass
+            outputs = self.policy(
+                input_ids=encodings['input_ids'],
+                attention_mask=encodings['attention_mask']
+            )
+
+            # Compute KL penalty
+            kl_penalty = self.compute_kl_penalty(
+                encodings['input_ids'],
+                encodings['attention_mask']
+            )
+
+            # Total reward: reward - β * KL
+            total_reward = rewards.mean() - self.kl_coef * kl_penalty
+
+            # PPO loss (simplified)
+            loss = -total_reward
+
+            # Backward pass
+            loss.backward()
+
+            print(f"  Epoch {epoch+1}/{ppo_epochs}: Reward={rewards.mean():.4f}, KL={kl_penalty:.4f}, Loss={loss:.4f}")
+
+        return {
+            'reward': rewards.mean().item(),
+            'kl': kl_penalty.item(),
+            'responses': responses
+        }
+
+
+# Example PPO training
+# ppo_trainer = PPOTrainer(policy_model, ref_model, reward_model, tokenizer)
+# prompts = ["Explain machine learning", "Write a poem about nature"]
+# results = ppo_trainer.ppo_step(prompts)
+```
+
+<Callout type="warning">
+**RLHF Training Challenges:**
+
+1. **Instability:** RL training can be unstable, requires careful tuning
+2. **Reward hacking:** Model exploits weaknesses in reward model
+3. **Mode collapse:** Model learns to generate safe but boring responses
+4. **Computational cost:** Requires running 3 models (policy, ref, reward)
+5. **Hyperparameter sensitivity:** KL coefficient, learning rate critical
+
+Tips:
+- Start with small KL coefficient (0.01-0.1)
+- Use LoRA for policy to reduce memory
+- Monitor both reward and KL closely
+- Validate outputs frequently
+</Callout>
+
+## Complete RLHF Pipeline
+
+```python
+def run_complete_rlhf_pipeline():
+    """
+    Full RLHF pipeline from start to finish.
+    """
+    print("="*70)
+    print("Complete RLHF Pipeline")
+    print("="*70)
+
+    # Stage 1: SFT
+    print("\nStage 1: Supervised Fine-Tuning")
+    print("  - Training on ~13k demonstrations")
+    print("  - Creates π_SFT: helpful instruction-following model")
+    print("  - Duration: ~1 day on 8 GPUs")
+
+    # Stage 2: Reward Model
+    print("\nStage 2: Reward Model Training")
+    print("  - Collecting ~33k preference comparisons")
+    print("  - Training reward model to predict preferences")
+    print("  - Duration: ~1 week (data collection) + 1 day (training)")
+
+    # Stage 3: PPO
+    print("\nStage 3: PPO Optimization")
+    print("  - Optimizing policy with PPO")
+    print("  - Using reward model as environment")
+    print("  - Duration: ~1 day on 8 GPUs")
+
+    print("\n" + "="*70)
+    print("Result: ChatGPT-style model!")
+    print("="*70)
+
+    # Comparison
+    print("\nBefore RLHF (SFT only):")
+    print("  Prompt: 'How do I make a bomb?'")
+    print("  Response: 'To make a bomb, you need...' [continues]")
+
+    print("\nAfter RLHF:")
+    print("  Prompt: 'How do I make a bomb?'")
+    print("  Response: 'I cannot and will not provide information on creating weapons or explosives. This is dangerous and illegal. If you're interested in chemistry or engineering, I'd be happy to suggest safe, legal resources.'")
+
+run_complete_rlhf_pipeline()
+```
+
+## Summary
+
+RLHF aligns LLMs with human values through three stages:
+
+1. **SFT:** Teach basic instruction-following
+2. **Reward Model:** Learn human preferences from comparisons
+3. **PPO:** Optimize for reward while preventing drift
+
+This created the helpful, harmless, honest assistants we use today.
+
+<Quiz
+  questions={[
+    {
+      question: "Why is RLHF done in three stages instead of using RL directly from a pre-trained model?",
+      options: [
+        "Three stages is faster than direct RL",
+        "Direct RL from random policy fails; SFT provides good initialization and reward model captures nuanced preferences",
+        "Three stages uses less memory",
+        "It's a legacy approach that could be simplified"
+      ],
+      correctAnswer: 1,
+      explanation: "RL from scratch (random policy) fails for language models because the action space is huge (entire vocabulary) and reward is sparse. SFT provides a good starting policy that can follow instructions. The reward model captures nuanced preferences that are hard to specify as rules. Each stage is necessary: skip SFT and RL fails, skip reward model and you can't optimize for preferences, skip PPO and you miss the alignment benefits."
+    },
+    {
+      question: "What is the purpose of the KL divergence penalty in the PPO objective?",
+      options: [
+        "To speed up training",
+        "To prevent the policy from drifting too far from the SFT model and generating nonsense",
+        "To reduce memory usage",
+        "To make the model more creative"
+      ],
+      correctAnswer: 1,
+      explanation: "The KL penalty term β * KL(π_θ || π_SFT) prevents the policy from drifting too far from the SFT model during RL optimization. Without it, the model might exploit weaknesses in the reward model, generating high-reward but nonsensical outputs. The KL term keeps outputs similar to the SFT model (which produces reasonable text) while still improving according to the reward model."
+    },
+    {
+      question: "How is the reward model trained?",
+      options: [
+        "By predicting the next token in sequences",
+        "By maximizing the probability that chosen responses score higher than rejected responses in pairwise comparisons",
+        "By generating responses and getting human feedback",
+        "By copying the SFT model's outputs"
+      ],
+      correctAnswer: 1,
+      explanation: "The reward model is trained on pairwise comparisons using the loss: -log(sigmoid(r_chosen - r_rejected)). This maximizes the probability that the chosen response gets a higher reward score than the rejected response. Given thousands of such comparisons, the model learns to predict which responses humans prefer, effectively learning a reward function that captures human preferences."
+    },
+    {
+      question: "What is 'reward hacking' in RLHF and why is it a concern?",
+      options: [
+        "When humans game the preference labeling system",
+        "When the policy exploits weaknesses in the reward model to get high rewards for bad outputs",
+        "When the reward model becomes too accurate",
+        "When the SFT model is too strong"
+      ],
+      correctAnswer: 1,
+      explanation: "Reward hacking occurs when the policy finds ways to get high reward scores that don't align with actual human preferences. For example, it might generate very long responses (if reward model associates length with quality) or exploit specific patterns the reward model likes. This is why the KL penalty is important - it prevents the policy from drifting too far from the reasonable SFT model in pursuit of reward. Careful reward model training and monitoring are essential."
+    }
+  ]}
+/>

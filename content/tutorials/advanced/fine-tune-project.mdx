@@ -1,0 +1,1141 @@
+---
+title: "Complete Fine-Tuning Project"
+description: "End-to-end fine-tuning project: dataset preparation, model selection, training pipeline with LoRA/QLoRA, evaluation, and deployment. Build a production-ready fine-tuned model."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Fine-Tuning", "Project", "LoRA", "QLoRA", "Production", "End-to-End"]
+difficulty: "advanced"
+duration: 60
+order: 60
+---
+
+# Complete Fine-Tuning Project
+
+Let's build a complete fine-tuning pipeline from scratch: data preparation, model training with LoRA/QLoRA, evaluation, and deployment. This is your end-to-end guide to production fine-tuning.
+
+## Project Overview
+
+We'll fine-tune a model for a specific use case: **Code-focused technical documentation assistant**.
+
+<Callout type="info">
+**Project Goal:**
+
+Create a model that:
+1. Explains technical concepts clearly
+2. Generates code examples
+3. Debugs code issues
+4. Answers programming questions
+5. Maintains helpful, accurate tone
+
+**Approach:** SFT with LoRA on a 7B base model
+</Callout>
+
+## Stage 1: Dataset Preparation
+
+### 1.1 Dataset Design
+
+```python
+import json
+import pandas as pd
+from typing import List, Dict, Optional
+from dataclasses import dataclass, asdict
+import random
+
+@dataclass
+class TrainingExample:
+    """
+    Single training example for instruction tuning.
+    """
+    instruction: str
+    input: Optional[str]
+    output: str
+    category: str  # For tracking data diversity
+
+    def to_dict(self):
+        """Convert to dictionary."""
+        return asdict(self)
+
+    def format_alpaca(self) -> str:
+        """Format as Alpaca-style prompt."""
+        if self.input:
+            return f"""Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+
+### Instruction:
+{self.instruction}
+
+### Input:
+{self.input}
+
+### Response:
+{self.output}"""
+        else:
+            return f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
+
+### Instruction:
+{self.instruction}
+
+### Response:
+{self.output}"""
+
+
+class DatasetBuilder:
+    """
+    Build high-quality instruction dataset for code assistant.
+    """
+
+    def __init__(self):
+        self.examples = []
+        self.categories = {
+            'explanation': [],
+            'code_generation': [],
+            'debugging': [],
+            'question_answering': [],
+            'code_review': []
+        }
+
+    def create_explanation_examples(self) -> List[TrainingExample]:
+        """Create concept explanation examples."""
+        examples = [
+            TrainingExample(
+                instruction="Explain what a decorator is in Python.",
+                input=None,
+                output="""A decorator in Python is a design pattern that allows you to modify or enhance functions without changing their source code. Decorators are functions that take another function as input and return a modified version.
+
+Here's a simple example:
+
+```python
+def my_decorator(func):
+    def wrapper():
+        print("Before function call")
+        func()
+        print("After function call")
+    return wrapper
+
+@my_decorator
+def say_hello():
+    print("Hello!")
+
+say_hello()
+```
+
+Output:
+```
+Before function call
+Hello!
+After function call
+```
+
+Common use cases include:
+- Logging function calls
+- Timing execution
+- Authentication/authorization
+- Caching results
+- Input validation""",
+                category="explanation"
+            ),
+            TrainingExample(
+                instruction="What is the difference between a list and a tuple in Python?",
+                input=None,
+                output="""The main differences between lists and tuples in Python:
+
+**Lists:**
+- Mutable (can be modified after creation)
+- Defined with square brackets: `[1, 2, 3]`
+- Slower than tuples
+- More memory overhead
+- Used for collections that need to change
+
+**Tuples:**
+- Immutable (cannot be modified after creation)
+- Defined with parentheses: `(1, 2, 3)`
+- Faster than lists
+- Less memory overhead
+- Used for fixed collections, dictionary keys, function returns
+
+Example:
+```python
+# List - can be modified
+my_list = [1, 2, 3]
+my_list[0] = 10  # ✓ Works
+my_list.append(4)  # ✓ Works
+
+# Tuple - cannot be modified
+my_tuple = (1, 2, 3)
+my_tuple[0] = 10  # ✗ Error: 'tuple' object does not support item assignment
+```
+
+Choose tuples when data shouldn't change (like coordinates, RGB colors), and lists when you need flexibility.""",
+                category="explanation"
+            )
+        ]
+
+        self.categories['explanation'].extend(examples)
+        return examples
+
+    def create_code_generation_examples(self) -> List[TrainingExample]:
+        """Create code generation examples."""
+        examples = [
+            TrainingExample(
+                instruction="Write a Python function to find the nth Fibonacci number using dynamic programming.",
+                input=None,
+                output="""Here's an efficient dynamic programming solution for finding the nth Fibonacci number:
+
+```python
+def fibonacci(n: int) -> int:
+    \"\"\"
+    Calculate the nth Fibonacci number using dynamic programming.
+
+    Args:
+        n: The position in the Fibonacci sequence (0-indexed)
+
+    Returns:
+        The nth Fibonacci number
+
+    Time Complexity: O(n)
+    Space Complexity: O(1)
+    \"\"\"
+    if n <= 1:
+        return n
+
+    # Use two variables instead of array to save space
+    prev, curr = 0, 1
+
+    for _ in range(2, n + 1):
+        prev, curr = curr, prev + curr
+
+    return curr
+
+
+# Test the function
+if __name__ == "__main__":
+    test_cases = [0, 1, 5, 10, 20]
+
+    for n in test_cases:
+        result = fibonacci(n)
+        print(f"fibonacci({n}) = {result}")
+```
+
+Output:
+```
+fibonacci(0) = 0
+fibonacci(1) = 1
+fibonacci(5) = 5
+fibonacci(10) = 55
+fibonacci(20) = 6765
+```
+
+This implementation:
+- Uses O(1) space instead of O(n) for array-based DP
+- Has O(n) time complexity
+- Handles edge cases (n = 0, 1)
+- Includes proper documentation and type hints""",
+                category="code_generation"
+            ),
+            TrainingExample(
+                instruction="Create a Python class for a simple bank account with deposit, withdraw, and balance methods.",
+                input=None,
+                output="""Here's a robust BankAccount class with proper error handling:
+
+```python
+class BankAccount:
+    \"\"\"
+    A simple bank account class with deposit, withdrawal, and balance tracking.
+    \"\"\"
+
+    def __init__(self, account_holder: str, initial_balance: float = 0.0):
+        \"\"\"
+        Initialize a bank account.
+
+        Args:
+            account_holder: Name of the account holder
+            initial_balance: Starting balance (default: 0.0)
+
+        Raises:
+            ValueError: If initial balance is negative
+        \"\"\"
+        if initial_balance < 0:
+            raise ValueError("Initial balance cannot be negative")
+
+        self.account_holder = account_holder
+        self._balance = initial_balance  # Private attribute
+
+    def deposit(self, amount: float) -> None:
+        \"\"\"
+        Deposit money into the account.
+
+        Args:
+            amount: Amount to deposit
+
+        Raises:
+            ValueError: If amount is not positive
+        \"\"\"
+        if amount <= 0:
+            raise ValueError("Deposit amount must be positive")
+
+        self._balance += amount
+        print(f"Deposited ${amount:.2f}. New balance: ${self._balance:.2f}")
+
+    def withdraw(self, amount: float) -> None:
+        \"\"\"
+        Withdraw money from the account.
+
+        Args:
+            amount: Amount to withdraw
+
+        Raises:
+            ValueError: If amount is not positive or exceeds balance
+        \"\"\"
+        if amount <= 0:
+            raise ValueError("Withdrawal amount must be positive")
+
+        if amount > self._balance:
+            raise ValueError(f"Insufficient funds. Balance: ${self._balance:.2f}")
+
+        self._balance -= amount
+        print(f"Withdrew ${amount:.2f}. New balance: ${self._balance:.2f}")
+
+    def get_balance(self) -> float:
+        \"\"\"
+        Get the current account balance.
+
+        Returns:
+            Current balance
+        \"\"\"
+        return self._balance
+
+    def __str__(self) -> str:
+        \"\"\"String representation of the account.\"\"\"
+        return f"Account({self.account_holder}): ${self._balance:.2f}"
+
+
+# Example usage
+if __name__ == "__main__":
+    # Create account
+    account = BankAccount("John Doe", 1000.0)
+    print(account)
+
+    # Deposit
+    account.deposit(500.0)
+
+    # Withdraw
+    account.withdraw(200.0)
+
+    # Check balance
+    print(f"Current balance: ${account.get_balance():.2f}")
+
+    # Try to withdraw more than balance (will raise error)
+    try:
+        account.withdraw(2000.0)
+    except ValueError as e:
+        print(f"Error: {e}")
+```
+
+This implementation includes:
+- Proper initialization with validation
+- Error handling for invalid operations
+- Private balance attribute (using _ convention)
+- Type hints for better code documentation
+- Comprehensive docstrings
+- Example usage with error handling""",
+                category="code_generation"
+            )
+        ]
+
+        self.categories['code_generation'].extend(examples)
+        return examples
+
+    def create_debugging_examples(self) -> List[TrainingExample]:
+        """Create code debugging examples."""
+        examples = [
+            TrainingExample(
+                instruction="Debug this code that's supposed to reverse a string but isn't working correctly.",
+                input="""def reverse_string(s):
+    reversed = ""
+    for i in range(len(s)):
+        reversed = s[i] + reversed
+    return reverse
+
+# Test
+print(reverse_string("hello"))""",
+                output="""I found the bug! On line 5, you're returning `reverse` instead of `reversed`. Here's the corrected code:
+
+```python
+def reverse_string(s):
+    reversed_str = ""  # Also renamed to avoid shadowing built-in
+    for i in range(len(s)):
+        reversed_str = s[i] + reversed_str
+    return reversed_str  # Fixed: was 'reverse'
+
+# Test
+print(reverse_string("hello"))  # Output: "olleh"
+```
+
+**Issues fixed:**
+1. Variable name typo: `reverse` → `reversed_str`
+2. Renamed from `reversed` to `reversed_str` to avoid shadowing Python's built-in `reversed()` function
+
+**Alternative solutions:**
+
+More Pythonic approach using slicing:
+```python
+def reverse_string(s):
+    return s[::-1]
+```
+
+Or using the built-in `reversed()`:
+```python
+def reverse_string(s):
+    return ''.join(reversed(s))
+```""",
+                category="debugging"
+            )
+        ]
+
+        self.categories['debugging'].extend(examples)
+        return examples
+
+    def create_qa_examples(self) -> List[TrainingExample]:
+        """Create Q&A examples."""
+        examples = [
+            TrainingExample(
+                instruction="What is the time complexity of binary search?",
+                input=None,
+                output="""The time complexity of binary search is **O(log n)**, where n is the number of elements in the sorted array.
+
+**Why O(log n)?**
+
+Binary search works by repeatedly dividing the search space in half:
+- Start with n elements
+- After 1 comparison: n/2 elements remain
+- After 2 comparisons: n/4 elements remain
+- After 3 comparisons: n/8 elements remain
+- After k comparisons: n/2^k elements remain
+
+We stop when n/2^k = 1, solving for k:
+- 2^k = n
+- k = log₂(n)
+
+**Space Complexity:**
+- Iterative: O(1) - constant space
+- Recursive: O(log n) - call stack depth
+
+**Example:**
+For an array of 1,000,000 elements:
+- Linear search: up to 1,000,000 comparisons
+- Binary search: up to 20 comparisons (log₂(1,000,000) ≈ 20)
+
+This is why binary search is so efficient for large sorted datasets!""",
+                category="question_answering"
+            )
+        ]
+
+        self.categories['qa'].extend(examples)
+        return examples
+
+    def build_dataset(self, target_size: int = 1000) -> List[TrainingExample]:
+        """
+        Build complete training dataset.
+
+        Args:
+            target_size: Target number of examples
+
+        Returns:
+            List of training examples
+        """
+        # Create examples for each category
+        self.create_explanation_examples()
+        self.create_code_generation_examples()
+        self.create_debugging_examples()
+        self.create_qa_examples()
+
+        # Collect all examples
+        all_examples = []
+        for category_examples in self.categories.values():
+            all_examples.extend(category_examples)
+
+        print(f"Created {len(all_examples)} seed examples")
+        print("\nCategory distribution:")
+        for category, examples in self.categories.items():
+            print(f"  {category}: {len(examples)}")
+
+        # In production, you would:
+        # 1. Use Self-Instruct to generate more examples
+        # 2. Filter for quality
+        # 3. Balance categories
+        # 4. Add preference data for DPO
+
+        return all_examples
+
+    def save_dataset(self, examples: List[TrainingExample], filepath: str):
+        """Save dataset to JSON file."""
+        data = [ex.to_dict() for ex in examples]
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+        print(f"\nDataset saved to {filepath}")
+
+    def create_train_val_split(
+        self,
+        examples: List[TrainingExample],
+        val_ratio: float = 0.1
+    ):
+        """Split into train and validation sets."""
+        random.shuffle(examples)
+        split_idx = int(len(examples) * (1 - val_ratio))
+
+        train_examples = examples[:split_idx]
+        val_examples = examples[split_idx:]
+
+        print(f"\nDataset split:")
+        print(f"  Training: {len(train_examples)} examples")
+        print(f"  Validation: {len(val_examples)} examples")
+
+        return train_examples, val_examples
+
+
+# Build dataset
+print("="*70)
+print("Stage 1: Dataset Preparation")
+print("="*70)
+
+builder = DatasetBuilder()
+all_examples = builder.build_dataset()
+
+# Split into train/val
+train_examples, val_examples = builder.create_train_val_split(all_examples)
+
+# Save datasets
+# builder.save_dataset(train_examples, 'train_dataset.json')
+# builder.save_dataset(val_examples, 'val_dataset.json')
+```
+
+### 1.2 Data Quality Checks
+
+```python
+class DataQualityChecker:
+    """
+    Validate dataset quality.
+    """
+
+    def check_diversity(self, examples: List[TrainingExample]):
+        """Check category diversity."""
+        categories = {}
+        for ex in examples:
+            categories[ex.category] = categories.get(ex.category, 0) + 1
+
+        print("\nCategory Diversity:")
+        for cat, count in sorted(categories.items()):
+            percentage = (count / len(examples)) * 100
+            print(f"  {cat}: {count} ({percentage:.1f}%)")
+
+    def check_length_distribution(self, examples: List[TrainingExample]):
+        """Check output length distribution."""
+        lengths = [len(ex.output) for ex in examples]
+
+        print("\nOutput Length Statistics:")
+        print(f"  Mean: {sum(lengths)/len(lengths):.0f} characters")
+        print(f"  Min: {min(lengths)} characters")
+        print(f"  Max: {max(lengths)} characters")
+        print(f"  Median: {sorted(lengths)[len(lengths)//2]} characters")
+
+    def check_for_duplicates(self, examples: List[TrainingExample]):
+        """Check for duplicate instructions."""
+        instructions = [ex.instruction for ex in examples]
+        unique_instructions = set(instructions)
+
+        duplicates = len(instructions) - len(unique_instructions)
+
+        print(f"\nDuplicate Check:")
+        print(f"  Total examples: {len(instructions)}")
+        print(f"  Unique instructions: {len(unique_instructions)}")
+        print(f"  Duplicates: {duplicates}")
+
+    def run_all_checks(self, examples: List[TrainingExample]):
+        """Run all quality checks."""
+        print("\n" + "="*70)
+        print("Data Quality Checks")
+        print("="*70)
+
+        self.check_diversity(examples)
+        self.check_length_distribution(examples)
+        self.check_for_duplicates(examples)
+
+
+checker = DataQualityChecker()
+checker.run_all_checks(all_examples)
+```
+
+<Callout type="tip">
+**Dataset Quality Best Practices:**
+
+1. **Diversity:** Cover multiple task types and difficulty levels
+2. **Quality over quantity:** 1000 excellent examples > 10,000 mediocre ones
+3. **Balance:** Roughly equal representation of categories
+4. **Length:** Vary output lengths (short answers, detailed explanations, code)
+5. **Validation:** Always create a held-out validation set
+6. **Real examples:** Include actual user queries when possible
+</Callout>
+
+## Stage 2: Model Training
+
+### 2.1 Training Setup
+
+```python
+import torch
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    TrainingArguments,
+    Trainer
+)
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from datasets import Dataset
+
+class FineTuningPipeline:
+    """
+    Complete fine-tuning pipeline with LoRA/QLoRA.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "meta-llama/Llama-2-7b-hf",
+        use_qlora: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: int = 32
+    ):
+        """
+        Args:
+            model_name: Base model to fine-tune
+            use_qlora: Whether to use QLoRA (4-bit) or standard LoRA (16-bit)
+            lora_rank: LoRA rank
+            lora_alpha: LoRA alpha scaling factor
+        """
+        self.model_name = model_name
+        self.use_qlora = use_qlora
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+
+        print("\n" + "="*70)
+        print("Stage 2: Model Training Setup")
+        print("="*70)
+
+        self.setup_model()
+
+    def setup_model(self):
+        """Setup model with LoRA/QLoRA."""
+        print(f"\nLoading base model: {self.model_name}")
+        print(f"Using: {'QLoRA (4-bit)' if self.use_qlora else 'LoRA (16-bit)'}")
+
+        # Tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.tokenizer.padding_side = "right"
+
+        if self.use_qlora:
+            # QLoRA: 4-bit quantization
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_compute_dtype=torch.bfloat16
+            )
+
+            model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                quantization_config=bnb_config,
+                device_map="auto",
+                trust_remote_code=True
+            )
+
+            # Prepare for k-bit training
+            model = prepare_model_for_kbit_training(model)
+
+        else:
+            # Standard LoRA: 16-bit
+            model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                torch_dtype=torch.float16,
+                device_map="auto"
+            )
+
+        # LoRA config
+        lora_config = LoraConfig(
+            r=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            target_modules=[
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj"
+            ],
+            lora_dropout=0.05,
+            bias="none",
+            task_type="CAUSAL_LM"
+        )
+
+        # Add LoRA adapters
+        self.model = get_peft_model(model, lora_config)
+        self.model.print_trainable_parameters()
+
+    def prepare_dataset(self, examples: List[TrainingExample]):
+        """Prepare dataset for training."""
+        print("\nPreparing dataset...")
+
+        # Format examples
+        formatted_texts = [ex.format_alpaca() for ex in examples]
+
+        # Tokenize
+        def tokenize_function(examples):
+            return self.tokenizer(
+                examples["text"],
+                truncation=True,
+                max_length=2048,
+                padding="max_length"
+            )
+
+        # Create HuggingFace dataset
+        dataset = Dataset.from_dict({"text": formatted_texts})
+        tokenized_dataset = dataset.map(
+            tokenize_function,
+            batched=True,
+            remove_columns=dataset.column_names
+        )
+
+        print(f"Dataset prepared: {len(tokenized_dataset)} examples")
+
+        return tokenized_dataset
+
+    def train(
+        self,
+        train_examples: List[TrainingExample],
+        val_examples: List[TrainingExample],
+        output_dir: str = "./fine-tuned-model",
+        num_epochs: int = 3,
+        batch_size: int = 4,
+        learning_rate: float = 2e-4
+    ):
+        """
+        Train the model.
+
+        Args:
+            train_examples: Training examples
+            val_examples: Validation examples
+            output_dir: Output directory
+            num_epochs: Number of epochs
+            batch_size: Per-device batch size
+            learning_rate: Learning rate
+        """
+        # Prepare datasets
+        train_dataset = self.prepare_dataset(train_examples)
+        val_dataset = self.prepare_dataset(val_examples)
+
+        # Training arguments
+        training_args = TrainingArguments(
+            output_dir=output_dir,
+            num_train_epochs=num_epochs,
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
+            gradient_accumulation_steps=4,
+            learning_rate=learning_rate,
+            lr_scheduler_type="cosine",
+            warmup_ratio=0.1,
+            logging_steps=10,
+            eval_strategy="steps",
+            eval_steps=50,
+            save_strategy="steps",
+            save_steps=100,
+            save_total_limit=3,
+            load_best_model_at_end=True,
+            fp16=True,
+            optim="paged_adamw_8bit" if self.use_qlora else "adamw_torch",
+            report_to="none"  # Change to "wandb" for logging
+        )
+
+        # Data collator
+        from transformers import DataCollatorForLanguageModeling
+
+        data_collator = DataCollatorForLanguageModeling(
+            tokenizer=self.tokenizer,
+            mlm=False
+        )
+
+        # Trainer
+        trainer = Trainer(
+            model=self.model,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+            data_collator=data_collator
+        )
+
+        # Train
+        print("\n" + "="*70)
+        print("Starting Training")
+        print("="*70)
+
+        trainer.train()
+
+        # Save final model
+        trainer.save_model(output_dir)
+        self.tokenizer.save_pretrained(output_dir)
+
+        print(f"\nModel saved to {output_dir}")
+
+        return trainer
+
+
+# Example training
+pipeline = FineTuningPipeline(
+    model_name="gpt2",  # Use smaller model for demo
+    use_qlora=False,
+    lora_rank=16
+)
+
+# Uncomment to train:
+# trainer = pipeline.train(
+#     train_examples,
+#     val_examples,
+#     num_epochs=3,
+#     batch_size=4
+# )
+```
+
+<Callout type="warning">
+**Training Considerations:**
+
+**Memory Requirements:**
+- Standard LoRA (7B model): ~28 GB VRAM
+- QLoRA (7B model): ~12 GB VRAM
+- Adjust batch size and gradient accumulation for your hardware
+
+**Training Time:**
+- 1000 examples, 3 epochs: ~2-4 hours (single A100)
+- Use gradient checkpointing for memory efficiency
+- Enable mixed precision (fp16/bf16) for speed
+
+**Monitoring:**
+- Track training and validation loss
+- Watch for overfitting (val loss increasing)
+- Monitor generated outputs during training
+</Callout>
+
+## Stage 3: Evaluation
+
+```python
+class ModelEvaluator:
+    """
+    Comprehensive model evaluation.
+    """
+
+    def __init__(self, model, tokenizer):
+        """
+        Args:
+            model: Fine-tuned model
+            tokenizer: Tokenizer
+        """
+        self.model = model
+        self.tokenizer = tokenizer
+        self.device = next(model.parameters()).device
+
+    def generate_response(
+        self,
+        instruction: str,
+        input_text: str = None,
+        max_length: int = 512
+    ) -> str:
+        """Generate response for instruction."""
+        # Format prompt
+        if input_text:
+            prompt = f"""### Instruction:
+{instruction}
+
+### Input:
+{input_text}
+
+### Response:
+"""
+        else:
+            prompt = f"""### Instruction:
+{instruction}
+
+### Response:
+"""
+
+        # Tokenize
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+
+        # Generate
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=max_length,
+                temperature=0.7,
+                top_p=0.9,
+                do_sample=True,
+                pad_token_id=self.tokenizer.eos_token_id
+            )
+
+        # Decode
+        full_response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+        # Extract only the response part
+        response = full_response.split("### Response:")[-1].strip()
+
+        return response
+
+    def evaluate_examples(self, test_examples: List[TrainingExample]):
+        """Evaluate on test examples."""
+        print("\n" + "="*70)
+        print("Stage 3: Model Evaluation")
+        print("="*70)
+
+        results = []
+
+        for i, example in enumerate(test_examples[:5], 1):  # Evaluate first 5
+            print(f"\n{'='*70}")
+            print(f"Example {i}/{len(test_examples[:5])}")
+            print(f"{'='*70}")
+
+            print(f"\nInstruction: {example.instruction}")
+            if example.input:
+                print(f"Input: {example.input}")
+
+            # Generate
+            response = self.generate_response(
+                example.instruction,
+                example.input
+            )
+
+            print(f"\nModel Response:\n{response}")
+            print(f"\nExpected Response:\n{example.output}")
+
+            results.append({
+                'instruction': example.instruction,
+                'input': example.input,
+                'expected': example.output,
+                'generated': response
+            })
+
+        return results
+
+    def compute_metrics(self, results: List[Dict]):
+        """Compute evaluation metrics."""
+        # In production, compute:
+        # - BLEU score for code generation
+        # - ROUGE scores for summaries
+        # - Exact match for Q&A
+        # - Human evaluation scores
+
+        print("\n" + "="*70)
+        print("Evaluation Metrics")
+        print("="*70)
+        print("\n(In production, compute BLEU, ROUGE, exact match, etc.)")
+        print("For now, use qualitative assessment above.")
+
+
+# Example evaluation
+# evaluator = ModelEvaluator(pipeline.model, pipeline.tokenizer)
+# results = evaluator.evaluate_examples(test_examples)
+# evaluator.compute_metrics(results)
+```
+
+## Stage 4: Deployment
+
+```python
+class ModelDeployment:
+    """
+    Deploy fine-tuned model.
+    """
+
+    def merge_and_save(self, model, tokenizer, output_path: str):
+        """
+        Merge LoRA weights and save for deployment.
+
+        Args:
+            model: LoRA model
+            tokenizer: Tokenizer
+            output_path: Output directory
+        """
+        print("\n" + "="*70)
+        print("Stage 4: Model Deployment")
+        print("="*70)
+
+        print("\nMerging LoRA weights...")
+
+        # Merge LoRA weights into base model
+        merged_model = model.merge_and_unload()
+
+        # Save merged model
+        merged_model.save_pretrained(output_path)
+        tokenizer.save_pretrained(output_path)
+
+        print(f"Merged model saved to {output_path}")
+        print("\nModel ready for deployment!")
+
+    def create_inference_script(self, output_path: str):
+        """Create simple inference script."""
+        script = """
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+class CodeAssistant:
+    def __init__(self, model_path):
+        self.model = AutoModelForCausalLM.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model.to(self.device)
+
+    def ask(self, instruction: str, input_text: str = None):
+        prompt = f"### Instruction:\\n{instruction}\\n\\n### Response:\\n"
+        if input_text:
+            prompt = f"### Instruction:\\n{instruction}\\n\\n### Input:\\n{input_text}\\n\\n### Response:\\n"
+
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=512,
+                temperature=0.7,
+                top_p=0.9,
+                do_sample=True
+            )
+
+        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return response.split("### Response:")[-1].strip()
+
+# Usage
+assistant = CodeAssistant("./deployed-model")
+response = assistant.ask("Explain recursion in Python")
+print(response)
+"""
+
+        with open(f"{output_path}/inference.py", "w") as f:
+            f.write(script)
+
+        print(f"\nInference script created: {output_path}/inference.py")
+
+
+# Example deployment
+# deployment = ModelDeployment()
+# deployment.merge_and_save(pipeline.model, pipeline.tokenizer, "./deployed-model")
+# deployment.create_inference_script("./deployed-model")
+```
+
+## Complete Pipeline Summary
+
+```python
+def run_complete_pipeline():
+    """
+    Run the complete fine-tuning pipeline.
+    """
+    print("\n" + "="*70)
+    print("COMPLETE FINE-TUNING PIPELINE SUMMARY")
+    print("="*70)
+
+    summary = """
+Stage 1: Dataset Preparation
+  ✓ Created diverse instruction dataset
+  ✓ Ensured quality and balance
+  ✓ Split into train/validation sets
+
+Stage 2: Model Training
+  ✓ Configured LoRA/QLoRA
+  ✓ Set up training arguments
+  ✓ Trained on prepared dataset
+  ✓ Monitored validation performance
+
+Stage 3: Evaluation
+  ✓ Generated test responses
+  ✓ Computed metrics
+  ✓ Qualitative assessment
+
+Stage 4: Deployment
+  ✓ Merged LoRA weights
+  ✓ Saved production model
+  ✓ Created inference script
+
+Final Model:
+  • Base: 7B parameters
+  • Method: LoRA/QLoRA fine-tuning
+  • Task: Code-focused technical assistant
+  • Status: Ready for deployment
+"""
+
+    print(summary)
+
+    print("\nNext Steps:")
+    print("  1. Deploy to production server")
+    print("  2. Set up monitoring and logging")
+    print("  3. Collect user feedback")
+    print("  4. Iterate with preference data (DPO)")
+    print("  5. Continuously improve dataset")
+
+run_complete_pipeline()
+```
+
+## Summary
+
+You now have a complete production fine-tuning pipeline:
+
+1. **Dataset:** High-quality, diverse instruction data
+2. **Training:** Efficient LoRA/QLoRA fine-tuning
+3. **Evaluation:** Comprehensive testing framework
+4. **Deployment:** Production-ready merged model
+
+This pipeline can be adapted for any domain or use case!
+
+<Quiz
+  questions={[
+    {
+      question: "Why is data quality more important than data quantity in fine-tuning?",
+      options: [
+        "Quality data requires less storage",
+        "Models learn patterns from training data - low quality data teaches bad patterns, leading to poor outputs",
+        "Quality data trains faster",
+        "Quantity doesn't matter at all"
+      ],
+      correctAnswer: 1,
+      explanation: "Data quality is crucial because the model learns to mimic the patterns in training data. If you train on 10,000 low-quality examples with errors, inconsistencies, or inappropriate content, the model will reproduce those flaws. 1,000 high-quality examples teach better patterns than 10,000 mediocre ones. Quality determines what the model learns; quantity just determines how well it learns it."
+    },
+    {
+      question: "What is the advantage of using QLoRA over standard LoRA for fine-tuning?",
+      options: [
+        "QLoRA produces better quality results",
+        "QLoRA trains faster",
+        "QLoRA uses 4-bit quantization to reduce memory by ~4x, enabling fine-tuning of larger models on consumer GPUs",
+        "QLoRA requires less training data"
+      ],
+      correctAnswer: 2,
+      explanation: "QLoRA's key advantage is memory efficiency through 4-bit quantization (NF4). A 7B model needs ~28 GB with standard LoRA but only ~12 GB with QLoRA - enabling fine-tuning on consumer GPUs like RTX 3090 or A6000. Training is slightly slower (~30% overhead), but the memory savings make otherwise impossible fine-tuning tasks feasible. Quality is comparable to standard LoRA."
+    },
+    {
+      question: "Why should you always create a held-out validation set when fine-tuning?",
+      options: [
+        "To have more data for training",
+        "To detect overfitting and select the best model checkpoint during training",
+        "Because it's a standard practice",
+        "To reduce training time"
+      ],
+      correctAnswer: 1,
+      explanation: "A validation set (not seen during training) is essential for detecting overfitting - when training loss decreases but validation loss increases, the model is memorizing training data rather than learning generalizable patterns. You can also use validation loss to select the best checkpoint and tune hyperparameters without contaminating your test evaluation. Without validation data, you won't know if your model generalizes."
+    },
+    {
+      question: "What is the purpose of merging LoRA weights before deployment?",
+      options: [
+        "To make the model more accurate",
+        "To reduce model size",
+        "To eliminate inference overhead by combining LoRA adapters with base weights (W' = W + BA)",
+        "To enable further training"
+      ],
+      correctAnswer: 2,
+      explanation: "Merging combines the base weights W with LoRA adapters BA into a single weight matrix W' = W + BA. During training, computing W₀x + BAx separately allows efficient updates. But for deployment, merging eliminates the separate BA computation, giving zero inference overhead - the merged model runs at the same speed as the base model. You can also keep LoRA separate to swap adapters for different tasks."
+    }
+  ]}
+/>

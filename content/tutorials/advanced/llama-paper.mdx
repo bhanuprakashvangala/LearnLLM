@@ -1,0 +1,586 @@
+---
+title: "Paper: LLaMA - Open and Efficient Foundation Models"
+description: "Deep dive into Meta's LLaMA paper that demonstrated smaller, efficiently trained models can match or exceed larger models through better data and training."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Paper", "LLaMA", "Research", "Training", "Efficiency"]
+difficulty: "advanced"
+duration: 30
+order: 48
+---
+
+# Paper: LLaMA - Open and Efficient Foundation Models
+
+<PaperReference
+  title="LLaMA: Open and Efficient Foundation Language Models"
+  authors="Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard Grave, Guillaume Lample"
+  year={2023}
+  venue="arXiv"
+  url="https://arxiv.org/abs/2302.13971"
+/>
+
+In February 2023, Meta AI released LLaMA, challenging the assumption that bigger is always better. The paper showed that smaller models trained on more data with careful optimization can match or exceed much larger models.
+
+## Motivation and Context
+
+### The Problem with Scale
+
+Before LLaMA, the trend was clear: bigger models = better performance.
+
+- GPT-3: 175B parameters
+- Gopher: 280B parameters
+- Megatron-Turing NLG: 530B parameters
+- PaLM: 540B parameters
+
+**Issues:**
+1. **Inference cost:** Large models expensive to run
+2. **Accessibility:** Only big labs can afford training
+3. **Environmental impact:** Massive energy consumption
+4. **Deployment:** Hard to deploy 100B+ models in production
+
+<Callout type="info">
+**LLaMA's Hypothesis:**
+
+Following Chinchilla scaling laws, smaller models trained on more data should be more efficient. A 13B model trained on 1T tokens might outperform a 175B model trained on 300B tokens - and be much cheaper to run.
+</Callout>
+
+## Key Contributions
+
+### 1. Model Sizes and Training Data
+
+LLaMA released 4 sizes: 7B, 13B, 33B, and 65B parameters.
+
+**Training data:**
+- **1.4 trillion tokens** for all models
+- Only publicly available data (no proprietary datasets)
+- Diverse sources: CommonCrawl, C4, GitHub, Wikipedia, Books, ArXiv, StackExchange
+
+```python
+# LLaMA training data composition
+data_sources = {
+    'CommonCrawl': 0.670,      # 67.0% - web pages
+    'C4': 0.150,               # 15.0% - cleaned CommonCrawl
+    'GitHub': 0.045,           # 4.5% - code
+    'Wikipedia': 0.045,        # 4.5% - encyclopedic
+    'Books': 0.045,            # 4.5% - long-form
+    'ArXiv': 0.025,            # 2.5% - scientific papers
+    'StackExchange': 0.020,    # 2.0% - Q&A
+}
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 6))
+plt.pie(
+    data_sources.values(),
+    labels=[f"{k}\n({v*100:.1f}%)" for k, v in data_sources.items()],
+    autopct='',
+    startangle=90
+)
+plt.title('LLaMA Training Data Composition (1.4T tokens)')
+plt.axis('equal')
+plt.show()
+
+total_tokens = 1.4e12
+print("\nTraining data breakdown:")
+for source, fraction in data_sources.items():
+    tokens = total_tokens * fraction
+    print(f"  {source:15s}: {tokens/1e9:6.1f}B tokens ({fraction*100:4.1f}%)")
+```
+
+### 2. Architecture Improvements
+
+LLaMA incorporated several modern improvements over the original transformer:
+
+```python
+"""
+LLaMA architectural choices:
+
+1. Pre-normalization (GPT-3 style)
+   - Apply normalization BEFORE each sub-layer
+   - Better training stability
+
+2. RMSNorm instead of LayerNorm
+   - Simpler, faster normalization
+   - No mean subtraction, no bias
+
+3. SwiGLU activation (PaLM style)
+   - Replace ReLU in FFN
+   - Better performance
+
+4. Rotary Embeddings (GPTNeo/GPT-J style)
+   - Relative positional encoding
+   - Better length generalization
+
+5. Increased context length
+   - 2048 tokens (up from 512 in early GPT)
+   - Enables longer-form understanding
+"""
+
+# LLaMA model configurations
+llama_configs = {
+    '7B': {
+        'dim': 4096,
+        'n_layers': 32,
+        'n_heads': 32,
+        'n_kv_heads': 32,  # LLaMA 1 uses standard MHA
+        'ffn_dim': 11008,  # ~2.7 × dim (for SwiGLU)
+        'vocab_size': 32000,
+        'context_len': 2048,
+    },
+    '13B': {
+        'dim': 5120,
+        'n_layers': 40,
+        'n_heads': 40,
+        'n_kv_heads': 40,
+        'ffn_dim': 13824,
+        'vocab_size': 32000,
+        'context_len': 2048,
+    },
+    '33B': {
+        'dim': 6656,
+        'n_layers': 60,
+        'n_heads': 52,
+        'n_kv_heads': 52,
+        'ffn_dim': 17920,
+        'vocab_size': 32000,
+        'context_len': 2048,
+    },
+    '65B': {
+        'dim': 8192,
+        'n_layers': 80,
+        'n_heads': 64,
+        'n_kv_heads': 64,
+        'ffn_dim': 22016,
+        'vocab_size': 32000,
+        'context_len': 2048,
+    },
+}
+
+# Display configurations
+import pandas as pd
+
+df = pd.DataFrame(llama_configs).T
+print("\nLLaMA Model Configurations:")
+print(df)
+
+# Calculate actual parameter counts
+def calculate_params(config):
+    """Estimate parameter count."""
+    d = config['dim']
+    n = config['n_layers']
+    v = config['vocab_size']
+    ffn = config['ffn_dim']
+
+    # Embedding
+    embed_params = v * d
+
+    # Attention per layer: Q, K, V, O projections
+    attn_params_per_layer = 4 * (d * d)
+
+    # FFN per layer (SwiGLU has 3 matrices)
+    ffn_params_per_layer = 3 * (d * ffn)
+
+    # Layer norms (RMSNorm has only weight, no bias)
+    norm_params_per_layer = 2 * d  # 2 norms per layer
+
+    # Total per layer
+    params_per_layer = attn_params_per_layer + ffn_params_per_layer + norm_params_per_layer
+
+    # Total model
+    total = embed_params + (n * params_per_layer) + d  # +d for final norm
+
+    return total
+
+print("\nParameter Counts:")
+for name, config in llama_configs.items():
+    params = calculate_params(config)
+    print(f"  LLaMA-{name}: {params / 1e9:.2f}B parameters")
+```
+
+<Callout type="tip">
+**Training Efficiency:**
+
+LLaMA-13B trained on 1.4T tokens uses approximately the same compute as GPT-3 (175B) trained on 300B tokens, but is much cheaper to run at inference due to smaller size.
+</Callout>
+
+### 3. Training Details
+
+```python
+"""
+Training hyperparameters (from paper):
+
+Optimizer: AdamW
+- β₁ = 0.9
+- β₂ = 0.95
+- eps = 10⁻⁸
+
+Learning rate schedule:
+- Warmup: 2000 steps to max LR
+- Cosine decay to 10% of max LR
+- Max LR varies by model size:
+  - 7B:  3 × 10⁻⁴
+  - 13B: 3 × 10⁻⁴
+  - 33B: 1.5 × 10⁻⁴
+  - 65B: 1.5 × 10⁻⁴
+
+Weight decay: 0.1
+
+Gradient clipping: 1.0
+
+Batch size: 4M tokens
+- Increased gradually during training
+
+Context length: 2048 tokens
+
+Training duration:
+- 7B:  ~1T tokens (140k steps)
+- 13B: ~1T tokens
+- 33B: ~1.4T tokens
+- 65B: ~1.4T tokens
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def cosine_learning_rate_schedule(
+    step,
+    max_steps,
+    max_lr,
+    warmup_steps=2000,
+    min_lr_ratio=0.1
+):
+    """
+    Cosine learning rate schedule with warmup (used in LLaMA).
+
+    Args:
+        step: Current training step
+        max_steps: Total training steps
+        max_lr: Maximum learning rate
+        warmup_steps: Number of warmup steps
+        min_lr_ratio: Minimum LR as ratio of max_lr
+
+    Returns:
+        Current learning rate
+    """
+    if step < warmup_steps:
+        # Linear warmup
+        return max_lr * (step / warmup_steps)
+    else:
+        # Cosine decay
+        progress = (step - warmup_steps) / (max_steps - warmup_steps)
+        cosine_decay = 0.5 * (1 + np.cos(np.pi * progress))
+        min_lr = max_lr * min_lr_ratio
+        return min_lr + (max_lr - min_lr) * cosine_decay
+
+
+# Visualize LR schedule
+max_steps = 140000  # LLaMA-7B
+max_lr = 3e-4
+steps = np.arange(max_steps)
+lrs = [cosine_learning_rate_schedule(s, max_steps, max_lr) for s in steps]
+
+plt.figure(figsize=(12, 6))
+plt.plot(steps, lrs, linewidth=2)
+plt.xlabel('Training Steps')
+plt.ylabel('Learning Rate')
+plt.title('LLaMA Learning Rate Schedule (7B model)')
+plt.grid(True, alpha=0.3)
+plt.axvline(2000, color='r', linestyle='--', alpha=0.5, label='End of warmup')
+plt.legend()
+plt.show()
+
+print(f"Peak learning rate: {max_lr}")
+print(f"Warmup steps: 2000")
+print(f"Final learning rate: {max_lr * 0.1}")
+```
+
+### 4. Training Infrastructure
+
+**Compute resources:**
+- 2048 A100 80GB GPUs
+- Training time: ~21 days for 65B model
+- Total compute: ~2.5 × 10²³ FLOPs for 65B
+
+```python
+def estimate_training_cost(params, tokens, flops_per_param_token=6):
+    """
+    Estimate training compute and cost.
+
+    Args:
+        params: Model parameters
+        tokens: Training tokens
+        flops_per_param_token: FLOPs per parameter per token (typically 6)
+
+    Returns:
+        Dictionary with compute metrics
+    """
+    # Total FLOPs
+    total_flops = params * tokens * flops_per_param_token
+
+    # Assuming A100 GPU: ~312 TFLOPS peak
+    # But effective utilization ~50% → ~150 TFLOPS
+    effective_tflops_per_gpu = 150e12
+
+    # GPU-hours needed
+    gpu_hours = total_flops / (effective_tflops_per_gpu * 3600)
+
+    # Cost estimate (AWS p4d.24xlarge: ~$32/hour for 8 A100s)
+    cost_per_gpu_hour = 32 / 8  # $4 per GPU-hour
+    total_cost = gpu_hours * cost_per_gpu_hour
+
+    return {
+        'total_flops': total_flops,
+        'gpu_hours': gpu_hours,
+        'estimated_cost': total_cost,
+        'days_on_single_gpu': gpu_hours / 24
+    }
+
+
+# Estimate for each LLaMA model
+training_tokens = 1.4e12  # 1.4T tokens
+
+print("LLaMA Training Cost Estimates:\n")
+for name, config in llama_configs.items():
+    params = calculate_params(config)
+    metrics = estimate_training_cost(params, training_tokens)
+
+    print(f"LLaMA-{name}:")
+    print(f"  Total FLOPs: {metrics['total_flops']:.2e}")
+    print(f"  GPU-hours: {metrics['gpu_hours']:,.0f}")
+    print(f"  Estimated cost: ${metrics['estimated_cost']:,.0f}")
+    print(f"  Days on 2048 GPUs: {metrics['gpu_hours'] / (24 * 2048):.1f}")
+    print()
+```
+
+<Callout type="warning">
+**Training Cost Reality:**
+
+The paper reports LLaMA-65B took 21 days on 2048 A100 GPUs. At $4/GPU-hour, that's approximately $4.1M in compute costs. This is why open-sourcing the weights was valuable - the community can use the models without repeating this expense.
+</Callout>
+
+## Performance Results
+
+### Zero-Shot and Few-Shot Benchmarks
+
+LLaMA compared favorably to much larger models:
+
+```python
+# Approximate results from the paper
+# (Numbers are illustrative based on paper figures)
+
+benchmark_results = {
+    'Model': ['GPT-3 175B', 'Gopher 280B', 'Chinchilla 70B', 'LLaMA-65B', 'LLaMA-13B'],
+    'Params (B)': [175, 280, 70, 65, 13],
+    'MMLU (5-shot)': [43.9, 60.0, 67.5, 63.4, 46.9],
+    'HellaSwag (0-shot)': [78.9, 79.2, 80.8, 79.2, 76.1],
+    'TriviaQA (1-shot)': [64.3, 73.0, 72.3, 68.9, 61.3],
+    'NaturalQuestions (1-shot)': [29.9, 31.8, 31.5, 33.0, 26.0],
+}
+
+import pandas as pd
+
+df_results = pd.DataFrame(benchmark_results).set_index('Model')
+print("LLaMA Benchmark Performance:\n")
+print(df_results.to_string())
+
+# Visualize
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+benchmarks = ['MMLU (5-shot)', 'HellaSwag (0-shot)', 'TriviaQA (1-shot)', 'NaturalQuestions (1-shot)']
+
+for idx, (ax, bench) in enumerate(zip(axes.flat, benchmarks)):
+    models = df_results.index
+    scores = df_results[bench]
+    colors = ['gray', 'gray', 'lightblue', 'blue', 'darkblue']
+
+    ax.barh(models, scores, color=colors)
+    ax.set_xlabel('Score')
+    ax.set_title(bench)
+    ax.grid(axis='x', alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+**Key observations:**
+1. **LLaMA-13B** matches or exceeds GPT-3 175B on many tasks (13x smaller!)
+2. **LLaMA-65B** competitive with Chinchilla-70B and Gopher-280B
+3. Smaller models trained longer can compete with much larger models
+
+<Callout type="info">
+**Efficiency Wins:**
+
+LLaMA-13B achieves similar performance to GPT-3 while being:
+- **13x smaller** (13B vs 175B parameters)
+- **4.6x more token-efficient** at training (1.4T vs 300B tokens)
+- **Much cheaper** to run at inference
+
+This validates the Chinchilla scaling hypothesis.
+</Callout>
+
+### Code Generation
+
+```python
+# HumanEval benchmark (coding)
+coding_results = {
+    'Model': ['GPT-3 175B', 'PaLM 62B', 'PaLM 540B', 'LLaMA-65B', 'LLaMA-13B'],
+    'Params (B)': [175, 62, 540, 65, 13],
+    'HumanEval Pass@1': [0.0, 26.2, 26.2, 23.7, 15.8],
+    'HumanEval Pass@100': [0.0, 76.2, 76.2, 79.3, 52.5],
+}
+
+df_coding = pd.DataFrame(coding_results)
+print("\nCode Generation Performance (HumanEval):\n")
+print(df_coding.to_string(index=False))
+```
+
+LLaMA shows strong coding ability despite no code-specific tuning (just 4.5% GitHub in training data).
+
+## Impact and Legacy
+
+### Open Source Revolution
+
+LLaMA's release (weights leaked, then officially released) sparked:
+
+1. **Alpaca:** Stanford instruction-tuned LLaMA-7B ($600 training cost)
+2. **Vicuna:** Chatbot fine-tune competitive with GPT-3.5
+3. **WizardLM, Orca, etc.:** Many derivatives
+4. **LLaMA 2:** Official follow-up with commercial license
+
+```python
+# LLaMA derivative timeline (2023)
+derivatives = {
+    'Feb 24': 'LLaMA weights leaked',
+    'Mar 13': 'Alpaca (Stanford)',
+    'Mar 30': 'Vicuna (LMSYS)',
+    'Apr 12': 'Koala (Berkeley)',
+    'Apr 24': 'WizardLM',
+    'May 22': 'Orca (Microsoft Research)',
+    'Jul 18': 'LLaMA 2 official release',
+}
+
+print("LLaMA's Impact on Open Source LLMs:\n")
+for date, event in derivatives.items():
+    print(f"{date}: {event}")
+```
+
+### Scientific Contributions
+
+**1. Validated Chinchilla scaling:**
+Empirically confirmed that smaller models + more data > larger models + less data
+
+**2. Architectural best practices:**
+Showed combination of RMSNorm, SwiGLU, and RoPE works well
+
+**3. Training efficiency:**
+Demonstrated efficient training with careful hyperparameter tuning
+
+**4. Open science:**
+Made state-of-the-art models accessible for research
+
+<Callout type="tip">
+**LLaMA's Lesson:**
+
+"Bigger is not always better." With the right data, training recipe, and architecture, a 13B model can match a 175B model while being far more practical to deploy.
+
+This shifted focus from "how big can we go?" to "how efficiently can we train?"
+</Callout>
+
+## LLaMA 2 Improvements
+
+LLaMA 2 (July 2023) built on the original:
+
+```python
+llama2_improvements = {
+    'Context Length': '2048 → 4096 tokens',
+    'Training Data': '1.4T → 2.0T tokens',
+    'Attention': 'MHA → Grouped-Query Attention (GQA)',
+    'License': 'Research only → Commercial use allowed',
+    'Variants': 'Base models → Base + Chat models',
+    'Safety': 'None → Extensive safety training',
+}
+
+print("LLaMA 2 Improvements:\n")
+for aspect, change in llama2_improvements.items():
+    print(f"  {aspect:15s}: {change}")
+
+# LLaMA 2 configurations (notable change: GQA)
+llama2_configs = {
+    '7B': {'n_heads': 32, 'n_kv_heads': 32},   # No GQA
+    '13B': {'n_heads': 40, 'n_kv_heads': 40},  # No GQA
+    '70B': {'n_heads': 64, 'n_kv_heads': 8},   # 8:1 GQA ratio
+}
+
+print("\nLLaMA 2 Grouped-Query Attention:")
+for size, config in llama2_configs.items():
+    ratio = config['n_heads'] / config['n_kv_heads']
+    print(f"  {size}: {config['n_heads']} query heads, {config['n_kv_heads']} KV heads (ratio: {ratio:.1f}:1)")
+```
+
+## Summary
+
+**LLaMA's Main Contributions:**
+
+1. **Efficiency over size:** 13B model matching 175B model performance
+2. **Data matters:** Training on 1.4T tokens (not just 300B)
+3. **Architectural improvements:** RMSNorm, SwiGLU, RoPE combination
+4. **Open science:** Released weights enabled research community
+5. **Validated scaling laws:** Chinchilla-style training works
+
+**Impact:**
+- Sparked open-source LLM revolution
+- Shifted focus to training efficiency
+- Made powerful models accessible
+- Inspired LLaMA 2, Mistral, and many others
+
+**Quote from the paper:**
+> "We focus on training models that achieve the best possible performance at various inference budgets, by training on more tokens than what is typically used."
+
+This philosophy - optimizing for inference efficiency rather than training efficiency - has become the new paradigm in LLM development.
+
+export const questions = [
+  {
+    question: "What was LLaMA's key insight about model training compared to previous large models like GPT-3?",
+    options: [
+      "Bigger models are always better regardless of training data",
+      "Smaller models trained on more data can match or exceed larger models trained on less data",
+      "Model architecture matters more than size or data",
+      "Training speed is more important than model quality"
+    ],
+    correctAnswer: 1,
+    explanation: "LLaMA validated the Chinchilla scaling hypothesis: LLaMA-13B trained on 1.4T tokens matched GPT-3 175B trained on 300B tokens. This showed that smaller models trained longer can be more efficient and performant than undertrained large models."
+  },
+  {
+    question: "How much training data did LLaMA use compared to GPT-3?",
+    options: [
+      "Same amount (300B tokens)",
+      "Less data (100B tokens)",
+      "Approximately 4.6x more (1.4T vs 300B tokens)",
+      "Twice as much (600B tokens)"
+    ],
+    correctAnswer: 2,
+    explanation: "LLaMA trained on 1.4 trillion tokens compared to GPT-3's 300 billion tokens - approximately 4.6x more data. This extensive training on publicly available data was key to achieving strong performance with smaller model sizes."
+  },
+  {
+    question: "Which of the following architectural improvements did LLaMA incorporate over the original Transformer?",
+    options: [
+      "Only RMSNorm instead of LayerNorm",
+      "RMSNorm, SwiGLU activation, and Rotary Position Embeddings (RoPE)",
+      "Mixture of Experts (MoE)",
+      "Grouped-Query Attention (GQA)"
+    ],
+    correctAnswer: 1,
+    explanation: "LLaMA (1) used three main architectural improvements: RMSNorm for faster normalization, SwiGLU activation instead of ReLU, and Rotary Position Embeddings (RoPE) for relative position encoding. GQA was introduced later in LLaMA 2, and MoE is used in Mixtral, not LLaMA."
+  },
+  {
+    question: "What was the approximate training cost for LLaMA-65B using 2048 A100 GPUs for 21 days?",
+    options: [
+      "$100,000",
+      "$500,000",
+      "$4.1 million",
+      "$10 million"
+    ],
+    correctAnswer: 2,
+    explanation: "With 2048 A100 GPUs running for 21 days at approximately $4/GPU-hour, the training cost was roughly $4.1 million. This high cost is why Meta's decision to open-source the weights was valuable - it allowed the community to benefit without repeating this expense."
+  }
+];

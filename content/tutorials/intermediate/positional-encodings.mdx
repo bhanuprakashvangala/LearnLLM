@@ -1,0 +1,696 @@
+---
+title: "Positional Encodings Explained"
+description: "Learn why transformers need positional information and how sinusoidal encodings solve this problem. Explore the mathematics behind positional encodings and their alternatives."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Transformer", "Positional Encoding", "Architecture", "Mathematics"]
+difficulty: "intermediate"
+duration: 15
+order: 20
+---
+
+# Positional Encodings Explained
+
+Transformers process all tokens in parallel, which means they have no inherent notion of sequence order. Positional encodings solve this by injecting position information into the input. This lesson explores why we need them and how they work.
+
+## The Position Problem
+
+### Why Transformers Don't Understand Order
+
+<Callout type="info">
+**Permutation Invariance:** A property where the output changes in the same way as the input when the order of inputs is rearranged. Transformers without positional encodings treat sequences as unordered sets, losing crucial sequential information.
+</Callout>
+
+Self-attention is **permutation-invariant**: shuffling the input produces correspondingly shuffled output.
+
+```python
+import torch
+import torch.nn as nn
+
+# Simple self-attention (without positional encoding)
+d_model = 4
+seq_len = 3
+
+X = torch.randn(seq_len, d_model)
+W_q = nn.Linear(d_model, d_model, bias=False)
+W_k = nn.Linear(d_model, d_model, bias=False)
+W_v = nn.Linear(d_model, d_model, bias=False)
+
+def attention(x):
+    Q, K, V = W_q(x), W_k(x), W_v(x)
+    scores = torch.matmul(Q, K.T) / (d_model ** 0.5)
+    weights = torch.softmax(scores, dim=-1)
+    return torch.matmul(weights, V)
+
+# Original sequence
+output1 = attention(X)
+
+# Permuted sequence
+X_permuted = X[[2, 0, 1], :]  # Shuffle rows
+output2 = attention(X_permuted)
+
+# Outputs are correspondingly permuted
+print("Original output:\n", output1)
+print("\nPermuted output:\n", output2[[1, 2, 0], :])  # Un-permute
+print("\nAre they the same?", torch.allclose(output1, output2[[1, 2, 0], :]))
+```
+
+### Why Order Matters
+
+Consider these sentences:
+- "The cat chased the dog"
+- "The dog chased the cat"
+
+Same words, completely different meanings! Without positional information, a transformer can't distinguish them.
+
+<Callout type="warning">
+**The Permutation Problem:**
+
+Without positional encodings:
+- "I love Paris" = "Paris love I" = "love I Paris"
+- Transformer would treat all three identically
+- Word order is crucial for understanding language
+
+RNNs don't have this problem because they process sequentially. Transformers gain parallelism but lose position awareness.
+</Callout>
+
+## The Solution: Positional Encodings
+
+Add position information directly to the input embeddings:
+
+```
+Input = Word Embedding + Positional Encoding
+```
+
+### Requirements for Good Positional Encodings
+
+1. **Unique:** Different positions get different encodings
+2. **Consistent:** Same relative positions should have consistent relationships
+3. **Generalizable:** Works for sequences longer than those seen in training
+4. **Bounded:** Values don't grow arbitrarily large
+
+## Sinusoidal Positional Encoding
+
+<Callout type="info">
+**Sinusoidal Positional Encoding:** A fixed mathematical function using sine and cosine waves at different frequencies to encode position information, providing unique representations for each position that can generalize to unseen sequence lengths.
+</Callout>
+
+The original transformer paper uses sine and cosine functions.
+
+### The Formula
+
+For position `pos` and dimension `i`:
+
+```
+PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
+```
+
+Where:
+- `pos` = position in sequence (0, 1, 2, ...)
+- `i` = dimension index (0, 1, 2, ..., d_model/2)
+- Even dimensions (2i) use sine
+- Odd dimensions (2i+1) use cosine
+
+### Implementation
+
+```python
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+
+def get_positional_encoding(max_len, d_model):
+    """
+    Generate sinusoidal positional encodings
+
+    Args:
+        max_len: Maximum sequence length
+        d_model: Model dimension (must be even)
+
+    Returns:
+        pe: Positional encoding matrix (max_len, d_model)
+    """
+    # Initialize encoding matrix
+    pe = np.zeros((max_len, d_model))
+
+    # Create position indices [0, 1, 2, ..., max_len-1]
+    position = np.arange(0, max_len)[:, np.newaxis]  # (max_len, 1)
+
+    # Create dimension indices [0, 2, 4, ..., d_model-2]
+    div_term = np.exp(
+        np.arange(0, d_model, 2) * -(np.log(10000.0) / d_model)
+    )  # (d_model/2,)
+
+    # Apply sine to even indices
+    pe[:, 0::2] = np.sin(position * div_term)
+
+    # Apply cosine to odd indices
+    pe[:, 1::2] = np.cos(position * div_term)
+
+    return torch.FloatTensor(pe)
+
+
+# Generate positional encodings
+max_len = 100
+d_model = 128
+
+pe = get_positional_encoding(max_len, d_model)
+print("Positional encoding shape:", pe.shape)  # (100, 128)
+print("\nFirst position encoding:")
+print(pe[0, :8])  # First 8 dimensions
+print("\nSecond position encoding:")
+print(pe[1, :8])
+```
+
+### Visualizing Positional Encodings
+
+```python
+def visualize_positional_encoding(pe):
+    """Visualize positional encoding as heatmap"""
+    plt.figure(figsize=(12, 6))
+
+    # Plot heatmap
+    plt.imshow(pe.numpy(), cmap='RdBu', aspect='auto')
+    plt.colorbar(label='Encoding Value')
+    plt.xlabel('Embedding Dimension')
+    plt.ylabel('Position in Sequence')
+    plt.title('Sinusoidal Positional Encoding')
+    plt.tight_layout()
+    plt.show()
+
+    # Plot specific dimensions over positions
+    plt.figure(figsize=(12, 6))
+    for i in [0, 1, 4, 8, 16, 32]:
+        plt.plot(pe[:, i].numpy(), label=f'Dim {i}')
+    plt.xlabel('Position')
+    plt.ylabel('Encoding Value')
+    plt.title('Positional Encoding Values Across Positions')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+# Visualize
+pe = get_positional_encoding(100, 128)
+visualize_positional_encoding(pe)
+```
+
+<Callout type="info">
+**Patterns in the Visualization:**
+
+- **Low dimensions (columns 0-10):** Rapid oscillation, change quickly with position
+- **High dimensions (columns 100-128):** Slow oscillation, change slowly
+- **Wavelengths:** Each dimension has a different frequency from 2π to 10000·2π
+
+This creates a unique "fingerprint" for each position.
+</Callout>
+
+## Why Sinusoidal Functions?
+
+### 1. Unique Representations
+
+Each position gets a unique encoding vector:
+
+```python
+pe = get_positional_encoding(100, 128)
+
+# Compare different positions
+pos_0 = pe[0]
+pos_1 = pe[1]
+pos_50 = pe[50]
+
+print("Similarity (pos 0 vs pos 1):", torch.cosine_similarity(pos_0, pos_1, dim=0))
+print("Similarity (pos 0 vs pos 50):", torch.cosine_similarity(pos_0, pos_50, dim=0))
+```
+
+### 2. Relative Position Information
+
+The encoding for position `pos + k` can be expressed as a linear function of the encoding at position `pos`:
+
+```
+PE(pos + k) = f(PE(pos))
+```
+
+This is due to trigonometric identities:
+
+```
+sin(α + β) = sin(α)cos(β) + cos(α)sin(β)
+cos(α + β) = cos(α)cos(β) - sin(α)sin(β)
+```
+
+### 3. Extrapolation to Longer Sequences
+
+Sinusoidal functions continue smoothly beyond training lengths:
+
+```python
+# Train on sequences up to length 50
+train_pe = get_positional_encoding(50, 128)
+
+# Generalize to length 200 (4x longer)
+test_pe = get_positional_encoding(200, 128)
+
+# The pattern continues smoothly
+print("Training PE shape:", train_pe.shape)
+print("Test PE shape:", test_pe.shape)
+```
+
+### 4. Bounded Values
+
+All values stay in [-1, 1]:
+
+```python
+pe = get_positional_encoding(1000, 512)
+print("Min value:", pe.min().item())  # Close to -1
+print("Max value:", pe.max().item())  # Close to +1
+```
+
+## Using Positional Encodings in Practice
+
+### Adding to Input Embeddings
+
+```python
+class PositionalEncoding(nn.Module):
+    """Positional encoding module for transformers"""
+
+    def __init__(self, d_model, max_len=5000, dropout=0.1):
+        """
+        Args:
+            d_model: Model dimension
+            max_len: Maximum sequence length
+            dropout: Dropout probability
+        """
+        super(PositionalEncoding, self).__init__()
+
+        self.dropout = nn.Dropout(p=dropout)
+
+        # Create positional encoding matrix
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-np.log(10000.0) / d_model)
+        )
+
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+
+        # Register as buffer (not a parameter, but part of state)
+        pe = pe.unsqueeze(0)  # (1, max_len, d_model)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        """
+        Args:
+            x: Input embeddings (batch, seq_len, d_model)
+
+        Returns:
+            x: Embeddings with positional encoding added (batch, seq_len, d_model)
+        """
+        # Add positional encoding
+        x = x + self.pe[:, :x.size(1), :]
+        return self.dropout(x)
+
+
+# Example usage
+batch_size = 2
+seq_len = 10
+d_model = 128
+vocab_size = 10000
+
+# Token embeddings
+embedding = nn.Embedding(vocab_size, d_model)
+pos_encoding = PositionalEncoding(d_model)
+
+# Input tokens
+tokens = torch.randint(0, vocab_size, (batch_size, seq_len))
+
+# Get embeddings
+token_embeddings = embedding(tokens)  # (2, 10, 128)
+print("Token embeddings shape:", token_embeddings.shape)
+
+# Add positional encoding
+output = pos_encoding(token_embeddings)  # (2, 10, 128)
+print("Output shape:", output.shape)
+```
+
+### Scaling Convention
+
+The original paper scales embeddings before adding positional encodings:
+
+```python
+# Standard approach
+token_embeddings = embedding(tokens) * np.sqrt(d_model)
+output = pos_encoding(token_embeddings)
+```
+
+This makes the embedding and positional encoding magnitudes comparable.
+
+<Callout type="tip">
+**Why scale by √d_model?**
+
+- Token embeddings have variance ≈ 1 (typically initialized this way)
+- Summing two random variables: variance = var₁ + var₂
+- Scaling by √d_model makes embedding variance ≈ d_model
+- After adding PE, total variance ≈ d_model + 1 ≈ d_model
+- This keeps the signal strong relative to the positional information
+</Callout>
+
+## Learned Positional Embeddings
+
+An alternative to sinusoidal encodings: learn position embeddings as parameters.
+
+### Implementation
+
+```python
+class LearnedPositionalEncoding(nn.Module):
+    """Learned positional embeddings (used in BERT)"""
+
+    def __init__(self, d_model, max_len=512, dropout=0.1):
+        super(LearnedPositionalEncoding, self).__init__()
+
+        self.dropout = nn.Dropout(p=dropout)
+
+        # Learnable position embeddings
+        self.position_embeddings = nn.Embedding(max_len, d_model)
+
+    def forward(self, x):
+        """
+        Args:
+            x: Input embeddings (batch, seq_len, d_model)
+
+        Returns:
+            x: Embeddings with positional encoding added
+        """
+        batch_size, seq_len, d_model = x.size()
+
+        # Create position IDs [0, 1, 2, ..., seq_len-1]
+        position_ids = torch.arange(seq_len, dtype=torch.long, device=x.device)
+        position_ids = position_ids.unsqueeze(0).expand(batch_size, -1)  # (batch, seq_len)
+
+        # Get position embeddings
+        position_embeds = self.position_embeddings(position_ids)
+
+        # Add to input
+        x = x + position_embeds
+        return self.dropout(x)
+
+
+# Example
+learned_pe = LearnedPositionalEncoding(d_model=128, max_len=512)
+token_embeddings = torch.randn(2, 10, 128)
+output = learned_pe(token_embeddings)
+print("Output shape:", output.shape)
+```
+
+### Learned vs Sinusoidal
+
+| Aspect | Sinusoidal | Learned |
+|--------|-----------|---------|
+| **Parameters** | 0 (deterministic) | max_len × d_model |
+| **Extrapolation** | Natural (continues smoothly) | Poor (unseen positions) |
+| **Flexibility** | Fixed pattern | Adapts to data |
+| **Used in** | Original Transformer, many models | BERT, GPT-2 |
+
+<Callout type="info">
+**Modern Practice:**
+
+- **BERT, GPT-2, GPT-3:** Learned embeddings
+- **T5, Reformer:** Relative positional encodings
+- **RoFormer, LLaMA:** Rotary Position Embeddings (RoPE)
+
+Learned embeddings often work slightly better for fixed-length tasks, but sinusoidal is better for variable/long sequences.
+</Callout>
+
+## Advanced: Relative Positional Encodings
+
+<Callout type="info">
+**Relative Positional Encoding:** An alternative to absolute positions that encodes the distance between positions rather than their absolute locations, allowing models to better capture positional relationships and generalize to longer sequences.
+</Callout>
+
+Instead of absolute positions (0, 1, 2, ...), encode relative distances.
+
+### Motivation
+
+For attention, what matters is often relative position:
+- "I saw **her** duck" - "her" is 2 positions before "duck"
+- Absolute positions (3, 5) matter less than the gap (2)
+
+### Relative Position Bias (T5 Approach)
+
+```python
+class RelativePositionBias(nn.Module):
+    """Relative position bias (simplified T5 approach)"""
+
+    def __init__(self, num_heads, max_distance=128):
+        super(RelativePositionBias, self).__init__()
+
+        self.num_heads = num_heads
+        self.max_distance = max_distance
+
+        # Learnable bias for each relative position and head
+        # Positions: [-max_distance, ..., -1, 0, 1, ..., max_distance]
+        num_buckets = 2 * max_distance + 1
+        self.relative_bias = nn.Embedding(num_buckets, num_heads)
+
+    def forward(self, seq_len):
+        """
+        Compute relative position bias
+
+        Args:
+            seq_len: Sequence length
+
+        Returns:
+            bias: (num_heads, seq_len, seq_len)
+        """
+        # Compute relative positions
+        positions = torch.arange(seq_len)
+        relative_positions = positions[:, None] - positions[None, :]  # (seq_len, seq_len)
+
+        # Clip to max distance
+        relative_positions = torch.clamp(
+            relative_positions,
+            -self.max_distance,
+            self.max_distance
+        )
+
+        # Shift to positive indices
+        relative_positions = relative_positions + self.max_distance
+
+        # Get bias values
+        bias = self.relative_bias(relative_positions)  # (seq_len, seq_len, num_heads)
+
+        # Transpose to (num_heads, seq_len, seq_len)
+        bias = bias.permute(2, 0, 1)
+
+        return bias
+
+
+# Usage in attention
+def attention_with_relative_bias(Q, K, V, bias):
+    """
+    Attention with relative position bias
+
+    Args:
+        Q, K, V: (batch, num_heads, seq_len, d_k)
+        bias: (num_heads, seq_len, seq_len)
+    """
+    d_k = Q.size(-1)
+    scores = torch.matmul(Q, K.transpose(-2, -1)) / np.sqrt(d_k)
+
+    # Add relative position bias
+    scores = scores + bias.unsqueeze(0)  # Broadcast across batch
+
+    weights = torch.softmax(scores, dim=-1)
+    return torch.matmul(weights, V)
+```
+
+## Rotary Position Embeddings (RoPE)
+
+<Callout type="info">
+**Rotary Position Embeddings (RoPE):** A position encoding method that applies rotations to query and key vectors based on their absolute positions, creating relative position information in the attention mechanism and enabling excellent length extrapolation.
+</Callout>
+
+Used in modern models like LLaMA, encodes position via rotation in complex space.
+
+### Key Idea
+
+Rotate query and key vectors based on their position:
+
+```python
+def apply_rotary_emb(x, position):
+    """
+    Apply rotary position embedding (simplified)
+
+    Args:
+        x: Input tensor (..., seq_len, d)
+        position: Position indices
+    """
+    # Create rotation angles
+    d = x.size(-1)
+    inv_freq = 1.0 / (10000 ** (torch.arange(0, d, 2).float() / d))
+
+    # Compute angles
+    angles = position[:, None].float() * inv_freq[None, :]  # (seq_len, d/2)
+
+    # Create rotation matrix
+    cos = torch.cos(angles)
+    sin = torch.sin(angles)
+
+    # Rotate (simplified - actual implementation is more complex)
+    x_rot = torch.cat([
+        x[..., ::2] * cos - x[..., 1::2] * sin,
+        x[..., ::2] * sin + x[..., 1::2] * cos
+    ], dim=-1)
+
+    return x_rot
+```
+
+<Callout type="tip">
+**RoPE Advantages:**
+
+1. **Relative information:** Naturally encodes relative positions through rotation
+2. **Extrapolation:** Generalizes well to longer sequences
+3. **No additional parameters:** Applied via rotation, not learned
+4. **Efficiency:** Can be computed efficiently
+
+Used in: LLaMA, GPT-NeoX, PaLM
+</Callout>
+
+## Practical Considerations
+
+### Maximum Sequence Length
+
+```python
+# Fixed maximum
+pe = PositionalEncoding(d_model=512, max_len=512)
+
+# For longer sequences, need to re-initialize or use relative encodings
+```
+
+### Memory Usage
+
+```python
+# Sinusoidal: O(max_len × d_model) storage (but computed once)
+# Learned: O(max_len × d_model) parameters
+
+# For max_len=2048, d_model=768:
+memory = 2048 * 768 * 4  # 4 bytes per float32
+print(f"Memory: {memory / 1e6:.2f} MB")  # ~6.3 MB
+```
+
+### Position IDs for Padding
+
+When using padding, position IDs should account for it:
+
+```python
+def create_position_ids(input_ids, pad_token_id=0):
+    """
+    Create position IDs, accounting for padding
+
+    Args:
+        input_ids: (batch, seq_len)
+        pad_token_id: Padding token ID
+
+    Returns:
+        position_ids: (batch, seq_len)
+    """
+    # Mask for non-padding tokens
+    mask = (input_ids != pad_token_id).long()
+
+    # Cumulative sum to get positions (0 for padding)
+    position_ids = torch.cumsum(mask, dim=1) * mask - 1
+
+    return position_ids
+
+
+# Example
+input_ids = torch.tensor([
+    [101, 2054, 2003, 0, 0],  # Last two are padding
+    [101, 2023, 2003, 1037, 3231]
+])
+
+position_ids = create_position_ids(input_ids, pad_token_id=0)
+print("Position IDs:")
+print(position_ids)
+# Output:
+# [[0, 1, 2, 0, 0],
+#  [0, 1, 2, 3, 4]]
+```
+
+## Summary
+
+Positional encodings solve the position-blindness of transformers:
+
+**Why Needed:**
+- Self-attention is permutation-invariant
+- Word order is crucial for language
+- Transformers process in parallel, no inherent sequence information
+
+**Sinusoidal Encodings:**
+- Formula: PE(pos, 2i) = sin(pos/10000^(2i/d))
+- Unique for each position
+- Generalizes to unseen lengths
+- Bounded values [-1, 1]
+
+**Alternatives:**
+- **Learned:** More flexible, but limited to training lengths
+- **Relative:** Focus on position differences, not absolute positions
+- **RoPE:** Rotation-based, excellent extrapolation
+
+**Modern Practice:**
+- GPT-2/3: Learned
+- BERT: Learned
+- T5: Relative
+- LLaMA: RoPE
+
+Position information is fundamental to transformer performance!
+
+<Quiz
+  questions={[
+    {
+      question: "Why do transformers need positional encodings?",
+      options: [
+        "To reduce computational complexity",
+        "Because self-attention is permutation-invariant and has no inherent notion of sequence order",
+        "To improve training speed",
+        "To reduce model parameters"
+      ],
+      correctAnswer: 1,
+      explanation: "Self-attention treats the input as a set, not a sequence. Without positional information, 'cat chased dog' and 'dog chased cat' would be processed identically. Positional encodings inject order information so the model can understand sequence structure."
+    },
+    {
+      question: "What is the range of values in sinusoidal positional encodings?",
+      options: [
+        "[0, 1]",
+        "[-1, 1]",
+        "[0, ∞]",
+        "Depends on sequence length"
+      ],
+      correctAnswer: 1,
+      explanation: "Sinusoidal positional encodings use sine and cosine functions, which naturally produce values in the range [-1, 1]. This bounded range is important for stable training and prevents positional encodings from dominating the token embeddings."
+    },
+    {
+      question: "What is an advantage of sinusoidal positional encodings over learned positional embeddings?",
+      options: [
+        "Sinusoidal encodings require fewer parameters",
+        "Sinusoidal encodings can extrapolate to sequence lengths longer than seen during training",
+        "Sinusoidal encodings train faster",
+        "Both A and B"
+      ],
+      correctAnswer: 3,
+      explanation: "Sinusoidal encodings have two key advantages: (1) they require zero learnable parameters (deterministic function), and (2) they can naturally extrapolate to longer sequences because the sine/cosine pattern continues smoothly. Learned embeddings require parameters for each position and cannot generalize beyond max_len."
+    },
+    {
+      question: "In the sinusoidal encoding formula PE(pos, 2i) = sin(pos/10000^(2i/d_model)), what does the term 10000^(2i/d_model) control?",
+      options: [
+        "The amplitude of the sine wave",
+        "The frequency/wavelength of the sine wave for dimension i",
+        "The phase shift of the sine wave",
+        "The maximum sequence length"
+      ],
+      correctAnswer: 1,
+      explanation: "The term 10000^(2i/d_model) determines the wavelength (or frequency) for each dimension. Lower dimensions have smaller divisors (higher frequency, rapid oscillation), while higher dimensions have larger divisors (lower frequency, slow oscillation). This creates different oscillation patterns across dimensions, giving each position a unique encoding."
+    }
+  ]}
+/>

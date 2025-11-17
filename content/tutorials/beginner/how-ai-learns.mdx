@@ -1,0 +1,296 @@
+---
+title: "How AI Learns: Training vs Inference"
+description: "Understand the two phases of AI: how models learn from data and how they use that knowledge"
+difficulty: "beginner"
+duration: 12
+order: 2
+tags: ["Training", "Inference", "Machine Learning Basics"]
+---
+
+## The Two Lives of an AI Model
+
+Every AI model, including the Large Language Models (LLMs) you use, lives two distinct lives. Think of it like learning to ride a bike:
+
+1. **Training** = Learning how to ride (falling, practicing, getting better)
+2. **Inference** = Actually riding the bike (using what you learned)
+
+Let's understand both!
+
+## Training: How AI Models Learn
+
+### What is Training?
+
+<Callout type="info">
+**Training:** The process where an AI model learns from massive datasets by adjusting billions of internal parameters. During training, the model analyzes patterns in data to predict outputs accurately. This happens once (or rarely) and requires enormous computational resources.
+</Callout>
+
+Training is when an AI model learns patterns from massive amounts of data. For language models like ChatGPT, this means:
+
+- Reading billions of pages from the internet
+- Learning how words relate to each other
+- Understanding grammar, facts, and concepts
+- Finding patterns in how humans write
+
+<Callout type="info">
+**Fun Fact:** GPT-3 was trained on about 45 TB of text data! That's like reading 1.5 million books. The training process took weeks and cost millions of dollars in computing power.
+</Callout>
+
+### The Training Process (Simplified)
+
+Here's what happens during training:
+
+1. **Show the model text**: "The cat sat on the ___"
+2. **Model guesses**: "mat"
+3. **Check if correct**: Is it really "mat"? ✓
+4. **Adjust internal settings**: Make similar predictions more likely
+5. **Repeat billions of times**: With different examples
+
+After seeing enough examples, the model learns:
+- Grammar rules (without being told explicitly)
+- Common phrases and idioms
+- Facts about the world
+- How to continue conversations
+
+<ComparisonTable
+  title="Training vs Inference"
+  columns={[
+    { title: "Training" },
+    { title: "Inference" }
+  ]}
+  rows={[
+    {
+      feature: "What happens",
+      values: ["Learning from data", "Using learned knowledge"]
+    },
+    {
+      feature: "How long it takes",
+      values: ["Weeks to months", "Seconds to minutes"]
+    },
+    {
+      feature: "Cost",
+      values: ["$1M - $100M+", "Pennies per request"]
+    },
+    {
+      feature: "Who does it",
+      values: ["AI research companies", "Everyone using the AI"]
+    },
+    {
+      feature: "Frequency",
+      values: ["Once or rarely", "Every time you use it"]
+    },
+    {
+      feature: "Computing power needed",
+      values: ["Massive (thousands of GPUs)", "Small (single GPU/CPU)"]
+    }
+  ]}
+/>
+
+## Inference: Using the Trained Model
+
+### What is Inference?
+
+<Callout type="info">
+**Inference:** The process of using a trained AI model to generate outputs based on new inputs. When you ask ChatGPT a question, it's running inference—applying learned patterns to produce a response. Inference is fast, cheap, and happens every time you interact with AI.
+</Callout>
+
+Inference is when you use the trained model. Every time you:
+- Ask ChatGPT a question
+- Generate an image with DALL-E
+- Use grammar correction tools
+
+You're doing **inference** - the model is using what it learned during training to help you!
+
+### How Inference Works
+
+When you type a prompt like: *"Explain quantum physics"*
+
+The model:
+1. **Reads your prompt** and converts it to numbers
+2. **Uses its training** to predict good responses
+3. **Generates text** one word at a time
+4. **Gives you the answer**
+
+All of this happens in seconds!
+
+<Callout type="tip">
+**Key Insight:** The model doesn't "search" the internet or "look up" information. It uses patterns it learned during training to generate responses. This is why it can sometimes be creative but also sometimes make mistakes!
+</Callout>
+
+## Why This Matters to You
+
+Understanding training vs inference helps you:
+
+### 1. Know the Limitations
+
+- Models only know what they learned during training
+- They can't access real-time information (unless specifically designed to)
+- Training data has a cutoff date
+
+### 2. Use AI More Effectively
+
+- The model isn't "thinking" - it's pattern matching
+- Better prompts = better use of learned patterns
+- Understanding this helps you write more effective prompts
+
+### 3. Understand Costs
+
+- **Training**: Very expensive (millions of dollars)
+- **Inference**: Cheap (fraction of a cent per response)
+- This is why companies offer free tiers!
+
+## Real-World Analogy
+
+Let's use a chef analogy:
+
+**Training** = Culinary school
+- Years of learning
+- Practicing thousands of recipes
+- Understanding ingredients and techniques
+- Very expensive and time-consuming
+
+**Inference** = Cooking a meal
+- Using what you learned
+- Takes minutes, not years
+- Inexpensive (just ingredient costs)
+- Can be done repeatedly
+
+Just like a chef doesn't re-learn cooking every time they make a dish, an AI doesn't retrain every time you ask it a question!
+
+## Interactive Example
+
+Let's see this in action with a simple JavaScript example that simulates the concept:
+
+<CodePlayground
+  language="javascript"
+  runnable={true}
+  initialCode={`// Simplified AI Learning Simulation
+
+// TRAINING PHASE: Learning from examples
+const trainingData = [
+  { input: "The cat sat on the", output: "mat" },
+  { input: "I love to eat", output: "pizza" },
+  { input: "The sky is", output: "blue" },
+  { input: "Dogs like to", output: "play" }
+];
+
+// Simulate "learning" - in reality, this is much more complex
+const learnedPatterns = {};
+trainingData.forEach(example => {
+  learnedPatterns[example.input] = example.output;
+});
+
+console.log("=== TRAINING COMPLETE ===");
+console.log("Learned patterns:", Object.keys(learnedPatterns).length);
+
+// INFERENCE PHASE: Using what we learned
+function predict(prompt) {
+  // In reality, AI uses complex math to find similar patterns
+  // This is a simplified lookup
+  if (learnedPatterns[prompt]) {
+    return learnedPatterns[prompt];
+  }
+  return "I don't know (not in training data)";
+}
+
+// Try inference
+console.log("\\n=== INFERENCE EXAMPLES ===");
+console.log("Prompt: 'The cat sat on the'");
+console.log("Prediction:", predict("The cat sat on the"));
+
+console.log("\\nPrompt: 'I love to eat'");
+console.log("Prediction:", predict("I love to eat"));
+
+console.log("\\nPrompt: 'Something new'");
+console.log("Prediction:", predict("Something new"));`}
+/>
+
+<Callout type="warning">
+**Note:** This is a hugely simplified example! Real AI training involves:
+- Billions of examples
+- Complex mathematical operations
+- Neural networks with billions of parameters
+- Sophisticated optimization algorithms
+
+But the core concept is the same: learn from data, then use that knowledge!
+</Callout>
+
+<Callout type="info">
+**Parameters:** The internal settings or "knobs" in an AI model that get adjusted during training. GPT-3 has 175 billion parameters—each one a number that determines how the model processes information. More parameters generally means more capability.
+</Callout>
+
+## Test Your Understanding
+
+<Quiz
+  title="Training vs Inference Quiz"
+  questions={[
+    {
+      question: "Which phase happens when you ask ChatGPT a question?",
+      options: [
+        "Training",
+        "Inference",
+        "Both training and inference",
+        "Neither, it searches the internet"
+      ],
+      correctAnswer: 1,
+      explanation: "When you use ChatGPT, you're doing inference - using the already-trained model. The model isn't training or searching; it's using patterns learned during its training phase."
+    },
+    {
+      question: "Why is training so expensive compared to inference?",
+      options: [
+        "Because training requires processing billions of examples on thousands of GPUs",
+        "Because inference is free",
+        "Because training happens every time you use the model",
+        "Because companies charge more for training"
+      ],
+      correctAnswer: 0,
+      explanation: "Training requires massive computational resources to process billions of examples and adjust billions of parameters. This takes weeks and costs millions. Inference only uses the trained model, which is much cheaper and faster."
+    },
+    {
+      question: "What does a language model learn during training?",
+      options: [
+        "How to search the internet",
+        "Patterns in language and how words relate",
+        "How to think like a human",
+        "Database queries"
+      ],
+      correctAnswer: 1,
+      explanation: "During training, language models learn statistical patterns in text - how words typically appear together, grammar rules, common phrases, and relationships between concepts. They don't learn to search, think, or query databases."
+    },
+    {
+      question: "Can a trained model learn new information without retraining?",
+      options: [
+        "Yes, it learns from every conversation",
+        "No, it can only use patterns from its training data",
+        "Only if connected to the internet",
+        "Yes, but only for 24 hours"
+      ],
+      correctAnswer: 1,
+      explanation: "A trained model is frozen - it can't learn new information without retraining. It can only use the patterns it learned during training. Some systems add external tools (like web search) to access new information, but the core model itself doesn't learn from your conversations."
+    }
+  ]}
+/>
+
+## Key Takeaways
+
+🎯 **Training** = Learning phase (expensive, slow, one-time)
+- Model learns from billions of examples
+- Takes weeks/months and costs millions
+- Done by AI companies, not users
+
+🎯 **Inference** = Using phase (cheap, fast, repeated)
+- You use the trained model
+- Takes seconds and costs pennies
+- Happens every time you interact with AI
+
+🎯 **The model is frozen**
+- It doesn't learn from your conversations
+- It uses patterns from training data
+- Knowledge has a cutoff date
+
+## What's Next?
+
+Now that you understand how AI learns and works, in the next lesson we'll explore **Tokens and Context Windows** - understanding how AI actually "reads" and "remembers" your prompts!
+
+<Callout type="tip">
+**Bonus Insight:** This is why you might notice AI models have knowledge cutoffs (like "training data up to April 2023"). After training, they don't learn new information unless they're retrained with new data!
+</Callout>

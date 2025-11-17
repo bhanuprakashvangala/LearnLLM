@@ -1,0 +1,711 @@
+---
+title: "Tokenization Algorithms: BPE, WordPiece, and SentencePiece"
+description: "Master the tokenization algorithms that power modern LLMs. Complete implementations of BPE, WordPiece, and SentencePiece with practical examples."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Tokenization", "NLP", "BPE", "WordPiece", "SentencePiece", "Implementation"]
+difficulty: "advanced"
+duration: 22
+order: 43
+---
+
+# Tokenization Algorithms: BPE, WordPiece, and SentencePiece
+
+Tokenization is the first step in every LLM pipeline, converting raw text into tokens the model can process. The choice of tokenization algorithm profoundly impacts model performance, vocabulary size, and handling of rare words.
+
+## The Tokenization Problem
+
+### Why Not Just Use Words?
+
+```python
+# Word-level tokenization
+text = "The tokenization handles preprocessing wonderfully!"
+word_tokens = text.split()
+print(word_tokens)
+# ['The', 'tokenization', 'handles', 'preprocessing', 'wonderfully!']
+```
+
+**Problems:**
+1. **Massive vocabulary:** English has 170,000+ words
+2. **Out-of-vocabulary (OOV):** Can't handle new words like "ChatGPT", "COVID-19"
+3. **Morphological variants:** "run", "running", "ran" are separate tokens
+4. **Language coverage:** Impossible to cover all languages with reasonable vocabulary
+
+### Why Not Just Use Characters?
+
+```python
+# Character-level tokenization
+text = "AI"
+char_tokens = list(text)
+print(char_tokens)
+# ['A', 'I']
+```
+
+**Problems:**
+1. **Very long sequences:** "ChatGPT is amazing" → 19 characters vs ~4 words
+2. **No semantic meaning:** Characters don't carry meaning by themselves
+3. **Harder to learn:** Model must learn to compose characters into words
+
+<Callout type="info">
+**The Subword Solution:**
+
+Subword tokenization finds the sweet spot: frequent words stay whole ("the", "is"), rare words split into meaningful pieces ("tokenization" → "token" + "ization"). This handles OOV words while keeping sequences manageable.
+</Callout>
+
+## Byte-Pair Encoding (BPE)
+
+BPE is the most popular tokenization algorithm, used by GPT-2, GPT-3, GPT-4, and many others.
+
+### Algorithm Overview
+
+**Training Phase:**
+1. Start with a vocabulary of all characters
+2. Find the most frequent pair of adjacent tokens
+3. Merge this pair into a new token
+4. Repeat until reaching desired vocabulary size
+
+**Encoding Phase:**
+Apply learned merges to split new text into tokens
+
+### Complete Implementation
+
+```python
+from collections import defaultdict, Counter
+import re
+
+class BytePairEncoding:
+    """Complete BPE implementation from scratch."""
+
+    def __init__(self, vocab_size=1000):
+        self.vocab_size = vocab_size
+        self.vocab = {}
+        self.merges = {}
+
+    def get_stats(self, word_freqs):
+        """Count frequency of adjacent token pairs."""
+        pairs = defaultdict(int)
+
+        for word, freq in word_freqs.items():
+            symbols = word.split()
+            for i in range(len(symbols) - 1):
+                pair = (symbols[i], symbols[i + 1])
+                pairs[pair] += freq
+
+        return pairs
+
+    def merge_vocab(self, pair, word_freqs):
+        """Merge the most frequent pair in the vocabulary."""
+        new_word_freqs = {}
+        bigram = ' '.join(pair)
+        replacement = ''.join(pair)
+
+        for word, freq in word_freqs.items():
+            new_word = word.replace(bigram, replacement)
+            new_word_freqs[new_word] = freq
+
+        return new_word_freqs
+
+    def train(self, corpus):
+        """
+        Train BPE on a corpus.
+
+        Args:
+            corpus: List of strings or single string
+        """
+        if isinstance(corpus, str):
+            corpus = [corpus]
+
+        # Step 1: Get word frequencies
+        word_counts = Counter()
+        for text in corpus:
+            # Simple tokenization
+            words = re.findall(r'\w+|[^\w\s]', text.lower())
+            word_counts.update(words)
+
+        # Step 2: Initialize with character-level tokens
+        # Add space marker to preserve word boundaries
+        word_freqs = {}
+        for word, freq in word_counts.items():
+            # Split into characters with space markers
+            word_freqs[' '.join(list(word)) + ' </w>'] = freq
+
+        # Build initial vocabulary (all characters)
+        self.vocab = set()
+        for word in word_freqs.keys():
+            self.vocab.update(word.split())
+
+        print(f"Initial vocabulary size: {len(self.vocab)}")
+        print(f"Initial vocab: {sorted(self.vocab)[:20]}")
+
+        # Step 3: Iteratively merge most frequent pairs
+        num_merges = self.vocab_size - len(self.vocab)
+
+        for i in range(num_merges):
+            pairs = self.get_stats(word_freqs)
+
+            if not pairs:
+                break
+
+            # Find most frequent pair
+            best_pair = max(pairs, key=pairs.get)
+
+            # Store merge operation
+            self.merges[best_pair] = ''.join(best_pair)
+
+            # Apply merge
+            word_freqs = self.merge_vocab(best_pair, word_freqs)
+
+            # Update vocabulary
+            self.vocab.add(''.join(best_pair))
+
+            if (i + 1) % 100 == 0:
+                print(f"Merge {i+1}/{num_merges}: {best_pair} → {''.join(best_pair)}")
+
+        print(f"\nFinal vocabulary size: {len(self.vocab)}")
+
+    def encode(self, text):
+        """
+        Encode text using learned BPE merges.
+
+        Args:
+            text: String to encode
+
+        Returns:
+            List of token strings
+        """
+        # Tokenize into words
+        words = re.findall(r'\w+|[^\w\s]', text.lower())
+
+        tokens = []
+        for word in words:
+            # Start with character-level split
+            word_tokens = list(word) + ['</w>']
+
+            # Apply merges
+            while len(word_tokens) > 1:
+                # Find pairs in current word
+                pairs = [(word_tokens[i], word_tokens[i+1])
+                        for i in range(len(word_tokens)-1)]
+
+                # Find which pairs have merge rules
+                mergeable_pairs = [(pair, i) for i, pair in enumerate(pairs)
+                                  if pair in self.merges]
+
+                if not mergeable_pairs:
+                    break
+
+                # Apply the earliest merge (consistent with training)
+                pair_to_merge, merge_idx = mergeable_pairs[0]
+
+                # Merge the pair
+                new_token = self.merges[pair_to_merge]
+                word_tokens = (word_tokens[:merge_idx] +
+                             [new_token] +
+                             word_tokens[merge_idx+2:])
+
+            tokens.extend(word_tokens)
+
+        return tokens
+
+    def decode(self, tokens):
+        """
+        Decode tokens back to text.
+
+        Args:
+            tokens: List of token strings
+
+        Returns:
+            Decoded string
+        """
+        text = ''.join(tokens)
+        text = text.replace('</w>', ' ')
+        return text.strip()
+
+
+# Example usage
+corpus = [
+    "low lower lowest",
+    "new newer newest",
+    "wide wider widest",
+    "the quick brown fox jumps over the lazy dog",
+    "neural networks are powerful",
+    "tokenization is important for language models"
+]
+
+# Train BPE
+bpe = BytePairEncoding(vocab_size=300)
+bpe.train(corpus)
+
+# Encode text
+test_text = "the newest network"
+tokens = bpe.encode(test_text)
+print(f"\nOriginal: {test_text}")
+print(f"Tokens: {tokens}")
+print(f"Decoded: {bpe.decode(tokens)}")
+
+# Test with unseen word
+test_text2 = "widening"
+tokens2 = bpe.encode(test_text2)
+print(f"\nOriginal: {test_text2}")
+print(f"Tokens: {tokens2}")
+print(f"Decoded: {bpe.decode(tokens2)}")
+```
+
+<Callout type="tip">
+**BPE in Practice:**
+
+GPT-2 uses BPE with vocab_size=50,257. The tokenizer handles special cases like:
+- Byte-level encoding (all UTF-8 bytes as base vocabulary)
+- Case sensitivity
+- Special handling for whitespace
+- Special tokens like `<|endoftext|>`
+</Callout>
+
+### Using GPT-2 Tokenizer
+
+```python
+from transformers import GPT2Tokenizer
+
+# Load pre-trained GPT-2 tokenizer
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+
+text = "The tokenization algorithm splits text efficiently."
+tokens = tokenizer.encode(text)
+print(f"Token IDs: {tokens}")
+print(f"Tokens: {tokenizer.convert_ids_to_tokens(tokens)}")
+print(f"Decoded: {tokenizer.decode(tokens)}")
+
+# Analyze token boundaries
+text = "unhappiness"
+tokens = tokenizer.tokenize(text)
+print(f"\n'{text}' splits into: {tokens}")
+# Likely: ['un', 'happiness'] or ['unh', 'app', 'iness']
+```
+
+## WordPiece
+
+WordPiece, used by BERT, is similar to BPE but uses a different merge criterion.
+
+### Key Difference from BPE
+
+**BPE:** Merges most frequent pair
+**WordPiece:** Merges pair that maximizes likelihood of training data
+
+Likelihood score for merging pair (a, b):
+```
+score = freq(ab) / (freq(a) × freq(b))
+```
+
+### Implementation
+
+```python
+import math
+
+class WordPiece:
+    """WordPiece tokenization (BERT-style)."""
+
+    def __init__(self, vocab_size=1000):
+        self.vocab_size = vocab_size
+        self.vocab = {}
+
+    def compute_pair_scores(self, word_freqs):
+        """Compute likelihood scores for all pairs."""
+        # Count individual token frequencies
+        token_freqs = defaultdict(int)
+        for word, freq in word_freqs.items():
+            for token in word.split():
+                token_freqs[token] += freq
+
+        # Count pair frequencies and compute scores
+        pair_scores = {}
+        pairs_count = defaultdict(int)
+
+        for word, freq in word_freqs.items():
+            symbols = word.split()
+            for i in range(len(symbols) - 1):
+                pair = (symbols[i], symbols[i + 1])
+                pairs_count[pair] += freq
+
+        # Compute likelihood score for each pair
+        for pair, pair_freq in pairs_count.items():
+            a, b = pair
+            # Likelihood: P(ab) / (P(a) * P(b))
+            score = pair_freq / (token_freqs[a] * token_freqs[b])
+            pair_scores[pair] = score
+
+        return pair_scores
+
+    def train(self, corpus):
+        """Train WordPiece on corpus."""
+        if isinstance(corpus, str):
+            corpus = [corpus]
+
+        # Get word frequencies
+        word_counts = Counter()
+        for text in corpus:
+            words = re.findall(r'\w+|[^\w\s]', text.lower())
+            word_counts.update(words)
+
+        # Initialize with characters + word boundary marker ##
+        word_freqs = {}
+        for word, freq in word_counts.items():
+            # Add ## prefix to non-initial characters
+            chars = [word[0]] + [f'##{c}' for c in word[1:]]
+            word_freqs[' '.join(chars)] = freq
+
+        # Build initial vocabulary
+        self.vocab = set()
+        for word in word_freqs.keys():
+            self.vocab.update(word.split())
+
+        print(f"Initial vocabulary size: {len(self.vocab)}")
+
+        # Iteratively merge based on likelihood
+        num_merges = self.vocab_size - len(self.vocab)
+
+        for i in range(num_merges):
+            pair_scores = self.compute_pair_scores(word_freqs)
+
+            if not pair_scores:
+                break
+
+            # Find pair with highest likelihood score
+            best_pair = max(pair_scores, key=pair_scores.get)
+            best_score = pair_scores[best_pair]
+
+            # Merge
+            bigram = ' '.join(best_pair)
+            replacement = ''.join(best_pair)
+
+            new_word_freqs = {}
+            for word, freq in word_freqs.items():
+                new_word = word.replace(bigram, replacement)
+                new_word_freqs[new_word] = freq
+
+            word_freqs = new_word_freqs
+            self.vocab.add(replacement)
+
+            if (i + 1) % 100 == 0:
+                print(f"Merge {i+1}: {best_pair} (score: {best_score:.6f})")
+
+        print(f"Final vocabulary size: {len(self.vocab)}")
+
+    def encode(self, text):
+        """Encode text using WordPiece."""
+        words = re.findall(r'\w+|[^\w\s]', text.lower())
+
+        tokens = []
+        for word in words:
+            # Try to encode using longest matching tokens
+            start = 0
+            word_tokens = []
+
+            while start < len(word):
+                end = len(word)
+                found = False
+
+                # Try progressively shorter substrings
+                while start < end:
+                    substr = word[start:end]
+                    # Add ## prefix for non-initial characters
+                    if start > 0:
+                        substr = f'##{substr}'
+
+                    if substr in self.vocab:
+                        word_tokens.append(substr)
+                        start = end
+                        found = True
+                        break
+
+                    end -= 1
+
+                if not found:
+                    # Unknown token - use single character
+                    word_tokens.append('[UNK]')
+                    start += 1
+
+            tokens.extend(word_tokens)
+
+        return tokens
+
+
+# Train WordPiece
+wp = WordPiece(vocab_size=300)
+wp.train(corpus)
+
+# Encode
+test_text = "the newest network"
+tokens = wp.encode(test_text)
+print(f"\nWordPiece encoding: {tokens}")
+```
+
+<Callout type="info">
+**BERT Tokenization:**
+
+BERT uses WordPiece with special tokens:
+- `[CLS]`: Classification token (start of sequence)
+- `[SEP]`: Separator token (between sentences)
+- `[PAD]`: Padding token
+- `[MASK]`: Mask token (for masked language modeling)
+- `[UNK]`: Unknown token
+</Callout>
+
+### Using BERT Tokenizer
+
+```python
+from transformers import BertTokenizer
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+text = "Tokenization is crucial!"
+tokens = tokenizer.tokenize(text)
+print(f"Tokens: {tokens}")
+# Note: ## prefix indicates continuation of previous word
+
+# Full encoding with special tokens
+encoding = tokenizer(text, return_tensors='pt')
+print(f"Input IDs: {encoding['input_ids']}")
+print(f"Decoded: {tokenizer.decode(encoding['input_ids'][0])}")
+```
+
+## SentencePiece
+
+SentencePiece is a language-independent tokenizer that treats text as a sequence of Unicode characters.
+
+### Key Features
+
+1. **Language-independent:** No pre-tokenization required
+2. **Reversible:** Can perfectly reconstruct original text
+3. **Direct training:** Trains directly on raw text
+4. **Supports BPE and Unigram:** Multiple algorithms
+
+### Installation and Usage
+
+```python
+# Install: pip install sentencepiece
+
+import sentencepiece as spm
+
+# Train SentencePiece model
+corpus_file = 'corpus.txt'
+
+# Write corpus to file
+with open(corpus_file, 'w', encoding='utf-8') as f:
+    f.write('\n'.join(corpus))
+
+# Train
+spm.SentencePieceTrainer.train(
+    input=corpus_file,
+    model_prefix='spm_model',
+    vocab_size=500,
+    character_coverage=1.0,
+    model_type='bpe'  # or 'unigram'
+)
+
+# Load trained model
+sp = spm.SentencePieceProcessor()
+sp.load('spm_model.model')
+
+# Encode
+text = "tokenization is important"
+tokens = sp.encode_as_pieces(text)
+ids = sp.encode_as_ids(text)
+
+print(f"Text: {text}")
+print(f"Tokens: {tokens}")
+print(f"IDs: {ids}")
+
+# Decode
+decoded = sp.decode_pieces(tokens)
+print(f"Decoded: {decoded}")
+
+# Note: Uses special character ▁ for spaces
+```
+
+### Unigram Language Model
+
+SentencePiece also supports Unigram LM, which starts with a large vocabulary and iteratively removes tokens.
+
+```python
+# Train with Unigram model
+spm.SentencePieceTrainer.train(
+    input=corpus_file,
+    model_prefix='unigram_model',
+    vocab_size=500,
+    model_type='unigram'
+)
+
+sp_unigram = spm.SentencePieceProcessor()
+sp_unigram.load('unigram_model.model')
+
+text = "neural networks"
+print(f"BPE: {sp.encode_as_pieces(text)}")
+print(f"Unigram: {sp_unigram.encode_as_pieces(text)}")
+```
+
+<Callout type="tip">
+**When to Use SentencePiece:**
+
+- **Multilingual models:** Handles 100+ languages uniformly
+- **No pre-tokenization:** Works directly on raw text
+- **Reversible encoding:** Can reconstruct exact original text
+- **Used by:** T5, ALBERT, XLNet, LLaMA, Mistral
+</Callout>
+
+## Comparing Tokenization Algorithms
+
+```python
+from transformers import (
+    GPT2Tokenizer,
+    BertTokenizer,
+    T5Tokenizer
+)
+
+# Load different tokenizers
+gpt2_tok = GPT2Tokenizer.from_pretrained('gpt2')
+bert_tok = BertTokenizer.from_pretrained('bert-base-uncased')
+t5_tok = T5Tokenizer.from_pretrained('t5-small')
+
+test_sentences = [
+    "The unhappiness disappeared quickly.",
+    "COVID-19 vaccination rates are increasing.",
+    "I love natural language processing!",
+    "GPT-4 tokenization is efficient."
+]
+
+for sentence in test_sentences:
+    print(f"\nSentence: {sentence}")
+    print(f"GPT-2 (BPE):        {gpt2_tok.tokenize(sentence)}")
+    print(f"BERT (WordPiece):   {bert_tok.tokenize(sentence)}")
+    print(f"T5 (SentencePiece): {t5_tok.tokenize(sentence)}")
+```
+
+## Best Practices
+
+### 1. Vocabulary Size Selection
+
+```python
+def analyze_vocab_size(corpus, vocab_sizes=[100, 500, 1000, 5000]):
+    """Analyze effect of vocabulary size on tokenization."""
+    results = {}
+
+    for vocab_size in vocab_sizes:
+        bpe = BytePairEncoding(vocab_size=vocab_size)
+        bpe.train(corpus)
+
+        # Measure average tokens per word
+        total_tokens = 0
+        total_words = 0
+
+        for text in corpus:
+            words = text.split()
+            total_words += len(words)
+            tokens = bpe.encode(text)
+            total_tokens += len(tokens)
+
+        avg_tokens_per_word = total_tokens / total_words
+        results[vocab_size] = avg_tokens_per_word
+
+    return results
+
+# Run analysis
+results = analyze_vocab_size(corpus)
+for vocab_size, avg in results.items():
+    print(f"Vocab {vocab_size:5d}: {avg:.2f} tokens/word")
+```
+
+### 2. Handling Special Cases
+
+```python
+class RobustBPE(BytePairEncoding):
+    """BPE with special token handling."""
+
+    def __init__(self, vocab_size=1000, special_tokens=None):
+        super().__init__(vocab_size)
+        self.special_tokens = special_tokens or []
+
+    def encode(self, text, add_special_tokens=True):
+        """Encode with special token handling."""
+        if add_special_tokens and '<|endoftext|>' not in text:
+            text = '<|endoftext|>' + text + '<|endoftext|>'
+
+        # Protect special tokens from being split
+        for special_token in self.special_tokens:
+            text = text.replace(special_token, f' {special_token} ')
+
+        return super().encode(text)
+
+# Usage
+robust_bpe = RobustBPE(
+    vocab_size=300,
+    special_tokens=['<|endoftext|>', '[MASK]', '[CLS]']
+)
+```
+
+## Summary
+
+**BPE (GPT-2, GPT-3, GPT-4):**
+- Merges most frequent pairs
+- Simple and effective
+- Used by most modern LLMs
+
+**WordPiece (BERT):**
+- Merges based on likelihood
+- Similar to BPE in practice
+- Uses ## for subword markers
+
+**SentencePiece (T5, LLaMA, Mistral):**
+- Language-independent
+- Reversible encoding
+- Supports multiple algorithms (BPE, Unigram)
+- Best for multilingual models
+
+All three achieve the same goal: efficient subword tokenization that handles OOV words while keeping vocabulary size manageable.
+
+export const questions = [
+  {
+    question: "What is the main advantage of subword tokenization (like BPE) over word-level tokenization?",
+    options: [
+      "It creates shorter sequences",
+      "It handles out-of-vocabulary words by breaking them into known subword pieces",
+      "It's faster to compute",
+      "It requires less training data"
+    ],
+    correctAnswer: 1,
+    explanation: "Subword tokenization handles OOV words by breaking them into known pieces. For example, 'unhappiness' might split into 'un' + 'happiness'. This allows the model to understand new words based on familiar components, unlike word-level tokenization which would mark unseen words as [UNK]."
+  },
+  {
+    question: "How does WordPiece differ from BPE in selecting which token pairs to merge?",
+    options: [
+      "WordPiece merges random pairs, BPE merges frequent pairs",
+      "WordPiece merges pairs with highest likelihood score, BPE merges most frequent pairs",
+      "WordPiece only merges at word boundaries, BPE merges anywhere",
+      "There is no difference - they use the same algorithm"
+    ],
+    correctAnswer: 1,
+    explanation: "BPE merges the most frequent pair, while WordPiece merges the pair with the highest likelihood score: freq(ab) / (freq(a) × freq(b)). This likelihood-based approach aims to maximize the probability of the training data."
+  },
+  {
+    question: "What does the ## prefix indicate in BERT's WordPiece tokenization?",
+    options: [
+      "It marks special tokens like [CLS] or [SEP]",
+      "It indicates a token that continues the previous word (not word-initial)",
+      "It marks unknown tokens",
+      "It indicates a token boundary"
+    ],
+    correctAnswer: 1,
+    explanation: "In BERT's WordPiece, ## indicates that a token is a continuation of the previous word. For example, 'playing' might tokenize to ['play', '##ing'], where ##ing shows that 'ing' is not a separate word but part of 'playing'."
+  },
+  {
+    question: "Why is SentencePiece particularly well-suited for multilingual models?",
+    options: [
+      "It has larger vocabulary sizes",
+      "It's language-independent and requires no pre-tokenization (works directly on raw text)",
+      "It's faster than other tokenization methods",
+      "It uses fewer tokens per word"
+    ],
+    correctAnswer: 1,
+    explanation: "SentencePiece is language-independent because it treats text as raw Unicode characters without assuming word boundaries. It doesn't require language-specific pre-tokenization (like splitting on spaces), making it ideal for languages without clear word boundaries (Chinese, Japanese) and multilingual models like T5 and mT5."
+  }
+];

@@ -1,0 +1,435 @@
+---
+title: "Introduction to LangChain"
+description: "Learn the fundamentals of LangChain framework for building LLM applications"
+duration: "20 min"
+difficulty: "intermediate"
+order: 26
+---
+
+# Introduction to LangChain
+
+LangChain is a powerful framework designed to simplify building applications with Large Language Models. In this lesson, we'll explore what makes LangChain essential for LLM development and how to get started.
+
+## What is LangChain?
+
+LangChain is an open-source framework that provides abstractions and tools for developing applications powered by language models. It addresses common challenges in LLM application development:
+
+<Callout type="info">
+**LangChain Definition:** An open-source framework that standardizes and simplifies building applications with Large Language Models by providing reusable components, integrations, and orchestration tools.
+</Callout>
+
+<Callout type="info">
+**Key Benefits of LangChain:**
+- Standardized interfaces for different LLM providers
+- Composable components for building complex workflows
+- Built-in memory management for conversational applications
+- Integration with external data sources and tools
+- Production-ready utilities for monitoring and debugging
+</Callout>
+
+### Why Use LangChain?
+
+Without LangChain, building LLM applications requires:
+- Writing custom code for each LLM provider
+- Manually managing conversation history
+- Implementing complex prompt templates from scratch
+- Building custom integrations with external tools
+
+LangChain provides these capabilities out of the box, letting you focus on your application logic.
+
+## Installation and Setup
+
+### Python Installation
+
+```bash
+# Install core LangChain
+pip install langchain
+
+# Install OpenAI integration
+pip install langchain-openai
+
+# Install additional dependencies
+pip install python-dotenv
+```
+
+### JavaScript/TypeScript Installation
+
+```bash
+# Install core LangChain.js
+npm install langchain
+
+# Install OpenAI integration
+npm install @langchain/openai
+
+# Install additional dependencies
+npm install dotenv
+```
+
+### Environment Setup
+
+Create a `.env` file for your API keys:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+```
+
+<Callout type="warning">
+Never commit API keys to version control. Always use environment variables or secure key management systems in production.
+</Callout>
+
+## Core Concepts
+
+### 1. Models
+
+Models are the foundation of LangChain. They represent the LLMs you'll interact with.
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Initialize a chat model
+llm = ChatOpenAI(
+    model="gpt-4",
+    temperature=0.7,
+    max_tokens=500
+)
+
+# Simple invocation
+response = llm.invoke("What is LangChain?")
+print(response.content)
+```
+
+**JavaScript Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+// Initialize a chat model
+const llm = new ChatOpenAI({
+  modelName: "gpt-4",
+  temperature: 0.7,
+  maxTokens: 500
+});
+
+// Simple invocation
+const response = await llm.invoke("What is LangChain?");
+console.log(response.content);
+```
+
+### 2. Prompts
+
+Prompts are templates that help you structure inputs to your models consistently.
+
+<Callout type="info">
+**Prompt Template Definition:** A reusable pattern for structuring LLM inputs with variables that can be dynamically filled, ensuring consistent formatting and reducing repetitive prompt engineering.
+</Callout>
+
+**Python Example:**
+
+```python
+from langchain.prompts import ChatPromptTemplate
+
+# Create a prompt template
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful AI assistant specializing in {domain}."),
+    ("human", "{question}")
+])
+
+# Format the prompt
+formatted = prompt.format_messages(
+    domain="machine learning",
+    question="Explain gradient descent in simple terms."
+)
+
+print(formatted)
+```
+
+**JavaScript Example:**
+
+```javascript
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+
+// Create a prompt template
+const prompt = ChatPromptTemplate.fromMessages([
+  ["system", "You are a helpful AI assistant specializing in {domain}."],
+  ["human", "{question}"]
+]);
+
+// Format the prompt
+const formatted = await prompt.formatMessages({
+  domain: "machine learning",
+  question: "Explain gradient descent in simple terms."
+});
+
+console.log(formatted);
+```
+
+<Callout type="tip">
+Prompt templates support multiple message types: `system`, `human`, `ai`, and `function`. This allows you to structure complex conversational flows.
+</Callout>
+
+### 3. Chains
+
+Chains combine models and prompts into reusable components. They represent a sequence of operations.
+
+<Callout type="info">
+**Chain Definition:** A sequence of operations that combines prompts, models, and other components into a reusable pipeline, allowing complex workflows to be executed in a single call.
+</Callout>
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.output_parser import StrOutputParser
+
+# Initialize components
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+prompt = ChatPromptTemplate.from_template(
+    "Write a short poem about {topic} in the style of {style}."
+)
+output_parser = StrOutputParser()
+
+# Create a chain using LCEL (LangChain Expression Language)
+chain = prompt | llm | output_parser
+
+# Execute the chain
+result = chain.invoke({
+    "topic": "artificial intelligence",
+    "style": "haiku"
+})
+
+print(result)
+```
+
+**JavaScript Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+
+// Initialize components
+const llm = new ChatOpenAI({ modelName: "gpt-3.5-turbo" });
+const prompt = ChatPromptTemplate.fromTemplate(
+  "Write a short poem about {topic} in the style of {style}."
+);
+const outputParser = new StringOutputParser();
+
+// Create a chain using LCEL
+const chain = prompt.pipe(llm).pipe(outputParser);
+
+// Execute the chain
+const result = await chain.invoke({
+  topic: "artificial intelligence",
+  style: "haiku"
+});
+
+console.log(result);
+```
+
+<Callout type="info">
+**LCEL (LangChain Expression Language) Definition:** A declarative syntax for composing LangChain components using the pipe operator (|), providing better type safety, streaming support, and more readable chain construction.
+</Callout>
+
+## First Complete LangChain Example
+
+Let's build a simple translation application that demonstrates all core concepts.
+
+**Python Complete Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.output_parser import StrOutputParser
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Initialize the model
+llm = ChatOpenAI(
+    model="gpt-3.5-turbo",
+    temperature=0.3  # Lower temperature for more consistent translations
+)
+
+# Create a prompt template
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a professional translator. Translate the following text from {source_lang} to {target_lang}. Preserve the tone and meaning."),
+    ("human", "{text}")
+])
+
+# Create output parser
+parser = StrOutputParser()
+
+# Build the chain
+translation_chain = prompt | llm | parser
+
+# Function to translate text
+def translate(text, source_lang="English", target_lang="Spanish"):
+    return translation_chain.invoke({
+        "text": text,
+        "source_lang": source_lang,
+        "target_lang": target_lang
+    })
+
+# Example usage
+if __name__ == "__main__":
+    original = "Good morning! How are you today?"
+    translated = translate(original, "English", "French")
+
+    print(f"Original: {original}")
+    print(f"Translated: {translated}")
+
+    # Translate multiple languages
+    languages = ["Spanish", "German", "Italian"]
+    for lang in languages:
+        result = translate(original, "English", lang)
+        print(f"{lang}: {result}")
+```
+
+**JavaScript Complete Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+// Initialize the model
+const llm = new ChatOpenAI({
+  modelName: "gpt-3.5-turbo",
+  temperature: 0.3  // Lower temperature for more consistent translations
+});
+
+// Create a prompt template
+const prompt = ChatPromptTemplate.fromMessages([
+  ["system", "You are a professional translator. Translate the following text from {source_lang} to {target_lang}. Preserve the tone and meaning."],
+  ["human", "{text}"]
+]);
+
+// Create output parser
+const parser = new StringOutputParser();
+
+// Build the chain
+const translationChain = prompt.pipe(llm).pipe(parser);
+
+// Function to translate text
+async function translate(text, sourceLang = "English", targetLang = "Spanish") {
+  return await translationChain.invoke({
+    text: text,
+    source_lang: sourceLang,
+    target_lang: targetLang
+  });
+}
+
+// Example usage
+async function main() {
+  const original = "Good morning! How are you today?";
+  const translated = await translate(original, "English", "French");
+
+  console.log(`Original: ${original}`);
+  console.log(`Translated: ${translated}`);
+
+  // Translate multiple languages
+  const languages = ["Spanish", "German", "Italian"];
+  for (const lang of languages) {
+    const result = await translate(original, "English", lang);
+    console.log(`${lang}: ${result}`);
+  }
+}
+
+main().catch(console.error);
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You've Learned:**
+1. LangChain provides standardized abstractions for building LLM applications
+2. Core components include Models, Prompts, and Chains
+3. LCEL (LangChain Expression Language) enables composable, readable chains
+4. The same patterns work across Python and JavaScript implementations
+5. Environment variables keep API keys secure
+</Callout>
+
+## Best Practices
+
+1. **Use LCEL for chains** - Modern syntax with better type safety and streaming support
+2. **Keep prompts modular** - Separate prompt templates from business logic
+3. **Handle errors gracefully** - LLM calls can fail; implement retry logic
+4. **Monitor token usage** - Track costs and optimize prompt length
+5. **Version your prompts** - Track changes to prompts like you track code
+
+## Next Steps
+
+In the next lesson, we'll explore:
+- Advanced chain types (SequentialChain, RouterChain)
+- Building agents that can use tools
+- The ReAct pattern for reasoning and acting
+- Integrating external tools and APIs
+
+---
+
+## Quiz
+
+Test your understanding of LangChain basics:
+
+<Quiz
+  questions={[
+    {
+      question: "What is the primary purpose of LangChain?",
+      options: [
+        "To train large language models from scratch",
+        "To provide abstractions and tools for building LLM applications",
+        "To host language models in the cloud",
+        "To replace traditional programming languages"
+      ],
+      correctAnswer: 1,
+      explanation: "LangChain is a framework that provides abstractions, components, and tools to simplify building applications with Large Language Models. It doesn't train models or host them."
+    },
+    {
+      question: "What does LCEL stand for in LangChain?",
+      options: [
+        "Large Chain Expression Language",
+        "LangChain Execution Layer",
+        "LangChain Expression Language",
+        "Linguistic Chain Encoding Logic"
+      ],
+      correctAnswer: 2,
+      explanation: "LCEL stands for LangChain Expression Language. It's the modern syntax for creating composable chains using the pipe operator (|) in Python or .pipe() in JavaScript."
+    },
+    {
+      question: "Which operator is used in Python LCEL to chain components together?",
+      options: [
+        "The + operator",
+        "The -> operator",
+        "The | operator",
+        "The >> operator"
+      ],
+      correctAnswer: 2,
+      explanation: "The pipe operator (|) is used in Python LCEL to chain components together. In JavaScript, the .pipe() method is used instead."
+    },
+    {
+      question: "What is the recommended way to handle API keys in LangChain applications?",
+      options: [
+        "Hard-code them in your source files",
+        "Store them in environment variables or secure key management systems",
+        "Include them in configuration files committed to git",
+        "Pass them as command-line arguments"
+      ],
+      correctAnswer: 1,
+      explanation: "API keys should always be stored in environment variables (using .env files) or secure key management systems, never hard-coded or committed to version control."
+    }
+  ]}
+/>

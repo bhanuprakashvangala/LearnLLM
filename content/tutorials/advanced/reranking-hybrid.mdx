@@ -1,0 +1,749 @@
+---
+title: "Re-ranking & Hybrid Search"
+description: "Master re-ranking techniques and hybrid search to dramatically improve retrieval quality in RAG systems"
+order: 67
+duration: 25
+difficulty: "advanced"
+tags: ["RAG", "Re-ranking", "Hybrid Search", "Retrieval", "Cohere"]
+---
+
+# Re-ranking & Hybrid Search
+
+Re-ranking and hybrid search are powerful techniques to significantly improve retrieval quality beyond basic vector similarity search.
+
+<Callout type="info">
+**Re-ranking**: A two-stage retrieval process where initial results are re-scored using more sophisticated models to improve relevance ordering.
+
+**Hybrid Search**: Combining multiple search methods (e.g., semantic + keyword) to leverage the strengths of each approach.
+</Callout>
+
+## Why Re-ranking?
+
+Initial retrieval often uses fast but less accurate methods. Re-ranking adds a second stage:
+
+```
+Stage 1 (Fast): Vector Search → Top 100 candidates
+                    ↓
+Stage 2 (Accurate): Re-rank → Top 10 best results
+```
+
+Benefits:
+- Better relevance ordering
+- Considers query-document relationships more deeply
+- Allows using expensive models on fewer candidates
+
+## Implementing Re-ranking
+
+### Basic Re-ranking with Cross-Encoders
+
+```python
+from typing import List, Dict, Tuple
+import numpy as np
+
+
+class CrossEncoderReranker:
+    """
+    Re-rank results using a cross-encoder model.
+
+    Cross-encoders jointly encode query and document for better relevance.
+    """
+
+    def __init__(self, model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"):
+        """Initialize with a cross-encoder model."""
+        from sentence_transformers import CrossEncoder
+
+        self.model = CrossEncoder(model_name)
+        print(f"✅ Loaded cross-encoder: {model_name}")
+
+    def rerank(
+        self,
+        query: str,
+        documents: List[str],
+        top_k: int = 10
+    ) -> List[Tuple[int, float, str]]:
+        """
+        Re-rank documents for a query.
+
+        Args:
+            query: Search query
+            documents: List of documents to re-rank
+            top_k: Number of top results to return
+
+        Returns:
+            List of (original_index, score, document) tuples
+        """
+        # Create query-document pairs
+        pairs = [[query, doc] for doc in documents]
+
+        # Score all pairs
+        print(f"🔄 Re-ranking {len(documents)} documents...")
+        scores = self.model.predict(pairs)
+
+        # Create results with original indices
+        results = [
+            (idx, float(score), doc)
+            for idx, (score, doc) in enumerate(zip(scores, documents))
+        ]
+
+        # Sort by score (descending)
+        results.sort(key=lambda x: x[1], reverse=True)
+
+        print(f"✅ Re-ranking complete")
+
+        return results[:top_k]
+
+
+# Usage example
+reranker = CrossEncoderReranker()
+
+query = "How do transformers process sequences?"
+
+documents = [
+    "Transformers use self-attention to process all tokens in parallel.",
+    "RNNs process sequences one token at a time sequentially.",
+    "The weather today is sunny with clear skies.",
+    "Self-attention allows transformers to capture long-range dependencies.",
+    "CNNs are primarily used for image processing tasks."
+]
+
+# Re-rank
+results = reranker.rerank(query, documents, top_k=3)
+
+print("\n📊 Re-ranked Results:")
+for rank, (orig_idx, score, doc) in enumerate(results, 1):
+    print(f"\n{rank}. Score: {score:.4f} (Original position: {orig_idx + 1})")
+    print(f"   {doc}")
+```
+
+### Cohere Re-rank API
+
+Use Cohere's re-ranking API for production systems:
+
+```python
+import cohere
+from typing import List, Dict, Any
+
+
+class CohereReranker:
+    """
+    Re-rank using Cohere's re-rank API.
+
+    Cohere provides a specialized re-ranking model optimized for search.
+    """
+
+    def __init__(self, api_key: str):
+        """Initialize Cohere client."""
+        self.client = cohere.Client(api_key)
+
+    def rerank(
+        self,
+        query: str,
+        documents: List[str],
+        top_k: int = 10,
+        model: str = "rerank-english-v2.0"
+    ) -> List[Dict[str, Any]]:
+        """
+        Re-rank documents using Cohere.
+
+        Args:
+            query: Search query
+            documents: Documents to re-rank
+            top_k: Number of results
+            model: Cohere re-rank model
+
+        Returns:
+            Re-ranked results with scores
+        """
+        print(f"🔄 Re-ranking with Cohere ({model})...")
+
+        # Call Cohere re-rank API
+        response = self.client.rerank(
+            model=model,
+            query=query,
+            documents=documents,
+            top_n=top_k
+        )
+
+        # Format results
+        results = []
+        for result in response.results:
+            results.append({
+                "index": result.index,
+                "relevance_score": result.relevance_score,
+                "document": documents[result.index]
+            })
+
+        print(f"✅ Re-ranked to top {len(results)} results")
+
+        return results
+
+
+# Usage
+import os
+reranker = CohereReranker(api_key=os.getenv("COHERE_API_KEY"))
+
+query = "What are the benefits of using RAG?"
+
+documents = [
+    "RAG combines retrieval with generation for better factual accuracy.",
+    "Cats are popular pets known for their independence.",
+    "RAG reduces hallucination by grounding responses in retrieved documents.",
+    "The history of Rome spans thousands of years.",
+    "Vector databases enable efficient similarity search for RAG systems."
+]
+
+results = reranker.rerank(query, documents, top_k=3)
+
+print("\n📊 Cohere Re-ranked Results:")
+for i, result in enumerate(results, 1):
+    print(f"\n{i}. Relevance: {result['relevance_score']:.4f}")
+    print(f"   {result['document']}")
+```
+
+<Callout type="tip">
+**Performance Boost**: Re-ranking can improve retrieval quality by 20-40% with minimal added latency when used on pre-filtered candidates.
+</Callout>
+
+## Hybrid Search
+
+Combine semantic search (vectors) with keyword search (BM25/lexical):
+
+```python
+from typing import List, Dict, Set
+import math
+from collections import Counter
+
+
+class BM25:
+    """
+    BM25 keyword search implementation.
+
+    BM25 is a probabilistic ranking function for keyword search.
+    """
+
+    def __init__(self, k1: float = 1.5, b: float = 0.75):
+        """
+        Initialize BM25.
+
+        Args:
+            k1: Term frequency saturation parameter
+            b: Length normalization parameter
+        """
+        self.k1 = k1
+        self.b = b
+        self.documents: List[str] = []
+        self.doc_lengths: List[int] = []
+        self.avg_doc_length: float = 0
+        self.doc_term_freqs: List[Counter] = []
+        self.idf: Dict[str, float] = {}
+
+    def index(self, documents: List[str]):
+        """Index documents for BM25 search."""
+        self.documents = documents
+        self.doc_term_freqs = []
+
+        # Tokenize and count terms
+        for doc in documents:
+            terms = doc.lower().split()
+            self.doc_term_freqs.append(Counter(terms))
+            self.doc_lengths.append(len(terms))
+
+        self.avg_doc_length = sum(self.doc_lengths) / len(self.doc_lengths)
+
+        # Calculate IDF for all terms
+        self._calculate_idf()
+
+        print(f"✅ Indexed {len(documents)} documents for BM25")
+
+    def _calculate_idf(self):
+        """Calculate inverse document frequency for all terms."""
+        # Get all unique terms
+        all_terms: Set[str] = set()
+        for term_freq in self.doc_term_freqs:
+            all_terms.update(term_freq.keys())
+
+        # Calculate IDF for each term
+        num_docs = len(self.documents)
+
+        for term in all_terms:
+            # Count documents containing term
+            doc_count = sum(1 for tf in self.doc_term_freqs if term in tf)
+
+            # IDF formula: log((N - n + 0.5) / (n + 0.5) + 1)
+            idf = math.log((num_docs - doc_count + 0.5) / (doc_count + 0.5) + 1)
+            self.idf[term] = idf
+
+    def search(self, query: str, top_k: int = 10) -> List[Tuple[int, float]]:
+        """
+        Search documents using BM25.
+
+        Args:
+            query: Search query
+            top_k: Number of results
+
+        Returns:
+            List of (doc_index, score) tuples
+        """
+        query_terms = query.lower().split()
+        scores = []
+
+        # Score each document
+        for doc_idx, (doc_tf, doc_len) in enumerate(
+            zip(self.doc_term_freqs, self.doc_lengths)
+        ):
+            score = 0
+
+            for term in query_terms:
+                if term not in doc_tf:
+                    continue
+
+                # Term frequency in document
+                tf = doc_tf[term]
+
+                # IDF for term
+                idf = self.idf.get(term, 0)
+
+                # BM25 formula
+                numerator = tf * (self.k1 + 1)
+                denominator = tf + self.k1 * (
+                    1 - self.b + self.b * (doc_len / self.avg_doc_length)
+                )
+
+                score += idf * (numerator / denominator)
+
+            scores.append((doc_idx, score))
+
+        # Sort by score
+        scores.sort(key=lambda x: x[1], reverse=True)
+
+        return scores[:top_k]
+
+
+class HybridSearchEngine:
+    """
+    Combines semantic (vector) and keyword (BM25) search.
+    """
+
+    def __init__(
+        self,
+        embedding_model: str = "text-embedding-ada-002",
+        alpha: float = 0.5
+    ):
+        """
+        Initialize hybrid search.
+
+        Args:
+            embedding_model: Model for semantic search
+            alpha: Weight for semantic search (1-alpha for keyword)
+                  0.0 = pure keyword, 1.0 = pure semantic
+        """
+        self.embedding_model = embedding_model
+        self.alpha = alpha
+        self.bm25 = BM25()
+        self.documents: List[str] = []
+        self.embeddings: List[List[float]] = []
+
+    def index_documents(self, documents: List[str]):
+        """Index documents for both semantic and keyword search."""
+        import openai
+
+        self.documents = documents
+
+        # Index for BM25
+        self.bm25.index(documents)
+
+        # Generate embeddings for semantic search
+        print("🔢 Generating embeddings...")
+
+        for doc in documents:
+            response = openai.Embedding.create(
+                model=self.embedding_model,
+                input=doc
+            )
+            embedding = response['data'][0]['embedding']
+            self.embeddings.append(embedding)
+
+        print(f"✅ Hybrid index complete")
+
+    def search(
+        self,
+        query: str,
+        top_k: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Hybrid search combining semantic and keyword.
+
+        Args:
+            query: Search query
+            top_k: Number of results
+
+        Returns:
+            Ranked results with scores
+        """
+        import openai
+        import numpy as np
+
+        # 1. Semantic search
+        response = openai.Embedding.create(
+            model=self.embedding_model,
+            input=query
+        )
+        query_embedding = response['data'][0]['embedding']
+
+        semantic_scores = {}
+        for idx, doc_embedding in enumerate(self.embeddings):
+            similarity = np.dot(query_embedding, doc_embedding)
+            semantic_scores[idx] = similarity
+
+        # 2. Keyword search (BM25)
+        bm25_results = self.bm25.search(query, top_k=len(self.documents))
+        keyword_scores = {idx: score for idx, score in bm25_results}
+
+        # 3. Normalize scores to [0, 1]
+        semantic_scores = self._normalize_scores(semantic_scores)
+        keyword_scores = self._normalize_scores(keyword_scores)
+
+        # 4. Combine scores
+        combined_scores = {}
+        all_indices = set(semantic_scores.keys()) | set(keyword_scores.keys())
+
+        for idx in all_indices:
+            sem_score = semantic_scores.get(idx, 0)
+            kw_score = keyword_scores.get(idx, 0)
+
+            combined_scores[idx] = (
+                self.alpha * sem_score + (1 - self.alpha) * kw_score
+            )
+
+        # 5. Sort and return top-k
+        sorted_results = sorted(
+            combined_scores.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:top_k]
+
+        # Format results
+        results = []
+        for idx, score in sorted_results:
+            results.append({
+                "document": self.documents[idx],
+                "score": score,
+                "semantic_score": semantic_scores.get(idx, 0),
+                "keyword_score": keyword_scores.get(idx, 0)
+            })
+
+        return results
+
+    def _normalize_scores(self, scores: Dict[int, float]) -> Dict[int, float]:
+        """Normalize scores to [0, 1] range."""
+        if not scores:
+            return {}
+
+        values = list(scores.values())
+        min_score = min(values)
+        max_score = max(values)
+
+        if max_score == min_score:
+            return {k: 1.0 for k in scores.keys()}
+
+        return {
+            k: (v - min_score) / (max_score - min_score)
+            for k, v in scores.items()
+        }
+
+
+# Usage example
+hybrid_search = HybridSearchEngine(alpha=0.5)
+
+documents = [
+    "Python is a high-level programming language with dynamic typing",
+    "Machine learning models require large amounts of training data",
+    "The Python programming language was created by Guido van Rossum",
+    "Neural networks are inspired by biological neural systems",
+    "Data preprocessing is crucial for machine learning success"
+]
+
+hybrid_search.index_documents(documents)
+
+# Search with hybrid approach
+results = hybrid_search.search(
+    query="Python programming language creator",
+    top_k=3
+)
+
+print("\n🔍 Hybrid Search Results:")
+for i, result in enumerate(results, 1):
+    print(f"\n{i}. Combined Score: {result['score']:.4f}")
+    print(f"   (Semantic: {result['semantic_score']:.4f}, "
+          f"Keyword: {result['keyword_score']:.4f})")
+    print(f"   {result['document']}")
+```
+
+<Callout type="tip">
+**Best Practice**: Use hybrid search with alpha=0.5 as a starting point, then tune based on your specific use case. Some queries benefit more from semantic search, others from keyword search.
+</Callout>
+
+## Reciprocal Rank Fusion (RRF)
+
+Alternative method for combining multiple rankings:
+
+```python
+class ReciprocalRankFusion:
+    """
+    Combine multiple rankings using Reciprocal Rank Fusion.
+
+    RRF is simpler than weighted combination and often works well.
+    """
+
+    def __init__(self, k: int = 60):
+        """
+        Initialize RRF.
+
+        Args:
+            k: Constant for RRF formula (typically 60)
+        """
+        self.k = k
+
+    def fuse(
+        self,
+        rankings: List[List[Tuple[int, float]]],
+        top_k: int = 10
+    ) -> List[Tuple[int, float]]:
+        """
+        Fuse multiple rankings using RRF.
+
+        Args:
+            rankings: List of rankings (each is list of (doc_id, score))
+            top_k: Number of results to return
+
+        Returns:
+            Fused ranking
+        """
+        # Calculate RRF score for each document
+        rrf_scores: Dict[int, float] = {}
+
+        for ranking in rankings:
+            for rank, (doc_id, _) in enumerate(ranking, start=1):
+                if doc_id not in rrf_scores:
+                    rrf_scores[doc_id] = 0
+
+                # RRF formula: 1 / (k + rank)
+                rrf_scores[doc_id] += 1 / (self.k + rank)
+
+        # Sort by RRF score
+        sorted_results = sorted(
+            rrf_scores.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        return sorted_results[:top_k]
+
+
+# Usage
+rrf = ReciprocalRankFusion(k=60)
+
+# Multiple rankings from different methods
+semantic_ranking = [(0, 0.9), (2, 0.8), (1, 0.7), (3, 0.6)]
+keyword_ranking = [(2, 15.2), (0, 12.5), (3, 10.1), (1, 8.3)]
+reranked = [(2, 0.95), (0, 0.85), (1, 0.75), (3, 0.65)]
+
+fused = rrf.fuse(
+    [semantic_ranking, keyword_ranking, reranked],
+    top_k=3
+)
+
+print("🎯 RRF Fused Results:")
+for rank, (doc_id, score) in enumerate(fused, 1):
+    print(f"{rank}. Document {doc_id}: RRF Score = {score:.4f}")
+```
+
+## Production RAG with Re-ranking
+
+Complete example integrating re-ranking into RAG:
+
+```python
+class ProductionRAG:
+    """Production RAG system with hybrid search and re-ranking."""
+
+    def __init__(
+        self,
+        embedding_model: str = "text-embedding-ada-002",
+        rerank_model: str = "rerank-english-v2.0",
+        alpha: float = 0.5,
+        initial_k: int = 50,
+        final_k: int = 5
+    ):
+        self.hybrid_search = HybridSearchEngine(
+            embedding_model=embedding_model,
+            alpha=alpha
+        )
+        self.reranker = CohereReranker(api_key=os.getenv("COHERE_API_KEY"))
+        self.initial_k = initial_k
+        self.final_k = final_k
+
+    def index(self, documents: List[str]):
+        """Index documents."""
+        self.hybrid_search.index_documents(documents)
+
+    def query(
+        self,
+        question: str,
+        use_reranking: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Query the RAG system.
+
+        Args:
+            question: User question
+            use_reranking: Whether to apply re-ranking
+
+        Returns:
+            Response with context and answer
+        """
+        import openai
+
+        # Stage 1: Hybrid search for initial candidates
+        print(f"\n🔍 Stage 1: Hybrid search (top {self.initial_k})...")
+        candidates = self.hybrid_search.search(question, top_k=self.initial_k)
+
+        # Stage 2: Re-rank if enabled
+        if use_reranking and len(candidates) > self.final_k:
+            print(f"🔄 Stage 2: Re-ranking to top {self.final_k}...")
+            candidate_docs = [c['document'] for c in candidates]
+            reranked = self.reranker.rerank(
+                question,
+                candidate_docs,
+                top_k=self.final_k
+            )
+            context_docs = [r['document'] for r in reranked]
+        else:
+            context_docs = [c['document'] for c in candidates[:self.final_k]]
+
+        # Build context
+        context = "\n\n".join([
+            f"[{i+1}] {doc}"
+            for i, doc in enumerate(context_docs)
+        ])
+
+        # Generate answer
+        print("💬 Stage 3: Generating answer...")
+        prompt = f"""Answer the question based on the provided context.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer:"""
+
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that answers questions based on provided context."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+
+        answer = response.choices[0].message.content
+
+        return {
+            "question": question,
+            "answer": answer,
+            "context": context_docs,
+            "num_candidates": len(candidates)
+        }
+
+
+# Usage
+rag = ProductionRAG(
+    alpha=0.5,
+    initial_k=20,
+    final_k=5
+)
+
+documents = [
+    "RAG combines retrieval with generation for better accuracy.",
+    "Vector databases store embeddings for fast similarity search.",
+    "Re-ranking improves the ordering of search results.",
+    # ... more documents
+]
+
+rag.index(documents)
+
+result = rag.query(
+    "How does re-ranking improve RAG systems?",
+    use_reranking=True
+)
+
+print(f"\n{'='*60}")
+print(f"Question: {result['question']}")
+print(f"\nAnswer: {result['answer']}")
+print(f"\nUsed {len(result['context'])} context documents")
+```
+
+<Callout type="warning">
+**Cost Consideration**: Re-ranking adds API calls. Balance quality improvements against costs by tuning initial_k and final_k parameters.
+</Callout>
+
+## Key Takeaways
+
+1. **Two-stage retrieval** - fast initial search, accurate re-ranking
+2. **Cross-encoders** - better relevance modeling than bi-encoders
+3. **Hybrid search** - combines semantic and keyword strengths
+4. **RRF** - simple, effective method for fusion
+5. **Production systems** - use re-ranking for quality-critical applications
+
+## Quiz
+
+Test your understanding of re-ranking and hybrid search:
+
+<Quiz
+  questions={[
+    {
+      question: "Why use a two-stage retrieval approach with re-ranking?",
+      options: [
+        "To make retrieval slower",
+        "To retrieve many candidates quickly, then re-rank fewer documents with better models",
+        "Because it uses less memory",
+        "To avoid using embeddings"
+      ],
+      correctAnswer: 1,
+      explanation: "Two-stage retrieval balances speed and accuracy: use fast methods (vector search) to get many candidates, then use expensive but accurate re-ranking on a smaller set."
+    },
+    {
+      question: "What is the main difference between hybrid search and pure vector search?",
+      options: [
+        "Hybrid search is always faster",
+        "Hybrid search combines semantic (vector) and keyword (BM25) search",
+        "Hybrid search doesn't use embeddings",
+        "Hybrid search only works with Cohere"
+      ],
+      correctAnswer: 1,
+      explanation: "Hybrid search combines the semantic understanding of vector search with the precision of keyword matching, leveraging strengths of both approaches."
+    },
+    {
+      question: "What does the alpha parameter control in hybrid search?",
+      options: [
+        "The number of results returned",
+        "The balance between semantic and keyword search scores",
+        "The model temperature",
+        "The chunk size"
+      ],
+      correctAnswer: 1,
+      explanation: "Alpha weights semantic vs keyword scores. Alpha=1.0 is pure semantic, alpha=0.0 is pure keyword, and values in between combine both approaches."
+    },
+    {
+      question: "What is Reciprocal Rank Fusion (RRF) used for?",
+      options: [
+        "Generating embeddings",
+        "Combining multiple rankings into a single ranking",
+        "Chunking documents",
+        "Training re-ranking models"
+      ],
+      correctAnswer: 1,
+      explanation: "RRF is a method for combining multiple rankings (e.g., from different search methods) into a single unified ranking using the formula 1/(k + rank)."
+    }
+  ]}
+/>

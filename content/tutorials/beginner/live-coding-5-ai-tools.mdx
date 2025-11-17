@@ -1,0 +1,2367 @@
+---
+title: "Live Coding: Build 5 AI Tools"
+description: "Build 5 production-ready AI tools from scratch - Code Explainer, Email Writer, Document Q&A, Image Generator, and Study Buddy"
+duration: 90
+order: 18
+tags: ["Live Coding", "Projects", "Tools", "OpenAI", "Production"]
+---
+
+# Live Coding: Build 5 AI Tools
+
+Welcome to the ultimate live coding session! We'll build 5 complete, production-ready AI tools that you can use immediately. Each tool solves a real-world problem and demonstrates different AI capabilities.
+
+## What We're Building
+
+1. **AI Code Explainer** - Upload code and get detailed explanations
+2. **Smart Email Writer** - CLI tool for professional emails
+3. **Document Q&A System** - RAG-based document analysis
+4. **Image Generator** - Beautiful DALL-E 3 web interface
+5. **AI Study Buddy** - Interactive learning assistant
+
+<Callout type="info">
+All tools are production-ready with complete code, error handling, and professional UI. You can deploy them immediately!
+</Callout>
+
+---
+
+## Tool 1: AI Code Explainer
+
+A web app that analyzes code and provides line-by-line explanations with complexity analysis.
+
+### Project Setup
+
+```bash
+mkdir ai-code-explainer
+cd ai-code-explainer
+npm init -y
+npm install express openai dotenv cors
+```
+
+### Environment Configuration
+
+```bash
+# .env
+OPENAI_API_KEY=your_api_key_here
+PORT=3001
+```
+
+### Backend Server (server.js)
+
+```javascript
+const express = require('express');
+const OpenAI = require('openai');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+// Analyze code endpoint
+app.post('/api/explain', async (req, res) => {
+  try {
+    const { code, language } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Code is required' });
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert code analyzer. Analyze the provided code and return a JSON response with:
+1. "summary": A brief overview of what the code does
+2. "complexity": Time and space complexity analysis
+3. "lineByLine": Array of objects with "line" (line number) and "explanation" (what that line does)
+4. "improvements": Array of suggested improvements
+5. "bugs": Array of potential bugs or issues
+
+Return ONLY valid JSON, no markdown.`
+        },
+        {
+          role: 'user',
+          content: `Analyze this ${language || 'code'}:\n\n${code}`
+        }
+      ],
+      temperature: 0.3,
+    });
+
+    const analysis = JSON.parse(completion.choices[0].message.content);
+    res.json(analysis);
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      error: 'Failed to analyze code',
+      details: error.message
+    });
+  }
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Code Explainer running on http://localhost:${PORT}`);
+});
+```
+
+### Frontend (public/index.html)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Code Explainer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .input-section {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    select, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      min-height: 200px;
+      resize: vertical;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .results {
+      display: none;
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .result-section {
+      margin-bottom: 30px;
+    }
+
+    .result-section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .line-explanation {
+      background: #f5f5f5;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+    }
+
+    .line-number {
+      font-weight: 600;
+      color: #667eea;
+      margin-right: 10px;
+    }
+
+    .improvement, .bug {
+      background: #fff3cd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border-left: 4px solid #ffc107;
+    }
+
+    .bug {
+      background: #f8d7da;
+      border-left-color: #dc3545;
+    }
+
+    .loader {
+      text-align: center;
+      padding: 20px;
+      display: none;
+    }
+
+    .loader.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AI Code Explainer</h1>
+      <p>Upload your code and get detailed explanations</p>
+    </header>
+
+    <div class="input-section">
+      <div class="form-group">
+        <label for="language">Programming Language</label>
+        <select id="language">
+          <option value="JavaScript">JavaScript</option>
+          <option value="Python">Python</option>
+          <option value="Java">Java</option>
+          <option value="C++">C++</option>
+          <option value="Go">Go</option>
+          <option value="Rust">Rust</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="code">Your Code</label>
+        <textarea id="code" placeholder="Paste your code here..."></textarea>
+      </div>
+
+      <button id="analyzeBtn">Analyze Code</button>
+    </div>
+
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <p style="margin-top: 10px;">Analyzing your code...</p>
+    </div>
+
+    <div class="results" id="results">
+      <div class="result-section">
+        <h2>Summary</h2>
+        <p id="summary"></p>
+      </div>
+
+      <div class="result-section">
+        <h2>Complexity Analysis</h2>
+        <p id="complexity"></p>
+      </div>
+
+      <div class="result-section">
+        <h2>Line-by-Line Explanation</h2>
+        <div id="lineByLine"></div>
+      </div>
+
+      <div class="result-section">
+        <h2>Suggested Improvements</h2>
+        <div id="improvements"></div>
+      </div>
+
+      <div class="result-section">
+        <h2>Potential Issues</h2>
+        <div id="bugs"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loader = document.getElementById('loader');
+    const results = document.getElementById('results');
+
+    analyzeBtn.addEventListener('click', async () => {
+      const code = document.getElementById('code').value;
+      const language = document.getElementById('language').value;
+
+      if (!code.trim()) {
+        alert('Please enter some code to analyze');
+        return;
+      }
+
+      // Show loader
+      analyzeBtn.disabled = true;
+      loader.classList.add('show');
+      results.classList.remove('show');
+
+      try {
+        const response = await fetch('http://localhost:3001/api/explain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, language })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          displayResults(data);
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Failed to analyze code: ' + error.message);
+      } finally {
+        analyzeBtn.disabled = false;
+        loader.classList.remove('show');
+      }
+    });
+
+    function displayResults(data) {
+      document.getElementById('summary').textContent = data.summary;
+      document.getElementById('complexity').textContent = data.complexity;
+
+      // Line by line
+      const lineByLineDiv = document.getElementById('lineByLine');
+      lineByLineDiv.innerHTML = data.lineByLine.map(item => `
+        <div class="line-explanation">
+          <span class="line-number">Line ${item.line}:</span>
+          ${item.explanation}
+        </div>
+      `).join('');
+
+      // Improvements
+      const improvementsDiv = document.getElementById('improvements');
+      improvementsDiv.innerHTML = data.improvements.length > 0
+        ? data.improvements.map(imp => `<div class="improvement">${imp}</div>`).join('')
+        : '<p>No improvements suggested - code looks good!</p>';
+
+      // Bugs
+      const bugsDiv = document.getElementById('bugs');
+      bugsDiv.innerHTML = data.bugs.length > 0
+        ? data.bugs.map(bug => `<div class="bug">${bug}</div>`).join('')
+        : '<p>No issues detected!</p>';
+
+      results.classList.add('show');
+    }
+  </script>
+</body>
+</html>
+```
+
+### How It Works
+
+1. **Frontend** - User pastes code and selects language
+2. **API Request** - Code is sent to backend with language context
+3. **GPT-4 Analysis** - AI analyzes code structure, complexity, and potential issues
+4. **JSON Response** - Structured data includes line-by-line explanations
+5. **Display** - Results are formatted and displayed in organized sections
+
+### Running the Tool
+
+```bash
+node server.js
+# Visit http://localhost:3001
+```
+
+---
+
+## Tool 2: Smart Email Writer
+
+A CLI tool that generates professional emails based on simple prompts.
+
+### Project Setup
+
+```bash
+mkdir smart-email-writer
+cd smart-email-writer
+npm init -y
+npm install openai dotenv inquirer@8.2.5 chalk
+```
+
+### Environment File
+
+```bash
+# .env
+OPENAI_API_KEY=your_api_key_here
+```
+
+### Complete CLI Tool (index.js)
+
+```javascript
+#!/usr/bin/env node
+
+const OpenAI = require('openai');
+const inquirer = require('inquirer');
+const chalk = require('chalk');
+require('dotenv').config();
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const EMAIL_TONES = {
+  professional: 'Professional and formal',
+  friendly: 'Friendly and warm',
+  casual: 'Casual and conversational',
+  persuasive: 'Persuasive and compelling',
+  apologetic: 'Apologetic and understanding'
+};
+
+const EMAIL_TYPES = {
+  introduction: 'Introduction/Networking',
+  followup: 'Follow-up',
+  request: 'Request/Ask',
+  announcement: 'Announcement',
+  response: 'Response/Reply',
+  complaint: 'Complaint/Concern',
+  thank_you: 'Thank You'
+};
+
+async function generateEmail(purpose, tone, recipient, details) {
+  const prompt = `Write a ${EMAIL_TONES[tone]} email for the following:
+
+Purpose: ${EMAIL_TYPES[purpose]}
+Recipient: ${recipient}
+Details: ${details}
+
+Requirements:
+- Include an appropriate subject line
+- Professional greeting
+- Clear and concise body
+- Appropriate closing
+- Professional signature placeholder
+
+Format the response as:
+Subject: [subject line]
+
+[email body]`;
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a professional email writer. Write clear, effective emails that achieve their purpose while maintaining the requested tone.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    temperature: 0.7,
+    max_tokens: 500
+  });
+
+  return completion.choices[0].message.content;
+}
+
+async function main() {
+  console.log(chalk.bold.blue('\n✉️  Smart Email Writer\n'));
+
+  const answers = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'purpose',
+      message: 'What type of email do you need?',
+      choices: Object.entries(EMAIL_TYPES).map(([key, value]) => ({
+        name: value,
+        value: key
+      }))
+    },
+    {
+      type: 'list',
+      name: 'tone',
+      message: 'What tone should the email have?',
+      choices: Object.entries(EMAIL_TONES).map(([key, value]) => ({
+        name: value,
+        value: key
+      }))
+    },
+    {
+      type: 'input',
+      name: 'recipient',
+      message: 'Who is the recipient? (e.g., "hiring manager", "client", "colleague")',
+      validate: input => input.trim() !== '' || 'Recipient is required'
+    },
+    {
+      type: 'input',
+      name: 'details',
+      message: 'Provide details about the email (what you want to say):',
+      validate: input => input.trim() !== '' || 'Details are required'
+    }
+  ]);
+
+  console.log(chalk.yellow('\n⏳ Generating your email...\n'));
+
+  try {
+    const email = await generateEmail(
+      answers.purpose,
+      answers.tone,
+      answers.recipient,
+      answers.details
+    );
+
+    console.log(chalk.green('✅ Email generated successfully!\n'));
+    console.log(chalk.cyan('─'.repeat(60)));
+    console.log(email);
+    console.log(chalk.cyan('─'.repeat(60)));
+
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: '\nWhat would you like to do?',
+        choices: [
+          { name: 'Generate another email', value: 'again' },
+          { name: 'Regenerate with different tone', value: 'regenerate' },
+          { name: 'Exit', value: 'exit' }
+        ]
+      }
+    ]);
+
+    if (action === 'again') {
+      await main();
+    } else if (action === 'regenerate') {
+      const { newTone } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'newTone',
+          message: 'Select new tone:',
+          choices: Object.entries(EMAIL_TONES).map(([key, value]) => ({
+            name: value,
+            value: key
+          }))
+        }
+      ]);
+
+      console.log(chalk.yellow('\n⏳ Regenerating...\n'));
+      const newEmail = await generateEmail(
+        answers.purpose,
+        newTone,
+        answers.recipient,
+        answers.details
+      );
+
+      console.log(chalk.green('✅ Email regenerated!\n'));
+      console.log(chalk.cyan('─'.repeat(60)));
+      console.log(newEmail);
+      console.log(chalk.cyan('─'.repeat(60)));
+
+      await main();
+    }
+
+  } catch (error) {
+    console.error(chalk.red('\n❌ Error generating email:'), error.message);
+    process.exit(1);
+  }
+}
+
+// Run the application
+main().catch(console.error);
+```
+
+### Package.json Configuration
+
+```json
+{
+  "name": "smart-email-writer",
+  "version": "1.0.0",
+  "description": "AI-powered professional email generator",
+  "main": "index.js",
+  "bin": {
+    "email-writer": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["email", "ai", "cli"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "dotenv": "^16.0.3",
+    "inquirer": "^8.2.5",
+    "openai": "^4.20.1"
+  }
+}
+```
+
+### How It Works
+
+1. **Interactive Prompts** - Inquirer.js asks for email type, tone, recipient, and details
+2. **Context Building** - Creates a comprehensive prompt with all parameters
+3. **GPT-4 Generation** - AI writes a professional email matching criteria
+4. **Formatting** - Includes subject line, body, and signature placeholder
+5. **Options** - User can regenerate, change tone, or write another email
+
+### Running the Tool
+
+```bash
+npm start
+# Or install globally: npm link
+# Then run: email-writer
+```
+
+---
+
+## Tool 3: Document Q&A System
+
+<Callout type="info">
+**RAG (Retrieval Augmented Generation) Definition:** A technique that combines document retrieval with AI generation. Instead of relying solely on the model's training data, RAG first searches relevant documents for context, then uses that information to generate accurate, grounded answers.
+</Callout>
+
+A RAG (Retrieval Augmented Generation) system that lets you upload documents and ask questions.
+
+### Project Setup
+
+```bash
+mkdir document-qa-system
+cd document-qa-system
+npm init -y
+npm install express openai dotenv cors multer pdf-parse mammoth
+```
+
+### Environment Configuration
+
+```bash
+# .env
+OPENAI_API_KEY=your_api_key_here
+PORT=3002
+```
+
+### Backend Server (server.js)
+
+```javascript
+const express = require('express');
+const OpenAI = require('openai');
+const cors = require('cors');
+const multer = require('multer');
+const fs = require('fs').promises;
+const path = require('path');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
+require('dotenv').config();
+
+const app = express();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Configure multer for file uploads
+const upload = multer({ dest: 'uploads/' });
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+// Store documents in memory (in production, use a database)
+const documents = new Map();
+
+// Extract text from different file types
+async function extractText(filePath, mimetype) {
+  if (mimetype === 'application/pdf') {
+    const dataBuffer = await fs.readFile(filePath);
+    const data = await pdfParse(dataBuffer);
+    return data.text;
+  } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    const result = await mammoth.extractRawText({ path: filePath });
+    return result.value;
+  } else if (mimetype === 'text/plain') {
+    return await fs.readFile(filePath, 'utf-8');
+  } else {
+    throw new Error('Unsupported file type');
+  }
+}
+
+<Callout type="info">
+**Embeddings Definition:** Numerical representations of text that capture semantic meaning in high-dimensional vector space. Embeddings allow computers to measure how similar two pieces of text are by comparing their vectors, enabling powerful search and retrieval capabilities.
+</Callout>
+
+// Create embeddings for text chunks
+async function createEmbedding(text) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-ada-002',
+    input: text,
+  });
+  return response.data[0].embedding;
+}
+
+<Callout type="info">
+**Cosine Similarity Definition:** A mathematical measure of similarity between two vectors, calculated by comparing their directions rather than their magnitudes. In text analysis, it ranges from -1 to 1, where 1 means identical meaning, 0 means unrelated, and -1 means opposite.
+</Callout>
+
+// Calculate cosine similarity
+function cosineSimilarity(a, b) {
+  const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
+  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+  return dotProduct / (magnitudeA * magnitudeB);
+}
+
+// Split text into chunks
+function chunkText(text, chunkSize = 1000) {
+  const chunks = [];
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    if ((currentChunk + sentence).length > chunkSize && currentChunk) {
+      chunks.push(currentChunk.trim());
+      currentChunk = sentence;
+    } else {
+      currentChunk += sentence;
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
+}
+
+// Upload document endpoint
+app.post('/api/upload', upload.single('document'), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Extract text
+    const text = await extractText(file.path, file.mimetype);
+
+    // Clean up uploaded file
+    await fs.unlink(file.path);
+
+    // Split into chunks
+    const chunks = chunkText(text);
+
+    // Create embeddings for each chunk
+    const embeddings = await Promise.all(
+      chunks.map(chunk => createEmbedding(chunk))
+    );
+
+    // Store document
+    const docId = Date.now().toString();
+    documents.set(docId, {
+      id: docId,
+      filename: file.originalname,
+      chunks: chunks.map((chunk, i) => ({
+        text: chunk,
+        embedding: embeddings[i]
+      })),
+      uploadedAt: new Date()
+    });
+
+    res.json({
+      success: true,
+      docId,
+      filename: file.originalname,
+      chunksCount: chunks.length
+    });
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Ask question endpoint
+app.post('/api/ask', async (req, res) => {
+  try {
+    const { docId, question } = req.body;
+
+    if (!docId || !question) {
+      return res.status(400).json({ error: 'Document ID and question are required' });
+    }
+
+    const doc = documents.get(docId);
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Create embedding for question
+    const questionEmbedding = await createEmbedding(question);
+
+    // Find most relevant chunks
+    const relevantChunks = doc.chunks
+      .map(chunk => ({
+        text: chunk.text,
+        similarity: cosineSimilarity(questionEmbedding, chunk.embedding)
+      }))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, 3); // Top 3 most relevant chunks
+
+    // Create context from relevant chunks
+    const context = relevantChunks.map(c => c.text).join('\n\n');
+
+    // Generate answer using GPT-4
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that answers questions based on the provided document context. If the answer is not in the context, say so.'
+        },
+        {
+          role: 'user',
+          content: `Context from document:\n${context}\n\nQuestion: ${question}`
+        }
+      ],
+      temperature: 0.3,
+    });
+
+    res.json({
+      answer: completion.choices[0].message.content,
+      relevantChunks: relevantChunks.length,
+      sources: relevantChunks.map(c => c.text.substring(0, 200) + '...')
+    });
+
+  } catch (error) {
+    console.error('Question error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get uploaded documents
+app.get('/api/documents', (req, res) => {
+  const docs = Array.from(documents.values()).map(doc => ({
+    id: doc.id,
+    filename: doc.filename,
+    chunksCount: doc.chunks.length,
+    uploadedAt: doc.uploadedAt
+  }));
+  res.json(docs);
+});
+
+const PORT = process.env.PORT || 3002;
+app.listen(PORT, () => {
+  console.log(`Document Q&A System running on http://localhost:${PORT}`);
+});
+```
+
+### Frontend (public/index.html)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Q&A System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .upload-section {
+      border: 2px dashed #667eea;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .upload-section:hover {
+      border-color: #764ba2;
+      background: #f9f9f9;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .file-label {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-block;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+
+    .file-label:hover {
+      transform: translateY(-2px);
+    }
+
+    .file-name {
+      margin-top: 15px;
+      color: #666;
+      font-style: italic;
+    }
+
+    .upload-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 20px;
+      transition: transform 0.2s;
+    }
+
+    .upload-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .upload-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .qa-section {
+      display: none;
+    }
+
+    .qa-section.show {
+      display: block;
+    }
+
+    .doc-info {
+      background: #e8eaf6;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .question-input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      transition: border-color 0.3s;
+    }
+
+    .question-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .ask-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+
+    .ask-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .answer-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+      display: none;
+    }
+
+    .answer-section.show {
+      display: block;
+    }
+
+    .answer-section h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+
+    .sources {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+    }
+
+    .source-item {
+      background: white;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loader.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Document Q&A System</h1>
+      <p>Upload documents and ask questions - powered by RAG</p>
+    </header>
+
+    <div class="card upload-card">
+      <h2 style="margin-bottom: 20px;">Upload Document</h2>
+      <div class="upload-section">
+        <div class="file-input-wrapper">
+          <input type="file" id="fileInput" accept=".pdf,.txt,.docx">
+          <label for="fileInput" class="file-label">Choose File</label>
+        </div>
+        <div class="file-name" id="fileName">No file chosen</div>
+        <button class="upload-btn" id="uploadBtn" disabled>Upload Document</button>
+      </div>
+      <div class="success-message" id="successMessage"></div>
+    </div>
+
+    <div class="card qa-section" id="qaSection">
+      <h2 style="margin-bottom: 20px;">Ask Questions</h2>
+      <div class="doc-info" id="docInfo"></div>
+
+      <input
+        type="text"
+        class="question-input"
+        id="questionInput"
+        placeholder="What would you like to know about this document?"
+      >
+      <button class="ask-btn" id="askBtn">Ask Question</button>
+
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <p style="margin-top: 10px;">Finding answer...</p>
+      </div>
+
+      <div class="answer-section" id="answerSection">
+        <h3>Answer</h3>
+        <p id="answer"></p>
+
+        <div class="sources">
+          <strong>Relevant Sources:</strong>
+          <div id="sources"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentDocId = null;
+
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const successMessage = document.getElementById('successMessage');
+    const qaSection = document.getElementById('qaSection');
+    const docInfo = document.getElementById('docInfo');
+    const questionInput = document.getElementById('questionInput');
+    const askBtn = document.getElementById('askBtn');
+    const loader = document.getElementById('loader');
+    const answerSection = document.getElementById('answerSection');
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        fileName.textContent = file.name;
+        uploadBtn.disabled = false;
+      } else {
+        fileName.textContent = 'No file chosen';
+        uploadBtn.disabled = true;
+      }
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading...';
+
+      const formData = new FormData();
+      formData.append('document', file);
+
+      try {
+        const response = await fetch('http://localhost:3002/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          currentDocId = data.docId;
+          successMessage.textContent = `✓ ${data.filename} uploaded successfully! (${data.chunksCount} chunks created)`;
+          successMessage.classList.add('show');
+
+          docInfo.innerHTML = `
+            <strong>Current Document:</strong> ${data.filename}<br>
+            <strong>Chunks:</strong> ${data.chunksCount}
+          `;
+
+          qaSection.classList.add('show');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Upload failed: ' + error.message);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload Document';
+      }
+    });
+
+    askBtn.addEventListener('click', async () => {
+      const question = questionInput.value.trim();
+      if (!question) {
+        alert('Please enter a question');
+        return;
+      }
+
+      loader.classList.add('show');
+      answerSection.classList.remove('show');
+      askBtn.disabled = true;
+
+      try {
+        const response = await fetch('http://localhost:3002/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ docId: currentDocId, question })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById('answer').textContent = data.answer;
+
+          const sourcesDiv = document.getElementById('sources');
+          sourcesDiv.innerHTML = data.sources.map((source, i) => `
+            <div class="source-item">
+              <strong>Source ${i + 1}:</strong> ${source}
+            </div>
+          `).join('');
+
+          answerSection.classList.add('show');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Failed to get answer: ' + error.message);
+      } finally {
+        loader.classList.remove('show');
+        askBtn.disabled = false;
+      }
+    });
+
+    questionInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        askBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+<Callout type="info">
+**Text Chunking Definition:** The process of dividing large documents into smaller, overlapping segments (chunks) for processing. Chunking is necessary because AI models have token limits, and smaller chunks improve retrieval accuracy by creating more focused, searchable units.
+</Callout>
+
+### How It Works
+
+1. **Document Upload** - Supports PDF, TXT, and DOCX files
+2. **Text Extraction** - Uses pdf-parse and mammoth for different formats
+3. **Chunking** - Splits documents into manageable pieces (1000 chars)
+4. **Embeddings** - Creates vector embeddings for each chunk using Ada-002
+5. **Similarity Search** - Finds most relevant chunks using cosine similarity
+6. **Answer Generation** - GPT-4 generates answers based on relevant context
+7. **Source Attribution** - Shows which parts of document were used
+
+### Running the Tool
+
+```bash
+node server.js
+# Visit http://localhost:3002
+```
+
+<Callout type="tip">
+This is a production-ready RAG system! The same architecture is used by major AI products. You can extend it with vector databases like Pinecone or Weaviate for larger scale.
+</Callout>
+
+---
+
+## Tool 4: Image Generator
+
+A beautiful web app for generating images with DALL-E 3.
+
+### Project Setup
+
+```bash
+mkdir image-generator
+cd image-generator
+npm init -y
+npm install express openai dotenv cors
+```
+
+### Environment File
+
+```bash
+# .env
+OPENAI_API_KEY=your_api_key_here
+PORT=3003
+```
+
+### Backend Server (server.js)
+
+```javascript
+const express = require('express');
+const OpenAI = require('openai');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+// Store generation history in memory
+const history = [];
+
+app.post('/api/generate', async (req, res) => {
+  try {
+    const { prompt, size, quality, style } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: prompt,
+      n: 1,
+      size: size || '1024x1024',
+      quality: quality || 'standard',
+      style: style || 'vivid'
+    });
+
+    const result = {
+      url: response.data[0].url,
+      revisedPrompt: response.data[0].revised_prompt,
+      originalPrompt: prompt,
+      size,
+      quality,
+      style,
+      timestamp: new Date()
+    };
+
+    history.unshift(result);
+    if (history.length > 20) history.pop();
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Generation error:', error);
+    res.status(500).json({
+      error: 'Failed to generate image',
+      details: error.message
+    });
+  }
+});
+
+app.get('/api/history', (req, res) => {
+  res.json(history);
+});
+
+const PORT = process.env.PORT || 3003;
+app.listen(PORT, () => {
+  console.log(`Image Generator running on http://localhost:${PORT}`);
+});
+```
+
+### Frontend (public/index.html)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Image Generator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 30px;
+    }
+
+    .control-panel {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      height: fit-content;
+      position: sticky;
+      top: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+      transition: border-color 0.3s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: border-color 0.3s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .generate-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .result-section {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .result-container {
+      display: none;
+    }
+
+    .result-container.show {
+      display: block;
+    }
+
+    .generated-image {
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .image-info {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .image-info h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .image-info p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .download-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 60px;
+    }
+
+    .loader.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .history-section {
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 2px solid #e0e0e0;
+    }
+
+    .history-section h2 {
+      margin-bottom: 20px;
+      color: #667eea;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .history-item {
+      cursor: pointer;
+      border-radius: 6px;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .history-item:hover {
+      transform: scale(1.05);
+    }
+
+    .history-item img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    .placeholder {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+
+    .placeholder svg {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AI Image Generator</h1>
+      <p>Create stunning images with DALL-E 3</p>
+    </header>
+
+    <div class="main-content">
+      <div class="control-panel">
+        <h2 style="margin-bottom: 20px;">Generate Image</h2>
+
+        <div class="form-group">
+          <label for="prompt">Describe your image</label>
+          <textarea
+            id="prompt"
+            placeholder="A serene sunset over a mountain lake with pine trees..."
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="size">Image Size</label>
+          <select id="size">
+            <option value="1024x1024">Square (1024x1024)</option>
+            <option value="1792x1024">Landscape (1792x1024)</option>
+            <option value="1024x1792">Portrait (1024x1792)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="quality">Quality</label>
+          <select id="quality">
+            <option value="standard">Standard</option>
+            <option value="hd">HD (Higher quality)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="style">Style</label>
+          <select id="style">
+            <option value="vivid">Vivid (More dramatic)</option>
+            <option value="natural">Natural (More realistic)</option>
+          </select>
+        </div>
+
+        <button class="generate-btn" id="generateBtn">Generate Image</button>
+      </div>
+
+      <div class="result-section">
+        <div class="placeholder" id="placeholder">
+          <svg fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+          </svg>
+          <p>Your generated image will appear here</p>
+        </div>
+
+        <div class="loader" id="loader">
+          <div class="spinner"></div>
+          <p>Generating your image...</p>
+          <p style="margin-top: 10px; color: #666;">This may take 10-30 seconds</p>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+          <img id="generatedImage" class="generated-image" alt="Generated image">
+
+          <div class="image-info">
+            <h3>Image Details</h3>
+            <p><strong>Your Prompt:</strong> <span id="originalPrompt"></span></p>
+            <p><strong>Revised Prompt:</strong> <span id="revisedPrompt"></span></p>
+            <p><strong>Size:</strong> <span id="imageSize"></span></p>
+          </div>
+
+          <a id="downloadBtn" class="download-btn" download="ai-generated-image.png">
+            Download Image
+          </a>
+        </div>
+
+        <div class="history-section">
+          <h2>Recent Generations</h2>
+          <div class="history-grid" id="historyGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const generateBtn = document.getElementById('generateBtn');
+    const loader = document.getElementById('loader');
+    const placeholder = document.getElementById('placeholder');
+    const resultContainer = document.getElementById('resultContainer');
+    const historyGrid = document.getElementById('historyGrid');
+
+    generateBtn.addEventListener('click', generateImage);
+
+    async function generateImage() {
+      const prompt = document.getElementById('prompt').value.trim();
+
+      if (!prompt) {
+        alert('Please enter a description for your image');
+        return;
+      }
+
+      const size = document.getElementById('size').value;
+      const quality = document.getElementById('quality').value;
+      const style = document.getElementById('style').value;
+
+      // Show loader
+      generateBtn.disabled = true;
+      placeholder.style.display = 'none';
+      resultContainer.classList.remove('show');
+      loader.classList.add('show');
+
+      try {
+        const response = await fetch('http://localhost:3003/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, size, quality, style })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          displayImage(data);
+          loadHistory();
+        } else {
+          alert('Error: ' + data.error);
+          placeholder.style.display = 'block';
+        }
+      } catch (error) {
+        alert('Failed to generate image: ' + error.message);
+        placeholder.style.display = 'block';
+      } finally {
+        generateBtn.disabled = false;
+        loader.classList.remove('show');
+      }
+    }
+
+    function displayImage(data) {
+      document.getElementById('generatedImage').src = data.url;
+      document.getElementById('originalPrompt').textContent = data.originalPrompt;
+      document.getElementById('revisedPrompt').textContent = data.revisedPrompt;
+      document.getElementById('imageSize').textContent = data.size;
+      document.getElementById('downloadBtn').href = data.url;
+
+      resultContainer.classList.add('show');
+    }
+
+    async function loadHistory() {
+      try {
+        const response = await fetch('http://localhost:3003/api/history');
+        const history = await response.json();
+
+        historyGrid.innerHTML = history.slice(0, 12).map(item => `
+          <div class="history-item" onclick='displayImage(${JSON.stringify(item)})'>
+            <img src="${item.url}" alt="${item.originalPrompt}">
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Failed to load history:', error);
+      }
+    }
+
+    // Load history on page load
+    loadHistory();
+
+    // Enable Enter key in textarea
+    document.getElementById('prompt').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && e.ctrlKey) {
+        generateImage();
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+### How It Works
+
+1. **User Input** - Collects prompt, size, quality, and style preferences
+2. **DALL-E 3 API** - Sends request to OpenAI's image generation endpoint
+3. **Image Generation** - DALL-E 3 creates image (10-30 seconds)
+4. **Revised Prompt** - API returns enhanced version of prompt
+5. **Display & Download** - Shows image with download option
+6. **History** - Stores recent generations for quick access
+
+### Running the Tool
+
+```bash
+node server.js
+# Visit http://localhost:3003
+```
+
+---
+
+## Tool 5: AI Study Buddy
+
+An interactive CLI learning assistant that helps you master any topic.
+
+### Project Setup
+
+```bash
+mkdir ai-study-buddy
+cd ai-study-buddy
+npm init -y
+npm install openai dotenv inquirer@8.2.5 chalk cli-table3
+```
+
+### Environment File
+
+```bash
+# .env
+OPENAI_API_KEY=your_api_key_here
+```
+
+### Complete Application (index.js)
+
+```javascript
+#!/usr/bin/env node
+
+const OpenAI = require('openai');
+const inquirer = require('inquirer');
+const chalk = require('chalk');
+const Table = require('cli-table3');
+require('dotenv').config();
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Store conversation history
+let conversationHistory = [];
+let currentTopic = '';
+let studySession = {
+  questionsAsked: 0,
+  questionsAnswered: 0,
+  startTime: null
+};
+
+async function chat(userMessage, systemContext = '') {
+  const messages = [
+    {
+      role: 'system',
+      content: systemContext || `You are a helpful study buddy teaching about ${currentTopic}. Be encouraging, clear, and educational.`
+    },
+    ...conversationHistory,
+    { role: 'user', content: userMessage }
+  ];
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: messages,
+    temperature: 0.7,
+  });
+
+  const response = completion.choices[0].message.content;
+
+  conversationHistory.push({ role: 'user', content: userMessage });
+  conversationHistory.push({ role: 'assistant', content: response });
+
+  return response;
+}
+
+async function explainTopic() {
+  console.log(chalk.yellow('\nFetching explanation...\n'));
+
+  const explanation = await chat(
+    `Explain ${currentTopic} in a clear, beginner-friendly way. Include:
+1. A simple definition
+2. Why it's important
+3. A real-world analogy
+4. Key concepts to understand`
+  );
+
+  console.log(chalk.cyan('━'.repeat(60)));
+  console.log(explanation);
+  console.log(chalk.cyan('━'.repeat(60)));
+}
+
+async function generateQuiz() {
+  console.log(chalk.yellow('\nGenerating quiz...\n'));
+
+  const quiz = await chat(
+    `Create a 3-question multiple choice quiz about ${currentTopic}.
+Format as JSON array with objects containing: question, options (array of 4 choices), correctAnswer (0-3 index).
+Return ONLY the JSON array, no other text.`,
+    'You are a quiz generator. Return only valid JSON.'
+  );
+
+  try {
+    const questions = JSON.parse(quiz);
+    let score = 0;
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      console.log(chalk.bold(`\nQuestion ${i + 1}: ${q.question}\n`));
+
+      const { answer } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'answer',
+          message: 'Your answer:',
+          choices: q.options.map((opt, idx) => ({
+            name: opt,
+            value: idx
+          }))
+        }
+      ]);
+
+      studySession.questionsAsked++;
+
+      if (answer === q.correctAnswer) {
+        console.log(chalk.green('✓ Correct!\n'));
+        score++;
+        studySession.questionsAnswered++;
+      } else {
+        console.log(chalk.red(`✗ Incorrect. The correct answer was: ${q.options[q.correctAnswer]}\n`));
+      }
+    }
+
+    console.log(chalk.bold(`\nQuiz Complete! Score: ${score}/${questions.length}`));
+
+    if (score === questions.length) {
+      console.log(chalk.green('Perfect score! You mastered this topic! 🎉'));
+    } else if (score >= questions.length / 2) {
+      console.log(chalk.yellow('Good effort! Review the material and try again.'));
+    } else {
+      console.log(chalk.red('Need more practice. Let\'s review the concepts!'));
+    }
+
+  } catch (error) {
+    console.error(chalk.red('Error generating quiz. Please try again.'));
+  }
+}
+
+async function askQuestion() {
+  const { question } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'question',
+      message: 'What would you like to know?',
+      validate: input => input.trim() !== '' || 'Please enter a question'
+    }
+  ]);
+
+  console.log(chalk.yellow('\nThinking...\n'));
+
+  const answer = await chat(question);
+
+  console.log(chalk.cyan('━'.repeat(60)));
+  console.log(answer);
+  console.log(chalk.cyan('━'.repeat(60)));
+}
+
+async function getStudyPlan() {
+  console.log(chalk.yellow('\nCreating personalized study plan...\n'));
+
+  const plan = await chat(
+    `Create a 7-day study plan for learning ${currentTopic}.
+For each day, specify:
+- Day number
+- Main topic/focus
+- Specific activities (2-3)
+- Estimated time
+
+Format as a clear, structured plan.`
+  );
+
+  console.log(chalk.cyan('━'.repeat(60)));
+  console.log(plan);
+  console.log(chalk.cyan('━'.repeat(60)));
+}
+
+async function showProgress() {
+  const duration = studySession.startTime
+    ? Math.round((Date.now() - studySession.startTime) / 60000)
+    : 0;
+
+  const table = new Table({
+    head: ['Metric', 'Value'],
+    colWidths: [30, 20]
+  });
+
+  table.push(
+    ['Current Topic', currentTopic],
+    ['Study Duration (minutes)', duration],
+    ['Questions Asked', studySession.questionsAsked],
+    ['Questions Answered Correctly', studySession.questionsAnswered],
+    ['Success Rate', studySession.questionsAsked > 0
+      ? `${Math.round(studySession.questionsAnswered / studySession.questionsAsked * 100)}%`
+      : 'N/A'
+    ]
+  );
+
+  console.log(chalk.bold('\n📊 Your Study Session Stats\n'));
+  console.log(table.toString());
+}
+
+async function studyMenu() {
+  const { action } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'action',
+      message: `What would you like to do with "${currentTopic}"?`,
+      choices: [
+        { name: '📖 Explain this topic', value: 'explain' },
+        { name: '❓ Ask a question', value: 'ask' },
+        { name: '📝 Take a quiz', value: 'quiz' },
+        { name: '📅 Get a study plan', value: 'plan' },
+        { name: '📊 Show my progress', value: 'progress' },
+        { name: '🔄 Change topic', value: 'change' },
+        { name: '👋 Exit', value: 'exit' }
+      ]
+    }
+  ]);
+
+  switch (action) {
+    case 'explain':
+      await explainTopic();
+      break;
+    case 'ask':
+      await askQuestion();
+      break;
+    case 'quiz':
+      await generateQuiz();
+      break;
+    case 'plan':
+      await getStudyPlan();
+      break;
+    case 'progress':
+      await showProgress();
+      break;
+    case 'change':
+      return await main();
+    case 'exit':
+      console.log(chalk.green('\n👋 Happy studying! See you next time!\n'));
+      await showProgress();
+      process.exit(0);
+  }
+
+  // Continue the study session
+  await studyMenu();
+}
+
+async function main() {
+  console.log(chalk.bold.blue('\n📚 AI Study Buddy\n'));
+  console.log('Your personal AI tutor for any subject!\n');
+
+  const { topic } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'topic',
+      message: 'What would you like to learn about?',
+      validate: input => input.trim() !== '' || 'Please enter a topic'
+    }
+  ]);
+
+  currentTopic = topic;
+  conversationHistory = [];
+
+  if (!studySession.startTime) {
+    studySession.startTime = Date.now();
+  }
+
+  console.log(chalk.green(`\n✓ Great! Let's learn about ${currentTopic}\n`));
+
+  await studyMenu();
+}
+
+// Error handling
+process.on('unhandledRejection', (error) => {
+  console.error(chalk.red('\nAn error occurred:'), error.message);
+  process.exit(1);
+});
+
+// Run the application
+main().catch(console.error);
+```
+
+### Package.json
+
+```json
+{
+  "name": "ai-study-buddy",
+  "version": "1.0.0",
+  "description": "Interactive AI-powered study assistant",
+  "main": "index.js",
+  "bin": {
+    "study-buddy": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["education", "ai", "cli", "learning"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.3",
+    "dotenv": "^16.0.3",
+    "inquirer": "^8.2.5",
+    "openai": "^4.20.1"
+  }
+}
+```
+
+### How It Works
+
+1. **Topic Selection** - User chooses what to learn
+2. **Interactive Menu** - Multiple study modes available
+3. **Conversation Memory** - Maintains context throughout session
+4. **Explain Mode** - Comprehensive topic explanations with analogies
+5. **Q&A Mode** - Ask specific questions, get detailed answers
+6. **Quiz Generation** - Dynamic multiple-choice quizzes
+7. **Study Plans** - 7-day structured learning roadmaps
+8. **Progress Tracking** - Statistics on study session
+
+### Running the Tool
+
+```bash
+npm start
+# Or install globally: npm link
+# Then run: study-buddy
+```
+
+<Callout type="tip">
+The Study Buddy uses conversation history to provide contextual answers. The more you interact, the more personalized the experience becomes!
+</Callout>
+
+---
+
+<Callout type="info">
+**Vector Database Definition:** A specialized database designed to store and search high-dimensional vectors (embeddings) efficiently. Unlike traditional databases that match exact values, vector databases find similar items using mathematical distance metrics, making them essential for AI-powered search.
+</Callout>
+
+## Key Concepts Recap
+
+### RAG (Retrieval Augmented Generation)
+- Combines document retrieval with AI generation
+- Uses embeddings for semantic search
+- More accurate than pure generation
+- Used in Document Q&A tool
+
+### Embeddings
+- Vector representations of text
+- Enable semantic similarity search
+- Created using models like Ada-002
+- Essential for RAG systems
+
+### Streaming vs. Non-Streaming
+- Streaming shows results as they're generated
+- Non-streaming waits for complete response
+- Trade-off between UX and simplicity
+- Our tools use non-streaming for simplicity
+
+### Error Handling
+- Always validate user input
+- Provide clear error messages
+- Handle API failures gracefully
+- Use try-catch blocks consistently
+
+<Callout type="warning">
+Production Tip: Add rate limiting, user authentication, and proper error logging before deploying these tools to production!
+</Callout>
+
+---
+
+## Deployment Checklist
+
+Before deploying any of these tools:
+
+1. **Environment Variables**
+   - Never commit .env files
+   - Use secure storage (AWS Secrets Manager, etc.)
+   - Rotate API keys regularly
+
+2. **Security**
+   - Add rate limiting
+   - Implement authentication
+   - Sanitize user inputs
+   - Use HTTPS only
+
+3. **Monitoring**
+   - Log all API calls
+   - Track error rates
+   - Monitor costs
+   - Set up alerts
+
+4. **Performance**
+   - Implement caching
+   - Optimize image sizes
+   - Use CDN for static files
+   - Consider serverless architecture
+
+5. **Cost Management**
+   - Set spending limits
+   - Monitor token usage
+   - Implement usage quotas
+   - Choose appropriate models
+
+---
+
+## Next Steps
+
+Now that you've built 5 production-ready AI tools, you can:
+
+1. **Extend the Tools**
+   - Add more features
+   - Improve UI/UX
+   - Add more AI models
+   - Integrate with other APIs
+
+2. **Combine Tools**
+   - Create a unified dashboard
+   - Share authentication
+   - Build a tool suite
+   - Add cross-tool features
+
+3. **Deploy to Production**
+   - Choose hosting platform
+   - Set up CI/CD
+   - Configure monitoring
+   - Launch to users
+
+4. **Build Your Own**
+   - Use these as templates
+   - Experiment with new ideas
+   - Solve real problems
+   - Share with the community
+
+---
+
+## Quiz
+
+Test your understanding of building production AI tools!
+
+<Quiz
+  questions={[
+    {
+      question: "In the Document Q&A system, what is the purpose of creating embeddings for text chunks?",
+      options: [
+        "To compress the text and save storage space",
+        "To enable semantic similarity search for relevant content",
+        "To encrypt the document for security",
+        "To translate the text to different languages"
+      ],
+      correctAnswer: 1,
+      explanation: "Embeddings convert text into vector representations that capture semantic meaning, allowing us to find relevant chunks by calculating similarity between the question embedding and chunk embeddings."
+    },
+    {
+      question: "Why does the Code Explainer tool ask GPT-4 to return JSON instead of plain text?",
+      options: [
+        "JSON is faster to generate than plain text",
+        "JSON uses fewer tokens and costs less",
+        "Structured JSON output is easier to parse and display in organized sections",
+        "GPT-4 only works with JSON format"
+      ],
+      correctAnswer: 2,
+      explanation: "Requesting JSON output allows us to get structured data (summary, line-by-line explanations, improvements, bugs) that can be easily parsed and displayed in different UI sections, making the interface more organized and user-friendly."
+    },
+    {
+      question: "What is the main advantage of maintaining conversation history in the Study Buddy tool?",
+      options: [
+        "It reduces API costs by reusing old responses",
+        "It allows the AI to provide contextual answers based on previous interactions",
+        "It makes the application run faster",
+        "It's required by OpenAI's API"
+      ],
+      correctAnswer: 1,
+      explanation: "Maintaining conversation history enables the AI to understand context from previous questions and answers, providing more relevant and personalized responses throughout the study session."
+    },
+    {
+      question: "In the Image Generator, why does DALL-E 3 return a 'revised prompt' along with the image?",
+      options: [
+        "To show how the AI interpreted and enhanced the original prompt",
+        "It's an error message that needs to be fixed",
+        "To suggest improvements for future prompts",
+        "To provide an alternative description of the image"
+      ],
+      correctAnswer: 0,
+      explanation: "DALL-E 3 often enhances and clarifies user prompts to generate better images. The revised prompt shows how the AI interpreted the request and what specific details it added to create the image, which helps users understand how to write better prompts."
+    }
+  ]}
+/>
+
+---
+
+## Summary
+
+Congratulations! You've built 5 complete, production-ready AI tools:
+
+1. **Code Explainer** - Analyzes code with detailed explanations
+2. **Email Writer** - Generates professional emails in any tone
+3. **Document Q&A** - RAG system for querying documents
+4. **Image Generator** - Beautiful DALL-E 3 interface
+5. **Study Buddy** - Interactive learning assistant
+
+These tools demonstrate real-world AI applications and can be deployed immediately. You now have the skills to build sophisticated AI-powered applications!

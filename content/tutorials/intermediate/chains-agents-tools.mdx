@@ -1,0 +1,695 @@
+---
+title: "Chains, Agents, and Tools"
+description: "Master advanced LangChain patterns for building intelligent agents with tool integration"
+duration: "25 min"
+difficulty: "intermediate"
+order: 27
+---
+
+# Chains, Agents, and Tools
+
+Now that you understand LangChain basics, let's explore how to build more sophisticated applications using chains, agents, and tools. These concepts enable your LLMs to perform complex multi-step reasoning and interact with external systems.
+
+## Understanding Chain Types
+
+Chains are sequences of operations that process inputs and produce outputs. LangChain provides several chain types for different use cases.
+
+### LLMChain: The Foundation
+
+LLMChain is the simplest chain type, combining a prompt template with an LLM.
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.output_parser import StrOutputParser
+
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
+
+# Create a product description chain
+prompt = ChatPromptTemplate.from_template(
+    "Create a compelling product description for: {product_name}\n"
+    "Target audience: {audience}\n"
+    "Key features: {features}"
+)
+
+chain = prompt | llm | StrOutputParser()
+
+result = chain.invoke({
+    "product_name": "SmartWatch Pro",
+    "audience": "fitness enthusiasts",
+    "features": "heart rate monitoring, GPS tracking, 7-day battery life"
+})
+
+print(result)
+```
+
+### SequentialChain: Multi-Step Processing
+
+SequentialChains connect multiple chains where the output of one becomes the input to the next.
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.output_parser import StrOutputParser
+
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+# Step 1: Generate a story outline
+outline_prompt = ChatPromptTemplate.from_template(
+    "Create a 3-sentence story outline about: {topic}"
+)
+outline_chain = outline_prompt | llm | StrOutputParser()
+
+# Step 2: Expand the outline into a full story
+story_prompt = ChatPromptTemplate.from_template(
+    "Expand this outline into a short story (200 words):\n\n{outline}"
+)
+story_chain = story_prompt | llm | StrOutputParser()
+
+# Step 3: Generate a title
+title_prompt = ChatPromptTemplate.from_template(
+    "Create a catchy title for this story:\n\n{story}"
+)
+title_chain = title_prompt | llm | StrOutputParser()
+
+# Combine into a sequential workflow
+def create_story(topic):
+    outline = outline_chain.invoke({"topic": topic})
+    print(f"Outline:\n{outline}\n")
+
+    story = story_chain.invoke({"outline": outline})
+    print(f"Story:\n{story}\n")
+
+    title = title_chain.invoke({"story": story})
+    print(f"Title: {title}")
+
+    return {"title": title, "story": story, "outline": outline}
+
+# Run the sequential chain
+result = create_story("a robot learning to paint")
+```
+
+**JavaScript Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+
+const llm = new ChatOpenAI({ modelName: "gpt-3.5-turbo" });
+
+// Step 1: Generate a story outline
+const outlinePrompt = ChatPromptTemplate.fromTemplate(
+  "Create a 3-sentence story outline about: {topic}"
+);
+const outlineChain = outlinePrompt.pipe(llm).pipe(new StringOutputParser());
+
+// Step 2: Expand the outline into a full story
+const storyPrompt = ChatPromptTemplate.fromTemplate(
+  "Expand this outline into a short story (200 words):\n\n{outline}"
+);
+const storyChain = storyPrompt.pipe(llm).pipe(new StringOutputParser());
+
+// Step 3: Generate a title
+const titlePrompt = ChatPromptTemplate.fromTemplate(
+  "Create a catchy title for this story:\n\n{story}"
+);
+const titleChain = titlePrompt.pipe(llm).pipe(new StringOutputParser());
+
+// Combine into a sequential workflow
+async function createStory(topic) {
+  const outline = await outlineChain.invoke({ topic });
+  console.log(`Outline:\n${outline}\n`);
+
+  const story = await storyChain.invoke({ outline });
+  console.log(`Story:\n${story}\n`);
+
+  const title = await titleChain.invoke({ story });
+  console.log(`Title: ${title}`);
+
+  return { title, story, outline };
+}
+
+// Run the sequential chain
+const result = await createStory("a robot learning to paint");
+```
+
+<Callout type="tip">
+Sequential chains are powerful for breaking down complex tasks into manageable steps. Each step can have its own specialized prompt and temperature setting.
+</Callout>
+
+## Agents and the ReAct Pattern
+
+Agents are LLMs that can decide which actions to take, execute them, observe results, and repeat until a task is complete. They use the **ReAct** (Reasoning + Acting) pattern.
+
+<Callout type="info">
+**Agent Definition:** An LLM-powered system that autonomously decides which tools to use and actions to take to accomplish a task, iterating through a cycle of reasoning, acting, and observing until the goal is achieved.
+</Callout>
+
+### The ReAct Pattern
+
+ReAct alternates between:
+1. **Thought**: The LLM reasons about what to do next
+2. **Action**: The LLM calls a tool or function
+3. **Observation**: The LLM receives the result
+4. **Repeat**: Continue until the task is solved
+
+<Callout type="info">
+**ReAct Pattern Definition:** A prompting technique where the LLM alternates between reasoning about what to do (Thought) and taking actions with tools (Act), creating a loop of thinking and doing until the task is completed.
+</Callout>
+
+<Callout type="info">
+**ReAct Flow Example:**
+- Thought: "I need to find the current temperature in Paris"
+- Action: Call weather_api("Paris")
+- Observation: "Temperature: 18°C, Sunny"
+- Thought: "I have the information needed"
+- Final Answer: "The current temperature in Paris is 18°C and it's sunny."
+</Callout>
+
+### Building Your First Agent
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain.tools import Tool
+from langchain import hub
+import requests
+
+# Define custom tools
+<Callout type="info">
+**Tool Definition:** A function that extends an agent's capabilities by performing specific actions like API calls, database queries, or calculations. Tools are described to the LLM, which decides when and how to use them.
+</Callout>
+
+def get_weather(location: str) -> str:
+    """Get the current weather for a location"""
+    # Simulated API call
+    weather_data = {
+        "Paris": "18°C, Sunny",
+        "London": "12°C, Rainy",
+        "Tokyo": "24°C, Cloudy"
+    }
+    return weather_data.get(location, "Weather data not available")
+
+def calculate(expression: str) -> str:
+    """Evaluate a mathematical expression"""
+    try:
+        result = eval(expression)
+        return str(result)
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def search_wikipedia(query: str) -> str:
+    """Search Wikipedia for information"""
+    # Simplified Wikipedia search
+    return f"Wikipedia summary for '{query}': [Simulated content about {query}]"
+
+# Create tool objects
+tools = [
+    Tool(
+        name="Weather",
+        func=get_weather,
+        description="Useful for getting the current weather in a location. Input should be a city name."
+    ),
+    Tool(
+        name="Calculator",
+        func=calculate,
+        description="Useful for mathematical calculations. Input should be a valid Python expression."
+    ),
+    Tool(
+        name="Wikipedia",
+        func=search_wikipedia,
+        description="Useful for looking up factual information. Input should be a search query."
+    )
+]
+
+# Initialize the LLM
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+
+# Get the ReAct prompt template
+prompt = hub.pull("hwchase17/react")
+
+# Create the agent
+agent = create_react_agent(llm, tools, prompt)
+
+<Callout type="info">
+**AgentExecutor Definition:** A runtime component that manages the agent's execution loop, handling tool calls, error recovery, iteration limits, and the flow between thought, action, and observation steps.
+</Callout>
+
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    handle_parsing_errors=True
+)
+
+# Run the agent
+if __name__ == "__main__":
+    # Example 1: Simple weather query
+    result = agent_executor.invoke({
+        "input": "What's the weather like in Paris?"
+    })
+    print(f"\nFinal Answer: {result['output']}\n")
+
+    # Example 2: Multi-step reasoning
+    result = agent_executor.invoke({
+        "input": "What's the weather in London? If it's below 15°C, calculate 15 - current_temperature."
+    })
+    print(f"\nFinal Answer: {result['output']}\n")
+```
+
+**JavaScript Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import { AgentExecutor, createReactAgent } from "langchain/agents";
+import { pull } from "langchain/hub";
+import { DynamicTool } from "@langchain/core/tools";
+
+// Define custom tools
+const weatherTool = new DynamicTool({
+  name: "Weather",
+  description: "Useful for getting the current weather in a location. Input should be a city name.",
+  func: async (location) => {
+    const weatherData = {
+      "Paris": "18°C, Sunny",
+      "London": "12°C, Rainy",
+      "Tokyo": "24°C, Cloudy"
+    };
+    return weatherData[location] || "Weather data not available";
+  }
+});
+
+const calculatorTool = new DynamicTool({
+  name: "Calculator",
+  description: "Useful for mathematical calculations. Input should be a valid mathematical expression.",
+  func: async (expression) => {
+    try {
+      const result = eval(expression);
+      return String(result);
+    } catch (e) {
+      return `Error: ${e.message}`;
+    }
+  }
+});
+
+const wikipediaTool = new DynamicTool({
+  name: "Wikipedia",
+  description: "Useful for looking up factual information. Input should be a search query.",
+  func: async (query) => {
+    return `Wikipedia summary for '${query}': [Simulated content about ${query}]`;
+  }
+});
+
+const tools = [weatherTool, calculatorTool, wikipediaTool];
+
+// Initialize the LLM
+const llm = new ChatOpenAI({ modelName: "gpt-3.5-turbo", temperature: 0 });
+
+// Get the ReAct prompt template
+const prompt = await pull("hwchase17/react");
+
+// Create the agent
+const agent = await createReactAgent({
+  llm,
+  tools,
+  prompt
+});
+
+const agentExecutor = new AgentExecutor({
+  agent,
+  tools,
+  verbose: true,
+  handleParsingErrors: true
+});
+
+// Run the agent
+async function main() {
+  // Example 1: Simple weather query
+  const result1 = await agentExecutor.invoke({
+    input: "What's the weather like in Paris?"
+  });
+  console.log(`\nFinal Answer: ${result1.output}\n`);
+
+  // Example 2: Multi-step reasoning
+  const result2 = await agentExecutor.invoke({
+    input: "What's the weather in London? If it's below 15°C, calculate 15 - current_temperature."
+  });
+  console.log(`\nFinal Answer: ${result2.output}\n`);
+}
+
+main().catch(console.error);
+```
+
+<Callout type="warning">
+When using `eval()` in production code, always validate and sanitize inputs to prevent code injection attacks. Consider using safer alternatives like `math.js` or dedicated calculation libraries.
+</Callout>
+
+## Advanced Tool Integration
+
+Let's build a more practical agent that integrates with real APIs.
+
+**Python Complete Example - News Research Agent:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain.tools import Tool
+from langchain import hub
+import requests
+from datetime import datetime
+
+def search_news(query: str) -> str:
+    """Search for recent news articles"""
+    # Using a free news API (example with NewsAPI)
+    # In production, use: requests.get(f"https://newsapi.org/v2/everything?q={query}&apiKey=YOUR_KEY")
+
+    # Simulated response
+    articles = [
+        {"title": f"Breaking: {query} makes headlines", "source": "Tech News"},
+        {"title": f"Analysis: The impact of {query}", "source": "Business Daily"},
+        {"title": f"Expert opinion on {query}", "source": "Science Weekly"}
+    ]
+
+    result = f"Top news for '{query}':\n"
+    for i, article in enumerate(articles, 1):
+        result += f"{i}. {article['title']} - {article['source']}\n"
+
+    return result
+
+def get_stock_price(symbol: str) -> str:
+    """Get current stock price"""
+    # Simulated stock data
+    # In production, use a real API like Alpha Vantage or Yahoo Finance
+    stocks = {
+        "AAPL": "$178.50 (+2.3%)",
+        "GOOGL": "$142.20 (+1.1%)",
+        "MSFT": "$384.75 (+0.8%)"
+    }
+    return f"{symbol}: {stocks.get(symbol.upper(), 'Stock not found')}"
+
+def summarize_text(text: str) -> str:
+    """Create a summary of text"""
+    # In production, this could call another LLM or use extractive summarization
+    words = text.split()
+    if len(words) <= 50:
+        return text
+    return " ".join(words[:50]) + "... [truncated]"
+
+def get_current_date() -> str:
+    """Get the current date and time"""
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# Create tools
+tools = [
+    Tool(
+        name="SearchNews",
+        func=search_news,
+        description="Search for recent news articles. Input should be a search query or topic."
+    ),
+    Tool(
+        name="GetStockPrice",
+        func=get_stock_price,
+        description="Get the current stock price for a company. Input should be a stock ticker symbol like AAPL, GOOGL, MSFT."
+    ),
+    Tool(
+        name="SummarizeText",
+        func=summarize_text,
+        description="Summarize a long piece of text. Input should be the text to summarize."
+    ),
+    Tool(
+        name="GetDate",
+        func=get_current_date,
+        description="Get the current date and time. No input required."
+    )
+]
+
+# Initialize agent
+llm = ChatOpenAI(model="gpt-4", temperature=0)
+prompt = hub.pull("hwchase17/react")
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=5,
+    handle_parsing_errors=True
+)
+
+# Research assistant function
+def research_assistant(query: str):
+    """Main research assistant function"""
+    print(f"\n{'='*60}")
+    print(f"Research Query: {query}")
+    print(f"{'='*60}\n")
+
+    result = agent_executor.invoke({"input": query})
+
+    print(f"\n{'='*60}")
+    print(f"Final Report:")
+    print(f"{'='*60}")
+    print(result['output'])
+
+    return result
+
+# Example usage
+if __name__ == "__main__":
+    # Complex multi-tool query
+    research_assistant(
+        "Find news about artificial intelligence, get the stock price of major tech companies, "
+        "and tell me what date it is today."
+    )
+
+    # Investment research query
+    research_assistant(
+        "What's the current price of Apple stock? Also search for recent news about Apple."
+    )
+```
+
+<Callout type="tip">
+**Agent Best Practices:**
+1. Give tools clear, descriptive names and descriptions
+2. Keep tool outputs concise and structured
+3. Set `max_iterations` to prevent infinite loops
+4. Use `verbose=True` during development to see the reasoning process
+5. Handle errors gracefully with `handle_parsing_errors=True`
+</Callout>
+
+## Tool Integration Patterns
+
+### 1. API Integration
+
+```python
+from langchain.tools import Tool
+import requests
+
+def call_api(endpoint: str) -> str:
+    """Generic API caller"""
+    try:
+        response = requests.get(f"https://api.example.com/{endpoint}")
+        return response.json()
+    except Exception as e:
+        return f"API Error: {str(e)}"
+
+api_tool = Tool(
+    name="APICall",
+    func=call_api,
+    description="Call an API endpoint. Input should be the endpoint path."
+)
+```
+
+### 2. Database Queries
+
+```python
+import sqlite3
+
+def query_database(query: str) -> str:
+    """Execute a database query"""
+    try:
+        conn = sqlite3.connect('example.db')
+        cursor = conn.cursor()
+        cursor.execute(query)
+        results = cursor.fetchall()
+        conn.close()
+        return str(results)
+    except Exception as e:
+        return f"Database Error: {str(e)}"
+
+db_tool = Tool(
+    name="DatabaseQuery",
+    func=query_database,
+    description="Execute a SQL query. Input should be a valid SQL SELECT statement."
+)
+```
+
+### 3. File Operations
+
+```python
+def read_file(filepath: str) -> str:
+    """Read a file's contents"""
+    try:
+        with open(filepath, 'r') as f:
+            content = f.read()
+        return content[:1000]  # Limit to first 1000 chars
+    except Exception as e:
+        return f"File Error: {str(e)}"
+
+file_tool = Tool(
+    name="ReadFile",
+    func=read_file,
+    description="Read the contents of a file. Input should be the file path."
+)
+```
+
+## Complete Agent Example with Multiple Tools
+
+**Python - Personal Assistant Agent:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain.tools import Tool
+from langchain import hub
+from datetime import datetime, timedelta
+
+# Tool 1: Calendar
+def check_calendar(date_str: str) -> str:
+    """Check calendar for a specific date"""
+    events = {
+        "today": ["9:00 AM - Team meeting", "2:00 PM - Client call"],
+        "tomorrow": ["10:00 AM - Project review", "4:00 PM - Weekly sync"]
+    }
+    return f"Events for {date_str}: " + ", ".join(events.get(date_str, ["No events scheduled"]))
+
+# Tool 2: Email
+def send_email(recipient: str) -> str:
+    """Simulate sending an email"""
+    return f"Email sent to {recipient}"
+
+# Tool 3: Reminders
+def set_reminder(task: str) -> str:
+    """Set a reminder"""
+    return f"Reminder set: {task}"
+
+# Tool 4: Weather
+def get_weather(location: str) -> str:
+    """Get weather forecast"""
+    weather = {"New York": "Sunny, 22°C", "London": "Rainy, 15°C"}
+    return weather.get(location, "Weather data unavailable")
+
+# Tool 5: Calculator
+def calculate(expression: str) -> str:
+    """Perform calculations"""
+    try:
+        return str(eval(expression))
+    except:
+        return "Invalid expression"
+
+# Create tools list
+tools = [
+    Tool(name="Calendar", func=check_calendar,
+         description="Check calendar events. Input: 'today' or 'tomorrow'"),
+    Tool(name="Email", func=send_email,
+         description="Send an email. Input: recipient email address"),
+    Tool(name="Reminder", func=set_reminder,
+         description="Set a reminder. Input: reminder text"),
+    Tool(name="Weather", func=get_weather,
+         description="Get weather forecast. Input: city name"),
+    Tool(name="Calculator", func=calculate,
+         description="Perform calculations. Input: mathematical expression")
+]
+
+# Create agent
+llm = ChatOpenAI(model="gpt-4", temperature=0)
+prompt = hub.pull("hwchase17/react")
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+# Example usage
+if __name__ == "__main__":
+    # Complex task requiring multiple tools
+    result = agent_executor.invoke({
+        "input": "What's on my calendar today? If I have a client call, check the weather in New York and send an email to client@example.com confirming the meeting."
+    })
+    print(f"\nResult: {result['output']}")
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You've Learned:**
+1. Sequential chains enable multi-step processing workflows
+2. Agents use the ReAct pattern to reason and take actions
+3. Tools extend LLM capabilities with external functions and APIs
+4. Proper tool descriptions help agents choose the right tool
+5. Error handling and iteration limits prevent agent failures
+</Callout>
+
+## Next Steps
+
+In the next lesson, we'll explore:
+- Memory systems for conversational agents
+- Different memory types (Buffer, Summary, Vector)
+- Building chatbots that remember context
+- Long-term conversation management
+
+---
+
+## Quiz
+
+Test your understanding of chains, agents, and tools:
+
+<Quiz
+  questions={[
+    {
+      question: "What is the ReAct pattern in LangChain agents?",
+      options: [
+        "A method for reacting to user input quickly",
+        "A pattern that alternates between Reasoning and Acting",
+        "A React.js integration for LangChain",
+        "A tool for creating reactive user interfaces"
+      ],
+      correctAnswer: 1,
+      explanation: "ReAct stands for Reasoning + Acting. It's a pattern where agents alternate between thinking about what to do (reasoning), taking actions using tools, observing results, and repeating until the task is complete."
+    },
+    {
+      question: "What is the primary purpose of tools in LangChain agents?",
+      options: [
+        "To make the agent run faster",
+        "To extend the agent's capabilities with external functions and APIs",
+        "To store conversation history",
+        "To format the agent's output"
+      ],
+      correctAnswer: 1,
+      explanation: "Tools allow agents to interact with external systems, APIs, databases, and functions, extending their capabilities beyond just text generation to perform real-world actions."
+    },
+    {
+      question: "In a sequential chain, how does data flow between steps?",
+      options: [
+        "All steps run in parallel and combine results at the end",
+        "Each step's output becomes the input to the next step",
+        "Steps are independent and don't share data",
+        "Only the first and last steps exchange data"
+      ],
+      correctAnswer: 1,
+      explanation: "Sequential chains process data in sequence, where each step's output becomes the input to the next step, creating a pipeline of transformations."
+    },
+    {
+      question: "Why is it important to set 'max_iterations' when creating an agent executor?",
+      options: [
+        "To improve performance by limiting processing time",
+        "To prevent infinite loops if the agent can't complete the task",
+        "To ensure the agent uses all available tools",
+        "To limit the number of tokens used"
+      ],
+      correctAnswer: 1,
+      explanation: "Setting max_iterations prevents agents from running indefinitely if they get stuck in a loop or can't figure out how to complete a task, providing a safety mechanism."
+    }
+  ]}
+/>

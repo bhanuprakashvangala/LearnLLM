@@ -1,0 +1,585 @@
+---
+title: "Memory Systems in LangChain"
+description: "Build conversational AI with persistent memory using LangChain's memory systems"
+duration: "18 min"
+difficulty: "intermediate"
+order: 28
+---
+
+# Memory Systems in LangChain
+
+Stateless LLMs don't remember previous interactions. Memory systems in LangChain solve this by maintaining conversation history and context, enabling natural multi-turn conversations and context-aware responses.
+
+<Callout type="info">
+**Memory System Definition:** A component that stores and manages conversation history, allowing LLMs to maintain context across multiple interactions and provide coherent, contextually aware responses in multi-turn conversations.
+</Callout>
+
+## Why Memory Matters
+
+Without memory, every LLM interaction is isolated:
+
+```python
+# Without memory - each call is independent
+llm.invoke("My name is Alice")
+# Response: "Hello Alice!"
+
+llm.invoke("What's my name?")
+# Response: "I don't know your name."  ❌
+```
+
+With memory, the LLM remembers context:
+
+```python
+# With memory - maintains conversation history
+conversation.invoke("My name is Alice")
+# Response: "Hello Alice!"
+
+conversation.invoke("What's my name?")
+# Response: "Your name is Alice!"  ✅
+```
+
+## Types of Memory in LangChain
+
+LangChain provides several memory implementations, each suited for different use cases.
+
+<Callout type="info">
+**Memory Types:**
+1. **ConversationBufferMemory** - Stores complete conversation history
+2. **ConversationSummaryMemory** - Stores condensed summaries
+3. **ConversationBufferWindowMemory** - Keeps only last N messages
+4. **ConversationSummaryBufferMemory** - Hybrid approach
+5. **VectorStoreMemory** - Semantic search over past conversations
+</Callout>
+
+## ConversationBufferMemory
+
+The simplest memory type stores the entire conversation history.
+
+<Callout type="info">
+**ConversationBufferMemory Definition:** A memory implementation that stores the complete, unmodified conversation history including all user inputs and AI responses, providing full context but potentially exceeding token limits in long conversations.
+</Callout>
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
+
+# Initialize LLM
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
+
+# Create memory
+memory = ConversationBufferMemory()
+
+# Create conversation chain
+conversation = ConversationChain(
+    llm=llm,
+    memory=memory,
+    verbose=True  # Show the conversation history
+)
+
+# Have a conversation
+print(conversation.predict(input="Hi! I'm working on a Python project."))
+print(conversation.predict(input="Can you help me debug a function?"))
+print(conversation.predict(input="What was I just working on?"))
+
+# View memory contents
+print("\n--- Memory Contents ---")
+print(memory.load_memory_variables({}))
+```
+
+**JavaScript Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import { BufferMemory } from "langchain/memory";
+import { ConversationChain } from "langchain/chains";
+
+// Initialize LLM
+const llm = new ChatOpenAI({ modelName: "gpt-3.5-turbo", temperature: 0.7 });
+
+// Create memory
+const memory = new BufferMemory();
+
+// Create conversation chain
+const conversation = new ConversationChain({
+  llm: llm,
+  memory: memory,
+  verbose: true
+});
+
+// Have a conversation
+const response1 = await conversation.call({ input: "Hi! I'm working on a Python project." });
+console.log(response1.response);
+
+const response2 = await conversation.call({ input: "Can you help me debug a function?" });
+console.log(response2.response);
+
+const response3 = await conversation.call({ input: "What was I just working on?" });
+console.log(response3.response);
+
+// View memory contents
+const memoryContents = await memory.loadMemoryVariables({});
+console.log("\n--- Memory Contents ---");
+console.log(memoryContents);
+```
+
+<Callout type="warning">
+**Limitation:** ConversationBufferMemory stores everything, which can quickly exceed token limits in long conversations. For production applications with extended dialogues, consider other memory types.
+</Callout>
+
+## ConversationBufferWindowMemory
+
+This memory type keeps only the last K conversation turns, preventing token overflow.
+
+<Callout type="info">
+**ConversationBufferWindowMemory Definition:** A memory type that maintains a sliding window of the most recent K conversation exchanges, automatically discarding older messages to prevent exceeding token limits while preserving recent context.
+</Callout>
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.chains import ConversationChain
+
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+# Keep only last 2 conversation turns (4 messages: 2 human + 2 AI)
+memory = ConversationBufferWindowMemory(k=2)
+
+conversation = ConversationChain(
+    llm=llm,
+    memory=memory,
+    verbose=True
+)
+
+# Conversation exceeding window size
+conversation.predict(input="Hi, I'm Alice.")
+conversation.predict(input="I like pizza.")
+conversation.predict(input="I have a cat named Whiskers.")
+conversation.predict(input="What's my name?")  # Will remember
+conversation.predict(input="What food do I like?")  # Might not remember (outside window)
+
+print("\n--- Memory Window Contents ---")
+print(memory.load_memory_variables({}))
+```
+
+<Callout type="tip">
+Choose `k` based on your use case. For customer support, k=5-10 often works well. For quick Q&A, k=2-3 may suffice.
+</Callout>
+
+## ConversationSummaryMemory
+
+Instead of storing raw messages, this creates running summaries to save tokens.
+
+<Callout type="info">
+**ConversationSummaryMemory Definition:** A memory implementation that uses an LLM to create condensed summaries of conversation history, reducing token usage while preserving key information from extended dialogues.
+</Callout>
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationSummaryMemory
+from langchain.chains import ConversationChain
+
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+
+# Create summary memory
+memory = ConversationSummaryMemory(llm=llm)
+
+conversation = ConversationChain(
+    llm=llm,
+    memory=memory,
+    verbose=True
+)
+
+# Long conversation that will be summarized
+conversation.predict(input="Hi! I'm planning a trip to Japan next month.")
+conversation.predict(input="I want to visit Tokyo, Kyoto, and Osaka.")
+conversation.predict(input="I'm interested in traditional temples and modern technology.")
+conversation.predict(input="My budget is around $3000.")
+conversation.predict(input="What are your recommendations?")
+
+# View the summary
+print("\n--- Conversation Summary ---")
+print(memory.load_memory_variables({}))
+```
+
+**JavaScript Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import { ConversationSummaryMemory } from "langchain/memory";
+import { ConversationChain } from "langchain/chains";
+
+const llm = new ChatOpenAI({ modelName: "gpt-3.5-turbo", temperature: 0 });
+
+// Create summary memory
+const memory = new ConversationSummaryMemory({ llm });
+
+const conversation = new ConversationChain({
+  llm,
+  memory,
+  verbose: true
+});
+
+// Long conversation
+await conversation.call({ input: "Hi! I'm planning a trip to Japan next month." });
+await conversation.call({ input: "I want to visit Tokyo, Kyoto, and Osaka." });
+await conversation.call({ input: "I'm interested in traditional temples and modern technology." });
+await conversation.call({ input: "My budget is around $3000." });
+await conversation.call({ input: "What are your recommendations?" });
+
+// View the summary
+const summary = await memory.loadMemoryVariables({});
+console.log("\n--- Conversation Summary ---");
+console.log(summary);
+```
+
+<Callout type="tip">
+**Best for:** Long conversations where you need to maintain context efficiently without hitting token limits. The trade-off is additional LLM calls to create summaries.
+</Callout>
+
+## Vector Store Memory
+
+For semantic search over conversation history, use vector store memory. This finds relevant past interactions based on similarity.
+
+<Callout type="info">
+**Vector Store Memory Definition:** A memory system that stores conversation history as embeddings in a vector database, enabling semantic search to retrieve relevant past interactions based on meaning rather than recency.
+</Callout>
+
+**Python Example:**
+
+```python
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.memory import VectorStoreRetrieverMemory
+from langchain.vectorstores import FAISS
+from langchain.chains import ConversationChain
+
+# Initialize components
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+embeddings = OpenAIEmbeddings()
+
+# Create vector store
+vectorstore = FAISS.from_texts(
+    ["Initial placeholder"],
+    embedding=embeddings
+)
+
+# Create retriever
+retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+
+# Create vector store memory
+memory = VectorStoreRetrieverMemory(retriever=retriever)
+
+# Add some memories manually
+memory.save_context(
+    {"input": "My favorite color is blue"},
+    {"output": "That's nice! Blue is a calming color."}
+)
+memory.save_context(
+    {"input": "I work as a software engineer"},
+    {"output": "Software engineering is a great field!"}
+)
+memory.save_context(
+    {"input": "I enjoy hiking on weekends"},
+    {"output": "Hiking is wonderful exercise!"}
+)
+
+# Retrieve relevant memories
+print("--- Relevant Memories for 'What do I do for work?' ---")
+relevant = memory.load_memory_variables({"prompt": "What do I do for work?"})
+print(relevant)
+
+print("\n--- Relevant Memories for 'What color do I like?' ---")
+relevant = memory.load_memory_variables({"prompt": "What color do I like?"})
+print(relevant)
+```
+
+<Callout type="info">
+Vector store memory is powerful for long-term memory systems where you want to retrieve relevant past conversations based on semantic similarity, not just recency.
+</Callout>
+
+## Complete Chatbot with Memory
+
+Let's build a complete chatbot that combines memory with custom prompts.
+
+**Python Complete Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.chains import ConversationChain
+from langchain.prompts import PromptTemplate
+from datetime import datetime
+
+# Custom prompt template
+template = """You are a helpful AI assistant with a friendly personality.
+You remember details from the conversation and provide personalized responses.
+
+Current conversation:
+{history}
+Human: {input}
+AI:"""
+
+prompt = PromptTemplate(
+    input_variables=["history", "input"],
+    template=template
+)
+
+# Initialize LLM
+llm = ChatOpenAI(
+    model="gpt-3.5-turbo",
+    temperature=0.7
+)
+
+# Create memory (keep last 5 exchanges)
+memory = ConversationBufferWindowMemory(k=5)
+
+# Create conversation chain
+chatbot = ConversationChain(
+    llm=llm,
+    memory=memory,
+    prompt=prompt,
+    verbose=False
+)
+
+# Helper function for chatting
+def chat(message):
+    """Send a message and get a response"""
+    response = chatbot.predict(input=message)
+    return response
+
+# Interactive chatbot session
+if __name__ == "__main__":
+    print("Chatbot started! Type 'quit' to exit.\n")
+
+    while True:
+        user_input = input("You: ")
+
+        if user_input.lower() in ['quit', 'exit', 'bye']:
+            print("Chatbot: Goodbye! Have a great day!")
+            break
+
+        response = chat(user_input)
+        print(f"Chatbot: {response}\n")
+```
+
+**JavaScript Complete Example:**
+
+```javascript
+import { ChatOpenAI } from "@langchain/openai";
+import { BufferWindowMemory } from "langchain/memory";
+import { ConversationChain } from "langchain/chains";
+import { PromptTemplate } from "@langchain/core/prompts";
+import * as readline from "readline";
+
+// Custom prompt template
+const template = `You are a helpful AI assistant with a friendly personality.
+You remember details from the conversation and provide personalized responses.
+
+Current conversation:
+{history}
+Human: {input}
+AI:`;
+
+const prompt = PromptTemplate.fromTemplate(template);
+
+// Initialize LLM
+const llm = new ChatOpenAI({
+  modelName: "gpt-3.5-turbo",
+  temperature: 0.7
+});
+
+// Create memory (keep last 5 exchanges)
+const memory = new BufferWindowMemory({ k: 5 });
+
+// Create conversation chain
+const chatbot = new ConversationChain({
+  llm: llm,
+  memory: memory,
+  prompt: prompt,
+  verbose: false
+});
+
+// Helper function for chatting
+async function chat(message) {
+  const response = await chatbot.call({ input: message });
+  return response.response;
+}
+
+// Interactive chatbot session
+async function main() {
+  console.log("Chatbot started! Type 'quit' to exit.\n");
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  const askQuestion = () => {
+    rl.question("You: ", async (userInput) => {
+      if (['quit', 'exit', 'bye'].includes(userInput.toLowerCase())) {
+        console.log("Chatbot: Goodbye! Have a great day!");
+        rl.close();
+        return;
+      }
+
+      const response = await chat(userInput);
+      console.log(`Chatbot: ${response}\n`);
+      askQuestion();
+    });
+  };
+
+  askQuestion();
+}
+
+main().catch(console.error);
+```
+
+## Advanced Memory Pattern: Persistent Storage
+
+For production applications, you'll want to persist memory across sessions.
+
+**Python with Redis Example:**
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_message_histories import RedisChatMessageHistory
+from langchain.chains import ConversationChain
+
+# Create memory with Redis backend
+def create_chatbot_with_persistence(session_id):
+    # Redis stores conversation history persistently
+    message_history = RedisChatMessageHistory(
+        session_id=session_id,
+        url="redis://localhost:6379/0"
+    )
+
+    memory = ConversationBufferMemory(
+        chat_memory=message_history,
+        return_messages=True
+    )
+
+    llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+    chatbot = ConversationChain(
+        llm=llm,
+        memory=memory,
+        verbose=True
+    )
+
+    return chatbot
+
+# Usage: Each user gets their own session
+user1_chatbot = create_chatbot_with_persistence("user_123")
+user2_chatbot = create_chatbot_with_persistence("user_456")
+
+# Conversations are maintained separately
+user1_chatbot.predict(input="My name is Alice")
+user2_chatbot.predict(input="My name is Bob")
+
+# Later, even after restart...
+user1_chatbot.predict(input="What's my name?")  # "Alice"
+user2_chatbot.predict(input="What's my name?")  # "Bob"
+```
+
+## Memory Management Best Practices
+
+<Callout type="tip">
+**Best Practices:**
+1. **Choose the right memory type** based on conversation length and context needs
+2. **Set reasonable limits** - Use window memory or summaries for long conversations
+3. **Persist memory** for production applications using databases like Redis or PostgreSQL
+4. **Clear memory** when starting new topics or sessions
+5. **Monitor token usage** to avoid exceeding model limits
+6. **Use session IDs** to maintain separate conversations for different users
+</Callout>
+
+## Memory Comparison Table
+
+| Memory Type | Pros | Cons | Best For |
+|------------|------|------|----------|
+| Buffer | Simple, complete history | Token limit issues | Short conversations |
+| Window | Fixed token usage | Loses old context | Customer support chats |
+| Summary | Efficient for long chats | Extra LLM calls | Extended dialogues |
+| Vector Store | Semantic retrieval | Complex setup | Knowledge assistants |
+
+## Key Takeaways
+
+<Callout type="info">
+**What You've Learned:**
+1. Memory systems enable stateful conversations with LLMs
+2. Different memory types suit different use cases
+3. ConversationBufferMemory stores everything (simple but limited)
+4. ConversationSummaryMemory creates summaries (efficient for long chats)
+5. Vector store memory enables semantic search over past conversations
+6. Production systems need persistent storage with session management
+</Callout>
+
+## Next Steps
+
+In the next lesson, we'll build a complete LangChain application:
+- Design a question-answering system
+- Integrate memory and tools
+- Add error handling and logging
+- Deploy the application
+
+---
+
+## Quiz
+
+Test your understanding of memory systems in LangChain:
+
+<Quiz
+  questions={[
+    {
+      question: "What is the main limitation of ConversationBufferMemory?",
+      options: [
+        "It's too slow for real-time applications",
+        "It stores the entire conversation, which can exceed token limits",
+        "It doesn't support multiple languages",
+        "It can't be used with ChatGPT"
+      ],
+      correctAnswer: 1,
+      explanation: "ConversationBufferMemory stores the complete conversation history, which can quickly exceed the model's token limit in long conversations. This makes it unsuitable for extended dialogues without proper management."
+    },
+    {
+      question: "What does the 'k' parameter represent in ConversationBufferWindowMemory?",
+      options: [
+        "The number of tokens to store",
+        "The number of conversation turns (exchanges) to keep",
+        "The number of seconds before memory expires",
+        "The number of users that can access the memory"
+      ],
+      correctAnswer: 1,
+      explanation: "The 'k' parameter in ConversationBufferWindowMemory specifies how many conversation turns (human-AI exchanges) to keep in memory. For example, k=2 keeps only the last 2 exchanges (4 messages total: 2 human + 2 AI)."
+    },
+    {
+      question: "What is the main advantage of ConversationSummaryMemory?",
+      options: [
+        "It's faster than other memory types",
+        "It creates summaries to maintain context efficiently in long conversations",
+        "It doesn't require an LLM to operate",
+        "It stores more information than buffer memory"
+      ],
+      correctAnswer: 1,
+      explanation: "ConversationSummaryMemory creates condensed summaries of the conversation, allowing it to maintain context efficiently in long conversations without exceeding token limits. The trade-off is that it requires additional LLM calls to create summaries."
+    },
+    {
+      question: "When would you use Vector Store Memory over other memory types?",
+      options: [
+        "When you need the fastest possible responses",
+        "When you want to retrieve relevant past conversations based on semantic similarity",
+        "When you have a very short conversation",
+        "When you want the simplest implementation"
+      ],
+      correctAnswer: 1,
+      explanation: "Vector Store Memory is ideal when you want to retrieve relevant information from past conversations based on semantic similarity rather than just recency. It's particularly useful for knowledge assistants and long-term memory systems where context from earlier conversations might be relevant."
+    }
+  ]}
+/>

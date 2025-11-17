@@ -1,0 +1,928 @@
+---
+title: "Chunking Strategies"
+description: "Master text chunking for vector databases. Learn fixed-size, semantic, recursive, and sliding window chunking with practical implementations and best practices."
+author: "LearnLLM"
+publishedAt: "2025-01-15"
+lastUpdated: "2025-01-15"
+tags: ["Chunking", "Text Processing", "Vector Databases", "RAG", "Document Processing"]
+difficulty: "intermediate"
+duration: 15
+order: 38
+---
+
+# Chunking Strategies
+
+Chunking is the process of breaking documents into smaller pieces for embedding and retrieval. Good chunking is crucial for RAG performance - it's often the difference between mediocre and excellent results.
+
+<Callout type="info">
+**Chunking:** The process of splitting large documents into smaller, manageable pieces (chunks) before embedding. Each chunk is embedded separately, allowing for more precise retrieval of relevant information.
+</Callout>
+
+## Why Chunking Matters
+
+### The Problem
+
+```python
+# BAD: Embedding entire documents
+document = """
+[50 pages of technical documentation about Python, covering
+installation, syntax, libraries, best practices, deployment,
+testing, debugging, performance optimization, etc.]
+"""
+
+# Create one embedding for everything
+embedding = get_embedding(document)  # 😞 Information gets "averaged out"
+
+# When user asks: "How do I install Python?"
+# The embedding represents ALL topics equally
+# Result: Poor retrieval accuracy
+```
+
+### The Solution
+
+```python
+# GOOD: Chunk the document
+chunks = [
+    "Python Installation: Download from python.org...",     # Chunk 1
+    "Python Syntax Basics: Variables are created...",       # Chunk 2
+    "Python Libraries: pip is the package manager...",      # Chunk 3
+    # ... more focused chunks
+]
+
+# Create embeddings for each chunk
+embeddings = [get_embedding(chunk) for chunk in chunks]
+
+# When user asks: "How do I install Python?"
+# Only the installation chunk matches well
+# Result: Precise, relevant retrieval ✅
+```
+
+<Callout type="info">
+**Key Principle:** Each chunk should represent a single, coherent concept. This allows embeddings to capture specific meanings rather than averaging across multiple topics.
+</Callout>
+
+## Fixed-Size Chunking
+
+The simplest approach: split text into equal-sized pieces.
+
+### Character-Based Chunking
+
+```python
+def chunk_by_characters(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
+    """
+    Split text into fixed-size chunks by character count
+
+    Args:
+        text: Input text
+        chunk_size: Characters per chunk
+        overlap: Characters to overlap between chunks
+
+    Returns:
+        List of text chunks
+    """
+    chunks = []
+    start = 0
+
+    while start < len(text):
+        # Extract chunk
+        end = start + chunk_size
+        chunk = text[start:end]
+
+        chunks.append(chunk)
+
+        # Move to next chunk with overlap
+        start += chunk_size - overlap
+
+    return chunks
+
+# Example
+text = "A" * 5000  # Long text
+chunks = chunk_by_characters(text, chunk_size=1000, overlap=200)
+
+print(f"Total chunks: {len(chunks)}")
+print(f"Chunk 1 length: {len(chunks[0])}")
+print(f"Chunk 2 length: {len(chunks[1])}")
+# Output:
+# Total chunks: 5
+# Chunk 1 length: 1000
+# Chunk 2 length: 1000
+```
+
+### Token-Based Chunking (Better)
+
+<Callout type="info">
+**Token:** The basic unit of text that language models process. A token can be a word, part of a word, or punctuation. Token-based chunking ensures chunks respect model limits and produces more consistent embeddings.
+</Callout>
+
+```python
+import tiktoken
+
+def chunk_by_tokens(
+    text: str,
+    chunk_size: int = 500,
+    overlap: int = 100,
+    encoding_name: str = "cl100k_base"
+) -> list[str]:
+    """
+    Split text into fixed-size chunks by token count
+
+    Args:
+        text: Input text
+        chunk_size: Tokens per chunk
+        overlap: Tokens to overlap between chunks
+        encoding_name: Tokenizer encoding (cl100k_base for GPT-4)
+
+    Returns:
+        List of text chunks
+    """
+    encoding = tiktoken.get_encoding(encoding_name)
+
+    # Encode text to tokens
+    tokens = encoding.encode(text)
+
+    chunks = []
+    start = 0
+
+    while start < len(tokens):
+        # Extract chunk of tokens
+        end = min(start + chunk_size, len(tokens))
+        chunk_tokens = tokens[start:end]
+
+        # Decode back to text
+        chunk = encoding.decode(chunk_tokens)
+        chunks.append(chunk)
+
+        # Move to next chunk with overlap
+        start += chunk_size - overlap
+
+    return chunks
+
+# Example
+text = """
+Machine learning is a subset of artificial intelligence that focuses on
+building systems that learn from data. Deep learning is a subset of machine
+learning that uses neural networks with multiple layers. Natural language
+processing applies machine learning to understand and generate human language.
+""" * 10  # Repeat for longer text
+
+chunks = chunk_by_tokens(text, chunk_size=100, overlap=20)
+
+print(f"Total chunks: {len(chunks)}")
+for i, chunk in enumerate(chunks[:3]):
+    tokens = len(tiktoken.get_encoding("cl100k_base").encode(chunk))
+    print(f"\nChunk {i + 1} ({tokens} tokens):")
+    print(chunk[:100] + "...")
+```
+
+### Pros and Cons
+
+```python
+# ✅ Pros:
+# - Simple to implement
+# - Predictable chunk sizes
+# - Consistent embedding dimensions
+# - Fast processing
+
+# ❌ Cons:
+# - May split in middle of sentences
+# - Ignores document structure
+# - No semantic understanding
+# - Can break context
+
+# Example of problem:
+text = "Python was created by Guido van Rossum in 1991. He designed it to be easy to read."
+chunks = chunk_by_characters(text, chunk_size=50, overlap=0)
+
+print("Chunk 1:", chunks[0])  # "Python was created by Guido van Rossum in 199"
+print("Chunk 2:", chunks[1])  # "1. He designed it to be easy to read."
+# Chunk 1 ends mid-sentence, Chunk 2 starts with orphaned "1"
+```
+
+<Callout type="warning">
+**Common Mistake:** Using chunk sizes that are too small (&lt;100 tokens) or too large (&gt;1000 tokens). Too small loses context; too large dilutes specificity. Sweet spot: 200-600 tokens.
+</Callout>
+
+## Semantic Chunking
+
+Split text based on meaning, not length.
+
+<Callout type="info">
+**Semantic Chunking:** A chunking strategy that splits documents based on meaning and topic changes rather than arbitrary size limits. Uses embeddings to detect semantic boundaries for more coherent chunks.
+</Callout>
+
+### Sentence-Based Chunking
+
+```python
+import re
+
+def chunk_by_sentences(
+    text: str,
+    max_sentences: int = 5,
+    overlap_sentences: int = 1
+) -> list[str]:
+    """
+    Split text into chunks of complete sentences
+
+    Args:
+        text: Input text
+        max_sentences: Maximum sentences per chunk
+        overlap_sentences: Sentences to overlap between chunks
+
+    Returns:
+        List of text chunks
+    """
+    # Split into sentences (simple regex)
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+
+    chunks = []
+    start = 0
+
+    while start < len(sentences):
+        # Extract chunk of sentences
+        end = min(start + max_sentences, len(sentences))
+        chunk = " ".join(sentences[start:end])
+
+        chunks.append(chunk)
+
+        # Move to next chunk with overlap
+        start += max_sentences - overlap_sentences
+
+    return chunks
+
+# Example
+text = """
+Python is a high-level programming language. It was created by Guido van Rossum.
+Python emphasizes code readability. The language provides constructs for clear programming.
+Python supports multiple programming paradigms. It includes object-oriented and functional programming.
+"""
+
+chunks = chunk_by_sentences(text, max_sentences=2, overlap_sentences=1)
+
+for i, chunk in enumerate(chunks):
+    print(f"Chunk {i + 1}: {chunk}\n")
+
+# Output:
+# Chunk 1: Python is a high-level programming language. It was created by Guido van Rossum.
+# Chunk 2: It was created by Guido van Rossum. Python emphasizes code readability.
+# Chunk 3: Python emphasizes code readability. The language provides constructs for clear programming.
+```
+
+### Paragraph-Based Chunking
+
+```python
+def chunk_by_paragraphs(
+    text: str,
+    max_paragraphs: int = 3,
+    overlap_paragraphs: int = 1
+) -> list[str]:
+    """
+    Split text into chunks by paragraphs
+
+    Args:
+        text: Input text
+        max_paragraphs: Maximum paragraphs per chunk
+        overlap_paragraphs: Paragraphs to overlap
+
+    Returns:
+        List of text chunks
+    """
+    # Split by double newline (paragraph separator)
+    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+
+    chunks = []
+    start = 0
+
+    while start < len(paragraphs):
+        end = min(start + max_paragraphs, len(paragraphs))
+        chunk = "\n\n".join(paragraphs[start:end])
+
+        chunks.append(chunk)
+
+        start += max_paragraphs - overlap_paragraphs
+
+    return chunks
+
+# Example
+text = """
+Python is a versatile programming language. It's used for web development,
+data science, automation, and more.
+
+The language was designed with readability in mind. Indentation is used to
+define code blocks, making code structure visually clear.
+
+Python has a large standard library. This "batteries included" philosophy
+means you can accomplish many tasks without external dependencies.
+"""
+
+chunks = chunk_by_paragraphs(text, max_paragraphs=2, overlap_paragraphs=1)
+
+for i, chunk in enumerate(chunks):
+    print(f"=== Chunk {i + 1} ===")
+    print(chunk)
+    print()
+```
+
+### Embedding-Based Semantic Chunking
+
+```python
+import numpy as np
+from openai import OpenAI
+
+client = OpenAI(api_key="your-api-key")
+
+def semantic_chunking(
+    text: str,
+    threshold: float = 0.75,
+    max_chunk_tokens: int = 500
+) -> list[str]:
+    """
+    Split text based on semantic similarity between sentences
+
+    Args:
+        text: Input text
+        threshold: Similarity threshold for splitting (0-1)
+        max_chunk_tokens: Maximum tokens per chunk
+
+    Returns:
+        List of semantically coherent chunks
+    """
+    import tiktoken
+
+    # Split into sentences
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+
+    # Get embeddings for each sentence
+    response = client.embeddings.create(
+        input=sentences,
+        model="text-embedding-3-small"
+    )
+    embeddings = [np.array(item.embedding) for item in response.data]
+
+    # Calculate similarities between consecutive sentences
+    def cosine_similarity(a, b):
+        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+    similarities = []
+    for i in range(len(embeddings) - 1):
+        sim = cosine_similarity(embeddings[i], embeddings[i + 1])
+        similarities.append(sim)
+
+    # Split where similarity drops below threshold
+    encoding = tiktoken.get_encoding("cl100k_base")
+    chunks = []
+    current_chunk = [sentences[0]]
+    current_tokens = len(encoding.encode(sentences[0]))
+
+    for i, sentence in enumerate(sentences[1:]):
+        sentence_tokens = len(encoding.encode(sentence))
+
+        # Check if we should split
+        if (similarities[i] < threshold or
+            current_tokens + sentence_tokens > max_chunk_tokens):
+            # Save current chunk and start new one
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [sentence]
+            current_tokens = sentence_tokens
+        else:
+            # Add to current chunk
+            current_chunk.append(sentence)
+            current_tokens += sentence_tokens
+
+    # Add final chunk
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    return chunks
+
+# Example
+text = """
+Python is a programming language. It was created in 1991. Python emphasizes readability.
+JavaScript is also a programming language. It runs in web browsers. JavaScript is event-driven.
+Machine learning uses algorithms to learn from data. Neural networks are inspired by the brain.
+Deep learning uses multiple layers of neural networks.
+"""
+
+chunks = semantic_chunking(text, threshold=0.75)
+
+print(f"Created {len(chunks)} semantic chunks:\n")
+for i, chunk in enumerate(chunks):
+    print(f"Chunk {i + 1}:\n{chunk}\n")
+```
+
+<Callout type="tip">
+**Pro Tip:** Semantic chunking creates more coherent chunks but is slower and more expensive (requires embeddings). Use for critical documents where quality matters. Use simpler methods for large-scale processing.
+</Callout>
+
+## Recursive Chunking
+
+LangChain's popular recursive character splitter preserves structure.
+
+<Callout type="info">
+**Recursive Chunking:** A hierarchical splitting strategy that tries multiple separators (paragraphs, sentences, words) in order to create chunks at natural boundaries while respecting size limits.
+</Callout>
+
+### Implementation
+
+```python
+def recursive_character_split(
+    text: str,
+    chunk_size: int = 500,
+    chunk_overlap: int = 100,
+    separators: list[str] = None
+) -> list[str]:
+    """
+    Recursively split text, trying to preserve structure
+
+    Args:
+        text: Input text
+        chunk_size: Target chunk size in characters
+        chunk_overlap: Overlap between chunks
+        separators: List of separators to try (in order)
+
+    Returns:
+        List of chunks
+    """
+    if separators is None:
+        # Default separators (in order of priority)
+        separators = [
+            "\n\n",  # Paragraphs
+            "\n",    # Lines
+            ". ",    # Sentences
+            " ",     # Words
+            ""       # Characters
+        ]
+
+    def split_text(text: str, separator: str) -> list[str]:
+        """Split text by separator"""
+        if separator == "":
+            return list(text)
+        return text.split(separator)
+
+    def merge_splits(splits: list[str], separator: str) -> list[str]:
+        """Merge splits into chunks of target size"""
+        chunks = []
+        current_chunk = []
+        current_length = 0
+
+        for split in splits:
+            split_length = len(split)
+
+            # If single split is larger than chunk_size, recurse with next separator
+            if split_length > chunk_size:
+                if current_chunk:
+                    chunks.append(separator.join(current_chunk))
+                    current_chunk = []
+                    current_length = 0
+
+                # Recursively split this piece
+                if len(separators) > 1:
+                    sub_chunks = recursive_character_split(
+                        split,
+                        chunk_size,
+                        chunk_overlap,
+                        separators[1:]
+                    )
+                    chunks.extend(sub_chunks)
+                else:
+                    # No more separators, force split
+                    chunks.append(split[:chunk_size])
+                continue
+
+            # Check if adding this split would exceed chunk_size
+            if current_length + split_length + len(separator) > chunk_size:
+                if current_chunk:
+                    chunks.append(separator.join(current_chunk))
+
+                # Start new chunk with overlap
+                overlap_splits = []
+                overlap_length = 0
+
+                for prev_split in reversed(current_chunk):
+                    overlap_length += len(prev_split) + len(separator)
+                    if overlap_length > chunk_overlap:
+                        break
+                    overlap_splits.insert(0, prev_split)
+
+                current_chunk = overlap_splits + [split]
+                current_length = sum(len(s) for s in current_chunk) + len(separator) * (len(current_chunk) - 1)
+            else:
+                current_chunk.append(split)
+                current_length += split_length + len(separator)
+
+        # Add final chunk
+        if current_chunk:
+            chunks.append(separator.join(current_chunk))
+
+        return chunks
+
+    # Start recursive splitting
+    separator = separators[0]
+    splits = split_text(text, separator)
+    return merge_splits(splits, separator)
+
+# Example
+text = """
+# Python Programming
+
+Python is a high-level programming language.
+
+## Features
+
+Python has many features:
+- Easy to learn
+- Readable syntax
+- Large standard library
+
+## Use Cases
+
+Python is used for:
+- Web development
+- Data science
+- Automation
+"""
+
+chunks = recursive_character_split(text, chunk_size=100, chunk_overlap=20)
+
+for i, chunk in enumerate(chunks):
+    print(f"=== Chunk {i + 1} ({len(chunk)} chars) ===")
+    print(chunk)
+    print()
+```
+
+### Using LangChain's Implementation
+
+```python
+# pip install langchain-text-splitters
+
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# Create splitter
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=100,
+    length_function=len,
+    separators=["\n\n", "\n", ". ", " ", ""]
+)
+
+# Split text
+text = """Your long document here..."""
+chunks = splitter.split_text(text)
+
+# Or split documents with metadata
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.schema import Document
+
+documents = [
+    Document(page_content="...", metadata={"source": "doc1.pdf", "page": 1}),
+    Document(page_content="...", metadata={"source": "doc1.pdf", "page": 2}),
+]
+
+split_docs = splitter.split_documents(documents)
+
+for doc in split_docs[:3]:
+    print(f"Metadata: {doc.metadata}")
+    print(f"Content: {doc.page_content[:100]}...")
+    print()
+```
+
+## Specialized Chunking Strategies
+
+### Markdown Chunking
+
+```python
+def chunk_markdown(text: str, chunk_size: int = 500) -> list[str]:
+    """
+    Split markdown by headers, respecting structure
+
+    Args:
+        text: Markdown text
+        chunk_size: Target chunk size
+
+    Returns:
+        List of chunks with preserved structure
+    """
+    import re
+
+    # Split by headers
+    header_pattern = r'^(#{1,6})\s+(.+)$'
+    lines = text.split('\n')
+
+    sections = []
+    current_section = {"headers": [], "content": []}
+
+    for line in lines:
+        match = re.match(header_pattern, line, re.MULTILINE)
+
+        if match:
+            # Save previous section
+            if current_section["content"]:
+                sections.append(current_section)
+
+            # Start new section
+            level = len(match.group(1))
+            title = match.group(2)
+
+            current_section = {
+                "headers": [(level, title)],
+                "content": []
+            }
+        else:
+            current_section["content"].append(line)
+
+    # Add last section
+    if current_section["content"]:
+        sections.append(current_section)
+
+    # Build chunks with header context
+    chunks = []
+    for section in sections:
+        # Reconstruct headers
+        header_text = "\n".join([
+            "#" * level + " " + title
+            for level, title in section["headers"]
+        ])
+
+        content = "\n".join(section["content"]).strip()
+
+        if content:
+            chunk = f"{header_text}\n\n{content}"
+            chunks.append(chunk)
+
+    return chunks
+
+# Example
+markdown = """
+# Python Guide
+
+## Introduction
+
+Python is a programming language.
+
+## Installation
+
+### Windows
+
+Download from python.org.
+
+### Mac
+
+Use homebrew: brew install python
+
+## Getting Started
+
+Write your first program.
+"""
+
+chunks = chunk_markdown(markdown)
+
+for i, chunk in enumerate(chunks):
+    print(f"=== Chunk {i + 1} ===")
+    print(chunk)
+    print()
+```
+
+### Code Chunking
+
+```python
+def chunk_code(code: str, language: str = "python") -> list[str]:
+    """
+    Split code by logical units (functions, classes)
+
+    Args:
+        code: Source code
+        language: Programming language
+
+    Returns:
+        List of code chunks
+    """
+    import ast
+
+    if language == "python":
+        try:
+            tree = ast.parse(code)
+            chunks = []
+
+            for node in ast.iter_child_nodes(tree):
+                # Extract functions and classes
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+                    chunk = ast.get_source_segment(code, node)
+                    if chunk:
+                        chunks.append(chunk)
+
+            return chunks
+        except SyntaxError:
+            # Fallback to simple splitting
+            return code.split('\n\n')
+
+    # For other languages, use simple heuristics
+    return code.split('\n\n')
+
+# Example
+code = """
+def add(a, b):
+    return a + b
+
+def subtract(a, b):
+    return a - b
+
+class Calculator:
+    def multiply(self, a, b):
+        return a * b
+"""
+
+chunks = chunk_code(code)
+
+for i, chunk in enumerate(chunks):
+    print(f"=== Chunk {i + 1} ===")
+    print(chunk)
+    print()
+```
+
+## Best Practices
+
+### 1. Choose Appropriate Chunk Size
+
+```python
+# Chunk size guidelines by use case:
+
+# Q&A / FAQ
+chunk_size = 200  # Small, focused answers
+
+# Technical documentation
+chunk_size = 500  # Balance between context and specificity
+
+# Long-form content / articles
+chunk_size = 800  # Preserve narrative flow
+
+# Code snippets
+chunk_size = 300  # Complete functions/classes
+```
+
+### 2. Add Overlap
+
+<Callout type="info">
+**Chunk Overlap:** The amount of text that appears in consecutive chunks. Overlap ensures information near boundaries isn't lost and provides context continuity between chunks.
+</Callout>
+
+```python
+# Overlap prevents information loss at chunk boundaries
+
+# Rule of thumb: 10-20% overlap
+chunk_size = 500
+overlap = 100  # 20% overlap
+
+chunks = chunk_by_tokens(text, chunk_size=chunk_size, overlap=overlap)
+
+# This ensures that information near boundaries appears in multiple chunks
+```
+
+### 3. Include Context in Metadata
+
+```python
+def chunk_with_context(text: str, chunk_size: int = 500) -> list[dict]:
+    """
+    Chunk text and add helpful metadata
+
+    Returns:
+        List of dicts with chunk text and metadata
+    """
+    chunks = chunk_by_tokens(text, chunk_size=chunk_size)
+
+    result = []
+    for i, chunk in enumerate(chunks):
+        result.append({
+            "text": chunk,
+            "metadata": {
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                "chunk_size": len(chunk),
+                # Previous chunk preview (context)
+                "previous_context": chunks[i-1][-100:] if i > 0 else None,
+                # Next chunk preview (context)
+                "next_context": chunks[i+1][:100] if i < len(chunks) - 1 else None
+            }
+        })
+
+    return result
+
+# Usage
+chunks = chunk_with_context(long_text)
+
+for chunk in chunks[:2]:
+    print(f"Chunk {chunk['metadata']['chunk_index'] + 1}:")
+    print(f"Text: {chunk['text'][:100]}...")
+    print(f"Previous context: {chunk['metadata']['previous_context']}")
+    print()
+```
+
+### 4. Preserve Document Structure
+
+```python
+def smart_chunk(text: str, doc_metadata: dict) -> list[dict]:
+    """
+    Intelligent chunking that preserves document structure
+
+    Args:
+        text: Document text
+        doc_metadata: Document-level metadata (title, author, etc.)
+
+    Returns:
+        List of chunks with rich metadata
+    """
+    chunks = recursive_character_split(text, chunk_size=500, chunk_overlap=100)
+
+    result = []
+    for i, chunk in enumerate(chunks):
+        result.append({
+            "text": chunk,
+            "metadata": {
+                **doc_metadata,  # Include document metadata
+                "chunk_id": f"{doc_metadata.get('doc_id', 'unknown')}_{i}",
+                "chunk_index": i,
+                "total_chunks": len(chunks)
+            }
+        })
+
+    return result
+
+# Example
+doc_metadata = {
+    "doc_id": "python_guide_v1",
+    "title": "Python Programming Guide",
+    "author": "Alice",
+    "category": "tutorial",
+    "date": "2025-01-15"
+}
+
+chunks = smart_chunk(long_text, doc_metadata)
+```
+
+<Callout type="tip">
+**Golden Rule:** Test your chunking strategy with actual queries. What works in theory might not work in practice. Iterate based on retrieval quality.
+</Callout>
+
+## Summary
+
+Chunking strategies ranked by use case:
+
+1. **Quick prototyping**: Fixed-size token chunking
+2. **General documents**: Recursive character splitting
+3. **Quality-critical**: Semantic chunking
+4. **Structured content**: Format-specific chunking (Markdown, Code)
+
+**Key principles:**
+- Chunk size: 200-600 tokens for most use cases
+- Overlap: 10-20% to prevent information loss
+- Metadata: Include context and structure
+- Testing: Validate with real queries
+
+Good chunking is the foundation of effective RAG systems.
+
+<Quiz
+  questions={[
+    {
+      question: "What is the main advantage of semantic chunking over fixed-size chunking?",
+      options: [
+        "It's faster and cheaper to implement",
+        "It creates chunks based on meaning, preserving conceptual coherence",
+        "It produces smaller chunks that are easier to store",
+        "It works better with any chunk size"
+      ],
+      correctAnswer: 1,
+      explanation: "Semantic chunking splits text based on meaning rather than arbitrary size limits. It uses embeddings to detect topic changes and creates chunks that are conceptually coherent. This results in better retrieval quality because each chunk represents a complete idea, though it's more expensive due to embedding costs."
+    },
+    {
+      question: "What is the recommended chunk overlap percentage to prevent information loss at boundaries?",
+      options: [
+        "No overlap needed",
+        "10-20% overlap",
+        "50% overlap",
+        "75% overlap"
+      ],
+      correctAnswer: 1,
+      explanation: "10-20% overlap is the sweet spot. This ensures that information near chunk boundaries appears in multiple chunks, preventing context loss when splitting sentences or concepts. Too little overlap (<10%) risks losing context; too much (>20%) wastes storage and compute without significant benefit."
+    },
+    {
+      question: "What is the ideal chunk size range for most RAG applications?",
+      options: [
+        "50-100 tokens",
+        "200-600 tokens",
+        "1000-2000 tokens",
+        "5000+ tokens"
+      ],
+      correctAnswer: 1,
+      explanation: "200-600 tokens is the sweet spot for most RAG applications. This range provides enough context for the LLM to understand the chunk while maintaining specificity for accurate retrieval. Smaller chunks (<200) lose context; larger chunks (>1000) dilute specificity and reduce retrieval precision."
+    },
+    {
+      question: "What does recursive character splitting prioritize when breaking text?",
+      options: [
+        "Random splitting at any point",
+        "Always splitting at character boundaries",
+        "Trying separators in order: paragraphs, lines, sentences, words, then characters",
+        "Only splitting at paragraph boundaries"
+      ],
+      correctAnswer: 2,
+      explanation: "Recursive character splitting tries a hierarchy of separators in order of priority: paragraphs (\\n\\n), lines (\\n), sentences (. ), words ( ), and finally characters. It attempts to preserve natural document structure by using the highest-level separator that keeps chunks under the size limit, falling back to lower-level separators as needed."
+    }
+  ]}
+/>
