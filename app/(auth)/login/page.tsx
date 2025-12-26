@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, Sparkles, ArrowRight, Github, Chrome, Facebook, Twitter } from "lucide-react";
+import { Mail, Lock, Sparkles, ArrowRight, Chrome } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo, LogoText } from "@/components/shared/Logo";
@@ -82,38 +82,6 @@ export default function LoginPage() {
               <Chrome className="w-5 h-5 mr-2" />
               Continue with Google
             </Button>
-
-            <Button
-              variant="outline"
-              className="w-full h-11 font-medium hover:bg-muted transition-all"
-              onClick={() => handleSocialLogin("github")}
-              disabled={isLoading}
-            >
-              <Github className="w-5 h-5 mr-2" />
-              Continue with GitHub
-            </Button>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                className="h-11 font-medium hover:bg-muted transition-all"
-                onClick={() => handleSocialLogin("facebook")}
-                disabled={isLoading}
-              >
-                <Facebook className="w-5 h-5 mr-2" />
-                Facebook
-              </Button>
-
-              <Button
-                variant="outline"
-                className="h-11 font-medium hover:bg-muted transition-all"
-                onClick={() => handleSocialLogin("twitter")}
-                disabled={isLoading}
-              >
-                <Twitter className="w-5 h-5 mr-2" />
-                Twitter
-              </Button>
-            </div>
           </div>
 
           {/* Divider */}
