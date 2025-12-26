@@ -9,7 +9,6 @@ import {
   Trophy,
   Clock,
   Target,
-  TrendingUp,
   Play,
   ChevronRight,
   Sparkles,
@@ -22,6 +21,38 @@ import Link from "next/link";
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isNewUser, setIsNewUser] = React.useState(true);
+  const [userStats, setUserStats] = React.useState({
+    lessonsCompleted: 0,
+    challengesCompleted: 0,
+    hoursLearned: 0,
+    currentStreak: 0,
+  });
+
+  // Check if user is new (no progress yet)
+  React.useEffect(() => {
+    async function checkUserProgress() {
+      if (session?.user?.id) {
+        try {
+          const res = await fetch("/api/user/progress");
+          if (res.ok) {
+            const data = await res.json();
+            setUserStats({
+              lessonsCompleted: data.lessonsCompleted || 0,
+              challengesCompleted: data.challengesCompleted || 0,
+              hoursLearned: data.hoursLearned || 0,
+              currentStreak: data.currentStreak || 0,
+            });
+            setIsNewUser(data.lessonsCompleted === 0);
+          }
+        } catch {
+          // If API fails, assume new user
+          setIsNewUser(true);
+        }
+      }
+    }
+    checkUserProgress();
+  }, [session?.user?.id]);
 
   // Redirect if not logged in
   React.useEffect(() => {
@@ -42,14 +73,14 @@ export default function DashboardPage() {
     return null;
   }
 
-  // Mock data - in production this would come from the database
+  // Stats from API + totals
   const stats = {
-    lessonsCompleted: 0,
+    lessonsCompleted: userStats.lessonsCompleted,
     totalLessons: 83,
-    challengesCompleted: 0,
+    challengesCompleted: userStats.challengesCompleted,
     totalChallenges: 25,
-    hoursLearned: 0,
-    currentStreak: 0,
+    hoursLearned: userStats.hoursLearned,
+    currentStreak: userStats.currentStreak,
   };
 
   const recentLessons = [
@@ -81,10 +112,12 @@ export default function DashboardPage() {
             )}
             <div>
               <h1 className="text-3xl font-bold">
-                Welcome, {session.user.name?.split(" ")[0] || "Learner"}!
+                {isNewUser ? "Welcome" : "Welcome back"}, {session.user.name?.split(" ")[0] || "Learner"}!
               </h1>
               <p className="text-muted-foreground">
-                Your AI learning journey starts here
+                {isNewUser
+                  ? "Your AI learning journey starts here"
+                  : "Ready to continue your AI learning journey?"}
               </p>
             </div>
           </div>

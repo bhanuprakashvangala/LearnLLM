@@ -33,7 +33,7 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 bg-background">
+    <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden bg-background">
       {/* Clean Background Pattern */}
       <div className="absolute inset-0 -z-10">
         {/* Subtle Grid Pattern */}
@@ -43,7 +43,7 @@ export function HeroSection() {
         <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-5xl mx-auto text-center">
           {/* Badge */}
           <motion.div
@@ -64,7 +64,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 leading-tight"
           >
             Learn{" "}
             <span className="gradient-text">AI & LLMs</span>
@@ -77,10 +77,9 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto"
+            className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-3xl mx-auto"
           >
-            In the vibe coding era, everyone needs to understand AI. Whether you're a student, designer, marketer, or developer -
-            learn ChatGPT, prompt engineering, RAG, LangChain and more. Start with no code, level up at your pace.
+            Whether you're a student, designer, marketer, or developer - learn ChatGPT, prompt engineering, RAG, and more. Start with no code, level up at your pace.
           </motion.p>
 
           {/* Stats */}
@@ -88,7 +87,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-8 mb-10"
+            className="flex flex-wrap items-center justify-center gap-6 mb-6"
           >
             {[
               { icon: Brain, label: "No Code to Pro", color: "text-primary" },
@@ -107,7 +106,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
           >
             <Button variant="default" size="xl" asChild className="group">
               <Link href="/signup">
