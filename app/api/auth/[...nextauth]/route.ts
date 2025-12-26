@@ -97,28 +97,33 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
       }
-      // For Google OAuth, get user from database
-      if (account?.provider === "google" && profile) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email! },
-        });
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.name = dbUser.name;
-          token.picture = dbUser.image;
-          token.plan = dbUser.plan;
-          token.role = dbUser.role;
+      try {
+        // For Google OAuth, get user from database
+        if (account?.provider === "google" && profile) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email! },
+          });
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.name = dbUser.name;
+            token.picture = dbUser.image;
+            token.plan = dbUser.plan;
+            token.role = dbUser.role;
+          }
         }
-      }
-      // For credentials, fetch plan and role
-      if (token.email && !token.plan) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-        });
-        if (dbUser) {
-          token.plan = dbUser.plan;
-          token.role = dbUser.role;
+        // For credentials, fetch plan and role
+        if (token.email && !token.plan) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email },
+          });
+          if (dbUser) {
+            token.plan = dbUser.plan;
+            token.role = dbUser.role;
+          }
         }
+      } catch (error) {
+        console.error("Error in JWT callback:", error);
+        // Continue without database data - user can still sign in
       }
       return token;
     },

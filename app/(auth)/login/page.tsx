@@ -18,7 +18,7 @@ function LoginForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  // Check for error in URL params
+  // Check for error in URL params (only on mount)
   React.useEffect(() => {
     const urlError = searchParams.get("error");
     if (urlError) {
@@ -29,8 +29,15 @@ function LoginForm() {
       } else {
         setError("An error occurred. Please try again.");
       }
+      // Clear URL params after showing error
+      window.history.replaceState({}, "", "/login");
     }
   }, [searchParams]);
+
+  // Clear error when user starts typing
+  const clearError = () => {
+    if (error) setError("");
+  };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +140,7 @@ function LoginForm() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); clearError(); }}
                   className="pl-10 h-11"
                   required
                   disabled={isLoading}
@@ -142,17 +149,9 @@ function LoginForm() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-medium">
-                  Password
-                </label>
-                <Link
-                  href="/reset-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <label htmlFor="password" className="block text-sm font-medium mb-2">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
@@ -160,7 +159,7 @@ function LoginForm() {
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); clearError(); }}
                   className="pl-10 h-11"
                   required
                   disabled={isLoading}
