@@ -79,7 +79,7 @@ export default function LoginPage() {
           <div className="space-y-3 mb-6">
             <Button
               variant="outline"
-              className="w-full h-11 font-medium hover:bg-muted transition-all"
+              className="w-full h-11 font-medium transition-all"
               onClick={() => handleSocialLogin("google")}
               disabled={isLoading}
             >

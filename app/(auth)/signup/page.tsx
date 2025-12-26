@@ -170,7 +170,7 @@ export default function SignUpPage() {
           <div className="space-y-3 mb-6">
             <Button
               variant="outline"
-              className="w-full h-11 font-medium hover:bg-muted hover:scale-[1.02] transition-all"
+              className="w-full h-11 font-medium hover:scale-[1.02] transition-all"
               onClick={() => handleSocialSignup("google")}
               disabled={isLoading}
             >
