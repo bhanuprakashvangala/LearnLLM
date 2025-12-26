@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
+import { SessionProvider, useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 // Types
@@ -25,111 +26,59 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Temporary in-memory storage (replace with actual API calls + database)
-const STORAGE_KEY = 'learnllm_user';
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+function AuthContextProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const isLoading = status === "loading";
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem(STORAGE_KEY);
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Save user to localStorage whenever it changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [user]);
+  const user: User | null = session?.user ? {
+    id: session.user.id || '',
+    email: session.user.email || '',
+    name: session.user.name || null,
+    image: session.user.image || null,
+    plan: 'FREE', // Default plan, should come from database
+    emailVerified: true,
+  } : null;
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/login', { ... });
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-      // Temporary: Simulate login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const mockUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email,
-        name: email.split('@')[0],
-        image: null,
-        plan: 'FREE',
-        emailVerified: true,
-      };
-
-      setUser(mockUser);
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (result?.error) {
+      throw new Error(result.error);
     }
+
+    router.push('/dashboard');
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/signup', { ... });
+    // First create the account
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
 
-      // Temporary: Simulate signup
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    const data = await res.json();
 
-      const mockUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        email,
-        name,
-        image: null,
-        plan: 'FREE',
-        emailVerified: false,
-      };
-
-      setUser(mockUser);
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Signup failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to create account');
     }
+
+    // Then sign in
+    await login(email, password);
   };
 
   const logout = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // await fetch('/api/auth/logout', { ... });
-
-      setUser(null);
-      router.push('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    await signOut({ callbackUrl: '/' });
   };
 
   const updateUser = (data: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...data });
-    }
+    // This would need an API call to update user data in the database
+    console.log('Update user:', data);
   };
 
   return (
@@ -137,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
-        isAuthenticated: !!user,
+        isAuthenticated: !!session,
         login,
         signup,
         logout,
@@ -146,6 +95,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
+  );
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <SessionProvider>
+      <AuthContextProvider>
+        {children}
+      </AuthContextProvider>
+    </SessionProvider>
   );
 }
 

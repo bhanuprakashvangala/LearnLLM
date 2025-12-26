@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Sparkles, ArrowRight, Chrome, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,31 +18,50 @@ export default function SignUpPage() {
     password: "",
   });
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    // TODO: Implement actual authentication
-    setTimeout(() => {
+    try {
+      // First, create the user account
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create account");
+        setIsLoading(false);
+        return;
+      }
+
+      // Then sign them in
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Account created but couldn't sign in. Please try logging in.");
+        setIsLoading(false);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
       setIsLoading(false);
-      router.push("/dashboard");
-    }, 1500);
+    }
   };
 
   const handleSocialSignup = (provider: string) => {
-    // For now, show alert until NextAuth is configured
-    alert(
-      `${provider.charAt(0).toUpperCase() + provider.slice(1)} OAuth not configured yet.\n\n` +
-      `To enable social login:\n` +
-      `1. Follow the setup guide in AUTHENTICATION_SETUP.md\n` +
-      `2. Configure OAuth apps for each provider\n` +
-      `3. Add credentials to .env file\n\n` +
-      `For now, please use email signup below.`
-    );
-
-    // After NextAuth setup, replace above with:
-    // signIn(provider, { callbackUrl: "/dashboard" });
+    signIn(provider, { callbackUrl: "/dashboard" });
   };
 
   const benefits = [
@@ -173,6 +193,11 @@ export default function SignUpPage() {
 
           {/* Email Signup Form */}
           <form onSubmit={handleEmailSignup} className="space-y-4">
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-sm">
+                {error}
+              </div>
+            )}
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-2">
                 Full Name
