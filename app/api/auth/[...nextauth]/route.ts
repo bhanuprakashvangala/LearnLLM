@@ -73,18 +73,22 @@ export const authOptions: NextAuthOptions = {
             });
           } else {
             // Update existing user with latest Google info
+            // Also set emailVerified if user signed up with email but now uses Google
             await prisma.user.update({
               where: { email: user.email! },
               data: {
                 name: user.name || profile.name || existingUser.name,
                 image: user.image || (profile as any).picture || existingUser.image,
+                emailVerified: existingUser.emailVerified || new Date(),
               },
             });
           }
           return true;
         } catch (error) {
           console.error("Error saving Google user:", error);
-          return false;
+          // Still allow sign-in even if database update fails
+          // User data just won't be synced
+          return true;
         }
       }
       return true;

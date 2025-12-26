@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Sparkles, ArrowRight, Chrome } from "lucide-react";
@@ -12,10 +12,25 @@ import { Logo, LogoText } from "@/components/shared/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+
+  // Check for error in URL params
+  React.useEffect(() => {
+    const urlError = searchParams.get("error");
+    if (urlError) {
+      if (urlError === "AccessDenied") {
+        setError("Access denied. Please try again or contact support.");
+      } else if (urlError === "Callback") {
+        setError("Authentication failed. Please try again.");
+      } else {
+        setError("An error occurred. Please try again.");
+      }
+    }
+  }, [searchParams]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
