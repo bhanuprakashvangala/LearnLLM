@@ -1,8 +1,14 @@
-// Auth pages have their own layout without navbar/footer
+import { Navbar } from "@/components/shared/Navbar";
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  );
 }

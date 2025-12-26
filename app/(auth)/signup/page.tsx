@@ -44,7 +44,12 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to create account");
+        // Check if account already exists
+        if (data.error?.includes("already exists")) {
+          setError("ACCOUNT_EXISTS");
+        } else {
+          setError(data.error || "Failed to create account");
+        }
         setIsLoading(false);
         return;
       }
@@ -81,7 +86,7 @@ export default function SignUpPage() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -203,7 +208,16 @@ export default function SignUpPage() {
           <form onSubmit={handleEmailSignup} className="space-y-4">
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-sm">
-                {error}
+                {error === "ACCOUNT_EXISTS" ? (
+                  <span>
+                    An account with this email already exists.{" "}
+                    <Link href="/login" className="underline font-semibold hover:text-red-700">
+                      Sign in instead
+                    </Link>
+                  </span>
+                ) : (
+                  error
+                )}
               </div>
             )}
             <div>
