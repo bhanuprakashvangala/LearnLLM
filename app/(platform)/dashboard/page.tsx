@@ -81,10 +81,10 @@ export default function DashboardPage() {
             )}
             <div>
               <h1 className="text-3xl font-bold">
-                Welcome back, {session.user.name?.split(" ")[0] || "Learner"}!
+                Welcome, {session.user.name?.split(" ")[0] || "Learner"}!
               </h1>
               <p className="text-muted-foreground">
-                Ready to continue your AI learning journey?
+                Your AI learning journey starts here
               </p>
             </div>
           </div>
