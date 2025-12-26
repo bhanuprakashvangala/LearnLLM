@@ -3,10 +3,9 @@
 
 // 1. Choose your database provider (uncomment one):
 datasource db {
-  provider = "postgresql"  // Recommended for production (Vercel Postgres, Supabase, Railway)
-  // provider = "mysql"     // Alternative
-  // provider = "sqlite"    // For local development only
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
