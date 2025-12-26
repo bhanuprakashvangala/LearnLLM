@@ -291,15 +291,20 @@ pre code {
   cursor: not-allowed;
 }
 
-/* Links - but not inside buttons */
-a:not(button a, [role="button"] a) {
+/* Links - but not inside buttons or navigation */
+a:not(button a, [role="button"] a, .nav-link, header a) {
   color: rgb(var(--primary));
   text-decoration: none;
   transition: color var(--duration-fast) ease;
 }
 
-a:not(button a, [role="button"] a):hover {
+a:not(button a, [role="button"] a, .nav-link, header a):hover {
   color: rgb(var(--secondary));
+}
+
+/* Nav links inherit their own color classes */
+.nav-link {
+  color: inherit;
 }
 
 /* Container Queries */

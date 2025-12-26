@@ -11,6 +11,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Logo, LogoText } from "./Logo";
 
 const navLinks = [
+  { href: "/", label: "Home" },
   { href: "/learn", label: "Learn" },
   { href: "/challenges", label: "Challenges" },
   { href: "/playground", label: "Playground" },
@@ -42,16 +43,18 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+              const isActive = link.href === "/"
+                ? pathname === "/"
+                : pathname === link.href || pathname.startsWith(link.href + "/");
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                    "nav-link px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                      ? "bg-primary !text-primary-foreground"
+                      : "!text-foreground/70 hover:!text-foreground hover:bg-muted"
                   )}
                 >
                   {link.label}
@@ -101,17 +104,19 @@ export function Navbar() {
           >
             <div className="flex flex-col gap-2 px-4">
               {navLinks.map((link) => {
-                const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+                const isActive = link.href === "/"
+                  ? pathname === "/"
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
-                      "px-4 py-2.5 rounded-lg text-sm font-semibold transition-all",
+                      "nav-link px-4 py-2.5 rounded-lg text-sm font-semibold transition-all",
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground/70 hover:text-foreground hover:bg-muted"
+                        ? "bg-primary !text-primary-foreground"
+                        : "!text-foreground/70 hover:!text-foreground hover:bg-muted"
                     )}
                   >
                     {link.label}
