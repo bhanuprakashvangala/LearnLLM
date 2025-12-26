@@ -53,11 +53,9 @@ export function HeroSection() {
             className="inline-block mb-6"
           >
             <div className="glass rounded-full px-6 py-2 inline-flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-accent" />
               <span className="text-sm font-medium">
-                Essential AI Skills for Everyone - No Coding Required to Start
+                Master AI Development from Basics to Production
               </span>
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
             </div>
           </motion.div>
 

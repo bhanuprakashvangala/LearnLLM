@@ -61,6 +61,7 @@ model User {
 
   // Plan and subscription
   plan           Plan      @default(FREE)
+  role           Role      @default(USER)
   stripeCustomerId String? @unique
 }
 
@@ -78,6 +79,12 @@ enum Plan {
   FREE
   PRO
   TEAMS
+}
+
+enum Role {
+  USER
+  EMPLOYEE
+  ADMIN
 }
 
 enum Difficulty {

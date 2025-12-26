@@ -102,6 +102,18 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id;
           token.name = dbUser.name;
           token.picture = dbUser.image;
+          token.plan = dbUser.plan;
+          token.role = dbUser.role;
+        }
+      }
+      // For credentials, fetch plan and role
+      if (token.email && !token.plan) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+        });
+        if (dbUser) {
+          token.plan = dbUser.plan;
+          token.role = dbUser.role;
         }
       }
       return token;
@@ -111,6 +123,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string || token.sub!;
         session.user.name = token.name as string;
         session.user.image = token.picture as string;
+        session.user.plan = token.plan as string;
+        session.user.role = token.role as string;
       }
       return session;
     },
