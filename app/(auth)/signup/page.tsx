@@ -16,6 +16,7 @@ export default function SignUpPage() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -24,6 +25,13 @@ export default function SignUpPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       // First, create the user account
@@ -257,6 +265,26 @@ export default function SignUpPage() {
               <p className="text-xs text-muted-foreground mt-1">
                 Must be at least 8 characters long
               </p>
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className="pl-10 h-11"
+                  required
+                  minLength={8}
+                  disabled={isLoading}
+                />
+              </div>
             </div>
 
             <Button
