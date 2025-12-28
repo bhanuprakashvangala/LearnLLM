@@ -4,13 +4,16 @@ export type Plan = "FREE" | "PRO" | "TEAMS";
 export type Role = "USER" | "EMPLOYEE" | "ADMIN";
 export type Difficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
+// The first lesson that's free for everyone (no login required)
+export const FREE_LESSON_SLUG = "what-is-llm";
+
 interface UserAccess {
   plan: Plan;
   role: Role;
 }
 
-// Check if user has full access (Admin, Employee, or paid plan)
-export function hasFullAccess(user: UserAccess | null): boolean {
+// Check if user has PRO access (Admin, Employee, or paid plan)
+export function hasProAccess(user: UserAccess | null): boolean {
   if (!user) return false;
 
   // Admins and employees always have full access
@@ -26,15 +29,30 @@ export function hasFullAccess(user: UserAccess | null): boolean {
   return false;
 }
 
+// Check if user is logged in (any plan)
+export function isLoggedIn(user: UserAccess | null): boolean {
+  return user !== null;
+}
+
+// Check if a specific lesson is the free preview lesson
+export function isFreeLessonSlug(slug: string): boolean {
+  return slug === FREE_LESSON_SLUG;
+}
+
 // Check if user can access specific difficulty level
-export function canAccessDifficulty(user: UserAccess | null, difficulty: Difficulty): boolean {
-  // Beginner and Intermediate content is free for everyone
-  if (difficulty === "BEGINNER" || difficulty === "INTERMEDIATE") {
+export function canAccessDifficulty(user: UserAccess | null, difficulty: Difficulty, slug?: string): boolean {
+  // The first beginner lesson is always free for everyone
+  if (slug && isFreeLessonSlug(slug)) {
     return true;
   }
 
-  // Advanced requires Pro plan or staff role
-  return hasFullAccess(user);
+  // Advanced requires PRO plan
+  if (difficulty === "ADVANCED") {
+    return hasProAccess(user);
+  }
+
+  // Beginner and Intermediate require login (any plan)
+  return isLoggedIn(user);
 }
 
 // Check if user can access challenges

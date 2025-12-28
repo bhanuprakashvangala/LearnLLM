@@ -3,17 +3,18 @@
 import * as React from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Lock, Sparkles, ArrowRight } from "lucide-react";
+import { Lock, Sparkles, ArrowRight, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { canAccessDifficulty, type Difficulty } from "@/lib/access";
+import { canAccessDifficulty, hasProAccess, type Difficulty } from "@/lib/access";
 
 interface ContentGateProps {
   difficulty: Difficulty;
   children: React.ReactNode;
   title?: string;
+  slug?: string;
 }
 
-export function ContentGate({ difficulty, children, title }: ContentGateProps) {
+export function ContentGate({ difficulty, children, title, slug }: ContentGateProps) {
   const { data: session, status } = useSession();
 
   // Show loading state
@@ -33,14 +34,18 @@ export function ContentGate({ difficulty, children, title }: ContentGateProps) {
       }
     : null;
 
-  const hasAccess = canAccessDifficulty(userAccess, difficulty);
+  const hasAccess = canAccessDifficulty(userAccess, difficulty, slug);
 
   // If user has access, show content
   if (hasAccess) {
     return <>{children}</>;
   }
 
-  // Show upgrade prompt for locked content
+  // Determine if this is a PRO-only lock (advanced) or login-required lock
+  const needsProPlan = difficulty === "ADVANCED" && session && !hasProAccess(userAccess);
+  const needsLogin = !session;
+
+  // Show appropriate prompt
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="max-w-md text-center p-8">
@@ -48,44 +53,69 @@ export function ContentGate({ difficulty, children, title }: ContentGateProps) {
           <Lock className="w-10 h-10 text-primary" />
         </div>
 
-        <h2 className="text-2xl font-bold mb-3">
-          {difficulty.charAt(0) + difficulty.slice(1).toLowerCase()} Content
-        </h2>
+        {needsLogin ? (
+          <>
+            <h2 className="text-2xl font-bold mb-3">Sign In Required</h2>
+            <p className="text-muted-foreground mb-6">
+              {title ? (
+                <>
+                  <span className="font-medium text-foreground">"{title}"</span> requires a free account.
+                </>
+              ) : (
+                <>This lesson requires a free account to access.</>
+              )}{" "}
+              Sign up for free to continue learning.
+            </p>
 
-        <p className="text-muted-foreground mb-6">
-          {title ? (
-            <>
-              <span className="font-medium text-foreground">"{title}"</span> is available for Pro members.
-            </>
-          ) : (
-            <>
-              {difficulty.charAt(0) + difficulty.slice(1).toLowerCase()} lessons are available for Pro members.
-            </>
-          )}{" "}
-          Upgrade to unlock all lessons, challenges, and features.
-        </p>
+            <div className="space-y-3">
+              <Button asChild className="w-full">
+                <Link href="/signup">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Create Free Account
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
 
-        <div className="space-y-3">
-          <Button asChild className="w-full">
-            <Link href="/pricing">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Upgrade to Pro
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </Button>
+              <Button variant="outline" asChild className="w-full">
+                <Link href="/login">
+                  Already have an account? Sign in
+                </Link>
+              </Button>
+            </div>
 
-          {!session && (
-            <Button variant="outline" asChild className="w-full">
-              <Link href="/login">
-                Sign in to continue
-              </Link>
-            </Button>
-          )}
-        </div>
+            <p className="text-xs text-muted-foreground mt-6">
+              Free account includes beginner and intermediate lessons.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold mb-3">Pro Content</h2>
+            <p className="text-muted-foreground mb-6">
+              {title ? (
+                <>
+                  <span className="font-medium text-foreground">"{title}"</span> is available for Pro members.
+                </>
+              ) : (
+                <>Advanced lessons are available for Pro members.</>
+              )}{" "}
+              Upgrade to unlock all advanced content.
+            </p>
 
-        <p className="text-xs text-muted-foreground mt-6">
-          Pro includes all 83 lessons, 25+ challenges, and unlimited playground saves.
-        </p>
+            <div className="space-y-3">
+              <Button asChild className="w-full">
+                <Link href="/pricing">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Upgrade to Pro
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-6">
+              Pro includes all 83 lessons, advanced content, and premium features.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

@@ -82,7 +82,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
           </div>
 
           {/* Content Gate - wraps restricted content */}
-          <ContentGate difficulty={difficultyLevel} title={lesson.metadata.title}>
+          <ContentGate difficulty={difficultyLevel} title={lesson.metadata.title} slug={slug}>
             {/* Lesson Header */}
             <div className="mb-8">
               {currentModule && (
