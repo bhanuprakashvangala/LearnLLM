@@ -2,128 +2,97 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Brain, Play, Users, Star } from "lucide-react";
+import { ArrowRight, BookOpen, Code2, Cpu, Layers, MessageSquare, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const techStack = [
+  { icon: MessageSquare, label: "Prompt Engineering" },
+  { icon: Layers, label: "LangChain" },
+  { icon: Cpu, label: "RAG Systems" },
+  { icon: Workflow, label: "AI Agents" },
+  { icon: Code2, label: "Fine-tuning" },
+  { icon: BookOpen, label: "Vector DBs" },
+];
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
-      {/* Premium Background Effects */}
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
+      {/* Simple clean background */}
       <div className="absolute inset-0 -z-10">
-        {/* Animated gradient orbs */}
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-primary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" />
-        <div className="absolute top-0 -right-40 w-80 h-80 bg-secondary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style={{ animationDelay: "2s" }} />
-        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-80 h-80 bg-accent/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style={{ animationDelay: "4s" }} />
-
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-30" />
-
-        {/* Radial gradient overlay */}
-        <div className="absolute inset-0 bg-radial-gradient" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+        <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-primary/5 blur-3xl rounded-full" />
+        <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-secondary/5 blur-3xl rounded-full" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="max-w-5xl mx-auto text-center">
-          {/* Animated Badge */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-block mb-8"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            <div className="glass rounded-full px-6 py-2.5 inline-flex items-center gap-3 border border-primary/20 shadow-lg">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              <span className="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Trusted by 10,000+ Professionals Worldwide
-              </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              Learn to Build with{" "}
+              <span className="text-primary">Large Language Models</span>
+            </h1>
+
+            <p className="text-lg text-muted-foreground mb-8 max-w-lg">
+              From complete beginner to production-ready. Master LLMs, build AI applications,
+              and join the future of software development.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+              <Button size="lg" asChild className="text-base px-8">
+                <Link href="/learn">
+                  Start Learning Free
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="text-base px-8">
+                <Link href="/challenges">
+                  Try Challenges
+                </Link>
+              </Button>
             </div>
-          </motion.div>
 
-          {/* Main Heading with animated gradient */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight tracking-tight"
-          >
-            Learn{" "}
-            <span className="gradient-text-animated">AI & LLMs</span>
-            <br />
-            <span className="text-foreground/80">Build Anything with AI</span>
-          </motion.h1>
-
-          {/* Subheading */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
-          >
-            Whether you're a student, designer, marketer, or developer - master LLMs, LangChain, RAG, AI Agents, and more.
-            <span className="text-foreground font-medium"> Start with no code, level up at your pace.</span>
-          </motion.p>
-
-          {/* Feature Pills */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-4 mb-10"
-          >
-            {[
-              { icon: Brain, label: "No Code to Pro", color: "bg-primary/10 text-primary border-primary/20" },
-              { icon: Zap, label: "For Everyone", color: "bg-accent/10 text-accent border-accent/20" },
-              { icon: Sparkles, label: "Practical Skills", color: "bg-secondary/10 text-secondary border-secondary/20" },
-            ].map((stat, i) => (
-              <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-full border ${stat.color} backdrop-blur-sm`}>
-                <stat.icon className="w-4 h-4" />
-                <span className="text-sm font-semibold">{stat.label}</span>
+            {/* Quick Stats */}
+            <div className="flex gap-8 text-sm">
+              <div>
+                <div className="text-2xl font-bold text-foreground">83+</div>
+                <div className="text-muted-foreground">Lessons</div>
               </div>
-            ))}
+              <div>
+                <div className="text-2xl font-bold text-foreground">30+</div>
+                <div className="text-muted-foreground">Challenges</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-foreground">Free</div>
+                <div className="text-muted-foreground">To Start</div>
+              </div>
+            </div>
           </motion.div>
 
-          {/* CTA Buttons */}
+          {/* Right Content - Tech Stack Cards */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="hidden lg:block"
           >
-            <Button variant="default" size="xl" asChild className="group glow shadow-xl text-lg px-8 py-6">
-              <Link href="/signup">
-                Start Learning Free
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-            <Button variant="outline" size="xl" asChild className="text-lg px-8 py-6 border-2">
-              <Link href="/learn">
-                <Play className="w-5 h-5 mr-2" />
-                Explore Courses
-              </Link>
-            </Button>
-          </motion.div>
-
-          {/* Social Proof Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground"
-          >
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-primary" />
-              <span><strong className="text-foreground">10,000+</strong> learners</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-warning fill-warning" />
-              <span><strong className="text-foreground">4.9/5</strong> rating</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-secondary" />
-              <span><strong className="text-foreground">Free</strong> to start</span>
+            <div className="grid grid-cols-2 gap-4">
+              {techStack.map((tech, index) => (
+                <motion.div
+                  key={tech.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+                  className="group p-6 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer"
+                >
+                  <tech.icon className="w-8 h-8 text-primary mb-3 group-hover:scale-110 transition-transform" />
+                  <div className="font-semibold text-foreground">{tech.label}</div>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         </div>
