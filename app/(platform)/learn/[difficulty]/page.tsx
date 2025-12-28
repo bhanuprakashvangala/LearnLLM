@@ -1,7 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { ArrowRight, Clock, BookOpen, CheckCircle2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, Clock, BookOpen, ChevronLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import curriculum from "@/data/curriculum.json";
 import { notFound } from "next/navigation";
@@ -11,6 +10,12 @@ interface DifficultyPageProps {
     difficulty: string;
   }>;
 }
+
+const difficultyColors = {
+  beginner: "from-green-500 to-emerald-600",
+  intermediate: "from-blue-500 to-indigo-600",
+  advanced: "from-purple-500 to-pink-600",
+};
 
 export async function generateStaticParams() {
   return [
@@ -28,6 +33,7 @@ export default async function DifficultyPage({ params }: DifficultyPageProps) {
   }
 
   const data = curriculum[difficulty as keyof typeof curriculum];
+  const difficultyKey = difficulty as keyof typeof difficultyColors;
   const totalLessons = data.modules.reduce(
     (acc, module) => acc + module.lessons.length,
     0
@@ -35,112 +41,89 @@ export default async function DifficultyPage({ params }: DifficultyPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <section className="py-16 border-b bg-muted/20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-4">
-              <Link
-                href="/learn"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
-              >
-                ← Back to all paths
-              </Link>
-            </div>
-            <h1 className="text-4xl font-bold mb-3">{data.title}</h1>
-            <p className="text-xl text-muted-foreground mb-6">{data.description}</p>
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <span>{data.duration}</span>
+      {/* Compact Header */}
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-3xl mx-auto">
+            <Link
+              href="/learn"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              All Paths
+            </Link>
+
+            <div className="flex items-center gap-4 mb-2">
+              <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${difficultyColors[difficultyKey]} flex items-center justify-center`}>
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-muted-foreground" />
-                <span>{totalLessons} lessons</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
-                <span>{data.modules.length} modules</span>
+              <div>
+                <h1 className="text-2xl font-bold">{data.title}</h1>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>{data.duration}</span>
+                  <span>•</span>
+                  <span>{totalLessons} lessons</span>
+                  <span>•</span>
+                  <span>{data.modules.length} modules</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Modules */}
-      <section className="py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto space-y-8">
-            {data.modules.map((module, moduleIndex) => (
-              <Card key={module.id} className="border-2">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Module {moduleIndex + 1} of {data.modules.length}
-                      </div>
-                      <CardTitle className="text-2xl mb-2">{module.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {module.description}
-                      </CardDescription>
-                    </div>
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-lg text-primary">
-                      {moduleIndex + 1}
-                    </div>
+      {/* Modules - Compact List */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {data.modules.map((module, moduleIndex) => (
+            <div key={module.id} className="border rounded-xl overflow-hidden">
+              {/* Module Header */}
+              <div className="bg-muted/50 px-5 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${difficultyColors[difficultyKey]} flex items-center justify-center text-white text-sm font-bold`}>
+                    {moduleIndex + 1}
                   </div>
-                </CardHeader>
-
-                <CardContent>
-                  <div className="space-y-3">
-                    {module.lessons.map((lesson, lessonIndex) => (
-                      <Link
-                        key={lesson.slug}
-                        href={`/learn/${difficulty}/${lesson.slug}`}
-                        className="group block p-4 rounded-lg border-2 border-transparent hover:border-primary/50 hover:bg-muted/50 transition-all"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-4 flex-1">
-                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium group-hover:bg-primary group-hover:text-white transition-colors">
-                              {lessonIndex + 1}
-                            </div>
-                            <div className="flex-1">
-                              <div className="font-medium group-hover:text-primary transition-colors">
-                                {lesson.title}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-4 h-4" />
-                              <span>{lesson.duration} min</span>
-                            </div>
-                            <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
+                  <div>
+                    <h2 className="font-semibold">{module.title}</h2>
+                    <p className="text-sm text-muted-foreground">{module.lessons.length} lessons</p>
                   </div>
+                </div>
+                <Button size="sm" variant="ghost" asChild>
+                  <Link href={`/learn/${difficulty}/${module.lessons[0].slug}`}>
+                    <Play className="w-4 h-4 mr-1" />
+                    Start
+                  </Link>
+                </Button>
+              </div>
 
-                  {moduleIndex === 0 && (
-                    <div className="mt-6 pt-6 border-t">
-                      <Button
-                        variant="default"
-                        className="w-full md:w-auto group"
-                        asChild
-                      >
-                        <Link href={`/learn/${difficulty}/${module.lessons[0].slug}`}>
-                          Start Module
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                      </Button>
+              {/* Lessons List */}
+              <div className="divide-y">
+                {module.lessons.map((lesson, lessonIndex) => (
+                  <Link
+                    key={lesson.slug}
+                    href={`/learn/${difficulty}/${lesson.slug}`}
+                    className="flex items-center justify-between px-5 py-3 hover:bg-muted/30 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-muted text-xs font-medium flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                        {lessonIndex + 1}
+                      </span>
+                      <span className="text-sm font-medium group-hover:text-primary transition-colors">
+                        {lesson.title}
+                      </span>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      <span>{lesson.duration} min</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
     </div>
   );
 }
