@@ -54,29 +54,6 @@ export default function LearnPage() {
 
   const totalLessons = stats.beginner + stats.intermediate + stats.advanced;
 
-  const features = [
-    {
-      icon: FileText,
-      title: "83+ Lessons",
-      description: "Comprehensive curriculum from basics to advanced"
-    },
-    {
-      icon: Layers,
-      title: "15+ Papers",
-      description: "Research papers explained in simple terms"
-    },
-    {
-      icon: Target,
-      title: "10+ Projects",
-      description: "Real-world portfolio projects"
-    },
-    {
-      icon: Users,
-      title: "Community",
-      description: "Learn with thousands of developers"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -105,27 +82,26 @@ export default function LearnPage() {
             </p>
 
             {/* Quick Stats */}
-            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 mb-8">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <motion.div
-                    key={feature.title}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + index * 0.1 }}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-semibold">{feature.title}</div>
-                      <div className="text-xs text-muted-foreground hidden sm:block">{feature.description}</div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <span className="font-medium text-foreground">{totalLessons}+</span> Lessons
+              </span>
+              <span className="text-border">•</span>
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-purple-500" />
+                <span className="font-medium text-foreground">15+</span> Papers
+              </span>
+              <span className="text-border">•</span>
+              <span className="flex items-center gap-1.5">
+                <Target className="w-4 h-4 text-amber-500" />
+                <span className="font-medium text-foreground">10+</span> Projects
+              </span>
+              <span className="text-border">•</span>
+              <span className="flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-blue-500" />
+                Community
+              </span>
             </div>
 
             {/* Progress for logged in users */}
