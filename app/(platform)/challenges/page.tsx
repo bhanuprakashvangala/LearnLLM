@@ -53,7 +53,7 @@ export default function ChallengesPage() {
     setIsHydrated(true);
   }, []);
 
-  const challenges: Challenge[] = challengesData.challenges;
+  const challenges: Challenge[] = challengesData.challenges as Challenge[];
 
   // Check if a challenge is locked (prerequisites not met)
   const isChallengelocked = (challenge: Challenge): boolean => {
