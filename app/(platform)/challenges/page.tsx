@@ -55,16 +55,16 @@ export default function ChallengesPage() {
 
   const challenges: Challenge[] = challengesData.challenges as Challenge[];
 
-  // Check if a challenge is locked (prerequisites not met)
-  // Only advanced challenges require login and prerequisites
+  // Check if a challenge is locked
+  // Only the first beginner challenge is free, everything else requires login
   const isChallengelocked = (challenge: Challenge): boolean => {
-    // Beginner and intermediate are always unlocked
-    if (challenge.difficulty === "beginner" || challenge.difficulty === "intermediate") {
+    // First beginner challenge (id "1") is always free
+    if (challenge.id === "1") {
       return false;
     }
-    // Advanced requires login
+    // Everything else requires login
     if (!session) return true;
-    // Check prerequisites for advanced
+    // Check prerequisites if logged in
     if (challenge.prerequisites.length === 0) return false;
     return !challenge.prerequisites.every(prereq => isChallengeCompleted(prereq));
   };
@@ -271,7 +271,7 @@ export default function ChallengesPage() {
           {filteredChallenges.map((challenge, index) => {
             // Only show completion state after hydration to prevent showing stale data
             const isCompleted = isHydrated && isChallengeCompleted(challenge.id);
-            const isLocked = isHydrated ? isChallengelocked(challenge) : challenge.difficulty === "advanced";
+            const isLocked = isHydrated ? isChallengelocked(challenge) : challenge.id !== "1";
 
             return (
               <motion.div
