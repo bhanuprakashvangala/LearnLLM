@@ -5,24 +5,20 @@ import { Logo, LogoText } from "./Logo";
 
 const footerLinks = {
   product: [
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Tutorials", href: "/learn" },
+    { label: "Learn", href: "/learn" },
     { label: "Challenges", href: "/challenges" },
     { label: "Playground", href: "/playground" },
+    { label: "Pricing", href: "/pricing" },
   ],
   company: [
     { label: "About Us", href: "/about" },
-    { label: "Blog", href: "/blog" },
-    { label: "Careers", href: "/careers" },
     { label: "Contact", href: "/contact" },
   ],
   resources: [
-    { label: "Documentation", href: "/docs" },
-    { label: "API Reference", href: "/api-docs" },
-    { label: "Community", href: "/community" },
-    { label: "Changelog", href: "/changelog" },
-    { label: "Status", href: "/status" },
+    { label: "Getting Started", href: "/learn/beginner" },
+    { label: "API Tutorials", href: "/learn/intermediate" },
+    { label: "Advanced Topics", href: "/learn/advanced" },
+    { label: "Help Center", href: "/contact" },
   ],
   legal: [
     { label: "Privacy Policy", href: "/privacy" },

@@ -2,25 +2,77 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import {
   Play, Save, Share2, Download, RotateCcw, Settings,
   Code, MessageSquare, Sparkles, Zap, Copy, Check,
-  ChevronDown, Info, Terminal
+  ChevronDown, Info, Terminal, Wand2, Brain, Clock,
+  Lock, ArrowRight, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
+const models = [
+  { id: "gpt-4", name: "GPT-4", provider: "OpenAI", badge: "Most Capable" },
+  { id: "gpt-4-turbo", name: "GPT-4 Turbo", provider: "OpenAI", badge: "Fast" },
+  { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", provider: "OpenAI", badge: "Budget" },
+  { id: "claude-3-opus", name: "Claude 3 Opus", provider: "Anthropic", badge: "Powerful" },
+  { id: "claude-3-sonnet", name: "Claude 3 Sonnet", provider: "Anthropic", badge: "Balanced" },
+];
+
+const promptTemplates = [
+  {
+    name: "Explain Like I'm 5",
+    prompt: "Explain [topic] in simple terms that a 5-year-old could understand.",
+    category: "Education",
+    icon: "📚"
+  },
+  {
+    name: "Code Review",
+    prompt: "Review this code and suggest improvements:\n\n[paste code here]",
+    category: "Coding",
+    icon: "👨‍💻"
+  },
+  {
+    name: "Brainstorm Ideas",
+    prompt: "Generate 10 creative ideas for [topic/problem]",
+    category: "Creative",
+    icon: "💡"
+  },
+  {
+    name: "Summarize Article",
+    prompt: "Summarize this article in 3 bullet points:\n\n[paste article]",
+    category: "Productivity",
+    icon: "📝"
+  },
+  {
+    name: "Debug Code",
+    prompt: "Help me debug this code. What's wrong and how to fix it?\n\n[paste code]",
+    category: "Coding",
+    icon: "🐛"
+  },
+  {
+    name: "Write Documentation",
+    prompt: "Write clear documentation for the following code/API:\n\n[paste code]",
+    category: "Documentation",
+    icon: "📖"
+  },
+];
+
 export default function PlaygroundPage() {
+  const { data: session } = useSession();
   const [prompt, setPrompt] = React.useState("");
   const [systemPrompt, setSystemPrompt] = React.useState("You are a helpful AI assistant.");
   const [response, setResponse] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [temperature, setTemperature] = React.useState(0.7);
-  const [maxTokens, setMaxTokens] = React.useState(500);
+  const [maxTokens, setMaxTokens] = React.useState(1000);
   const [model, setModel] = React.useState("gpt-4");
-  const [showSettings, setShowSettings] = React.useState(false);
+  const [showSettings, setShowSettings] = React.useState(true);
   const [copied, setCopied] = React.useState(false);
+  const [showTemplates, setShowTemplates] = React.useState(true);
 
   const handleRun = async () => {
     if (!prompt.trim()) return;
@@ -28,18 +80,36 @@ export default function PlaygroundPage() {
     setIsLoading(true);
     setResponse("");
 
-    // Simulate AI response
-    setTimeout(() => {
-      setResponse(
-        `This is a simulated response to your prompt. In a real implementation, this would call the ${model} API with:\n\n` +
-        `System: ${systemPrompt}\n` +
-        `Prompt: ${prompt}\n` +
-        `Temperature: ${temperature}\n` +
-        `Max Tokens: ${maxTokens}\n\n` +
-        `The response would appear here with proper formatting and streaming support.`
-      );
-      setIsLoading(false);
-    }, 2000);
+    // Simulate AI response with streaming effect
+    const selectedModel = models.find(m => m.id === model);
+    const simulatedResponse = `This is a simulated response from ${selectedModel?.name || model}.
+
+Based on your prompt, here's what I would respond:
+
+**Analysis:**
+Your question touches on several key concepts. Let me break this down:
+
+1. **Context Understanding**: The prompt shows you're looking for ${prompt.includes('explain') ? 'an explanation' : prompt.includes('code') ? 'code assistance' : 'general help'}.
+
+2. **Response Strategy**: I would approach this by providing clear, structured information.
+
+3. **Key Points**:
+   - Temperature setting: ${temperature} (${temperature < 0.5 ? 'more focused' : temperature > 1 ? 'very creative' : 'balanced'})
+   - Max tokens: ${maxTokens}
+
+*Note: This is a demo response. Connect your API keys in settings to use real AI models.*`;
+
+    // Simulate typing effect
+    let currentText = "";
+    const words = simulatedResponse.split(" ");
+
+    for (let i = 0; i < words.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 30));
+      currentText += (i > 0 ? " " : "") + words[i];
+      setResponse(currentText);
+    }
+
+    setIsLoading(false);
   };
 
   const handleCopy = () => {
@@ -53,113 +123,102 @@ export default function PlaygroundPage() {
     setResponse("");
     setSystemPrompt("You are a helpful AI assistant.");
     setTemperature(0.7);
-    setMaxTokens(500);
+    setMaxTokens(1000);
   };
 
-  const promptTemplates = [
-    {
-      name: "Explain Like I'm 5",
-      prompt: "Explain [topic] in simple terms that a 5-year-old could understand.",
-      category: "Education"
-    },
-    {
-      name: "Code Review",
-      prompt: "Review this code and suggest improvements:\n\n[paste code here]",
-      category: "Coding"
-    },
-    {
-      name: "Brainstorm Ideas",
-      prompt: "Generate 10 creative ideas for [topic/problem]",
-      category: "Creative"
-    },
-    {
-      name: "Summarize Article",
-      prompt: "Summarize this article in 3 bullet points:\n\n[paste article]",
-      category: "Productivity"
-    },
-    {
-      name: "Debug Code",
-      prompt: "Help me debug this code. What's wrong and how to fix it?\n\n[paste code]",
-      category: "Coding"
-    },
-  ];
+  const selectedModel = models.find(m => m.id === model);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 border-b border-border">
-        <div className="container mx-auto px-4 py-8">
+      <div className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 border-b border-border">
+        <div className="container mx-auto px-4 py-6 md:py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                <Terminal className="w-6 h-6 text-primary" />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
+                  <Terminal className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">AI Playground</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Experiment with AI prompts and parameters in real-time
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold">AI Playground</h1>
-                <p className="text-sm text-muted-foreground">
-                  Experiment with AI prompts and parameters in real-time
-                </p>
-              </div>
-            </div>
 
-            {/* Quick Actions */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
-              <Button variant="outline" size="sm">
-                <Save className="w-4 h-4 mr-2" />
-                Save
-              </Button>
-              <Button variant="outline" size="sm">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
+                  <RotateCcw className="w-4 h-4" />
+                  Reset
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Save className="w-4 h-4" />
+                  Save
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Export
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Sidebar - Templates */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Prompt Templates
-              </h3>
-              <div className="space-y-2">
-                {promptTemplates.map((template) => (
-                  <button
-                    key={template.name}
-                    onClick={() => setPrompt(template.prompt)}
-                    className="w-full text-left p-3 rounded-lg border border-border hover:bg-muted transition-colors group"
-                  >
-                    <div className="font-medium text-sm mb-1 group-hover:text-primary transition-colors">
-                      {template.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {template.category}
-                    </div>
-                  </button>
-                ))}
-              </div>
+      <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Left Sidebar - Templates & Settings */}
+          <div className="xl:col-span-1 space-y-6">
+            {/* Templates */}
+            <Card className="overflow-hidden">
+              <button
+                onClick={() => setShowTemplates(!showTemplates)}
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Wand2 className="w-4 h-4 text-primary" />
+                  Prompt Templates
+                </h3>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showTemplates ? "rotate-180" : ""}`} />
+              </button>
+
+              {showTemplates && (
+                <div className="px-4 pb-4 space-y-2">
+                  {promptTemplates.map((template) => (
+                    <button
+                      key={template.name}
+                      onClick={() => setPrompt(template.prompt)}
+                      className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">{template.icon}</span>
+                        <span className="font-medium text-sm group-hover:text-primary transition-colors">
+                          {template.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
+                        {template.category}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </Card>
 
             {/* Settings */}
-            <Card className="p-4">
+            <Card className="overflow-hidden">
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="w-full flex items-center justify-between mb-3"
+                className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
               >
                 <h3 className="font-semibold flex items-center gap-2">
                   <Settings className="w-4 h-4" />
@@ -169,40 +228,52 @@ export default function PlaygroundPage() {
               </button>
 
               {showSettings && (
-                <div className="space-y-4">
+                <div className="px-4 pb-4 space-y-5">
                   {/* Model Selection */}
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Model</label>
+                    <label className="text-sm font-medium mb-2 block flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-muted-foreground" />
+                      Model
+                    </label>
                     <select
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
-                      className="w-full h-10 px-3 rounded-lg border border-border bg-background"
+                      className="w-full h-11 px-3 rounded-lg border border-border bg-background hover:border-primary transition-colors cursor-pointer"
                     >
-                      <option value="gpt-4">GPT-4 (Most Capable)</option>
-                      <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                      <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Faster)</option>
-                      <option value="claude-3-opus">Claude 3 Opus</option>
-                      <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                      {models.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} ({m.badge})
+                        </option>
+                      ))}
                     </select>
+                    {selectedModel && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Provider: {selectedModel.provider}
+                      </p>
+                    )}
                   </div>
 
                   {/* Temperature */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium">Temperature</label>
-                      <span className="text-sm text-muted-foreground">{temperature}</span>
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-muted-foreground" />
+                        Temperature
+                      </label>
+                      <span className="text-sm font-mono bg-muted px-2 py-0.5 rounded">{temperature}</span>
                     </div>
                     <input
                       type="range"
                       min="0"
-                      max="2"
+                      max="1"
                       step="0.1"
                       value={temperature}
                       onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                      className="w-full"
+                      className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>Focused</span>
+                      <span>Precise</span>
+                      <span>Balanced</span>
                       <span>Creative</span>
                     </div>
                   </div>
@@ -210,8 +281,11 @@ export default function PlaygroundPage() {
                   {/* Max Tokens */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium">Max Tokens</label>
-                      <span className="text-sm text-muted-foreground">{maxTokens}</span>
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-muted-foreground" />
+                        Max Tokens
+                      </label>
+                      <span className="text-sm font-mono bg-muted px-2 py-0.5 rounded">{maxTokens}</span>
                     </div>
                     <input
                       type="range"
@@ -220,19 +294,22 @@ export default function PlaygroundPage() {
                       step="100"
                       value={maxTokens}
                       onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-                      className="w-full"
+                      className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>100</span>
-                      <span>4000</span>
+                      <span>Short</span>
+                      <span>Medium</span>
+                      <span>Long</span>
                     </div>
                   </div>
 
+                  {/* Info */}
                   <div className="pt-3 border-t border-border">
-                    <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                      <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-2 text-xs text-muted-foreground p-3 bg-muted/50 rounded-lg">
+                      <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-primary" />
                       <p>
-                        Temperature controls randomness. Lower values make output more focused and deterministic.
+                        Lower temperature = more focused and deterministic responses.
+                        Higher temperature = more creative and varied outputs.
                       </p>
                     </div>
                   </div>
@@ -242,53 +319,62 @@ export default function PlaygroundPage() {
           </div>
 
           {/* Main Area - Prompt & Response */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="xl:col-span-3 space-y-6">
             {/* System Prompt */}
-            <Card className="p-4">
-              <label className="text-sm font-medium mb-2 block flex items-center gap-2">
-                <Code className="w-4 h-4" />
+            <Card className="p-5">
+              <label className="text-sm font-semibold mb-3 block flex items-center gap-2">
+                <Code className="w-4 h-4 text-primary" />
                 System Prompt
+                <span className="text-xs font-normal text-muted-foreground ml-2">
+                  (Define the AI's behavior)
+                </span>
               </label>
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
-                className="w-full h-20 px-3 py-2 rounded-lg border border-border bg-background resize-none font-mono text-sm"
+                className="w-full h-24 px-4 py-3 rounded-xl border-2 border-border bg-muted/30 resize-none font-mono text-sm focus:border-primary focus:outline-none transition-colors"
                 placeholder="Define the AI's behavior and context..."
               />
             </Card>
 
             {/* User Prompt */}
-            <Card className="p-4">
-              <label className="text-sm font-medium mb-2 block flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
+            <Card className="p-5">
+              <label className="text-sm font-semibold mb-3 block flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
                 Your Prompt
               </label>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="w-full h-48 px-3 py-2 rounded-lg border border-border bg-background resize-none font-mono text-sm"
-                placeholder="Enter your prompt here..."
+                className="w-full h-40 md:h-48 px-4 py-3 rounded-xl border-2 border-border bg-muted/30 resize-none font-mono text-sm focus:border-primary focus:outline-none transition-colors"
+                placeholder="Enter your prompt here... Try using one of the templates on the left!"
               />
 
-              <div className="flex items-center gap-2 mt-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
                 <Button
                   onClick={handleRun}
                   disabled={isLoading || !prompt.trim()}
-                  className="flex-1 group"
+                  size="lg"
+                  className="flex-1 sm:flex-none h-12 px-8 group font-semibold"
                 >
                   {isLoading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                       Generating...
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4 mr-2" />
+                      <Play className="w-5 h-5 mr-2" />
                       Run Prompt
                       <Zap className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
                     </>
                   )}
                 </Button>
+
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4" />
+                  <span>Est. {Math.ceil(maxTokens / 100)}s</span>
+                </div>
               </div>
             </Card>
 
@@ -298,26 +384,32 @@ export default function PlaygroundPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <Card className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-sm font-medium flex items-center gap-2">
+                <Card className="p-5 border-2 border-primary/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="text-sm font-semibold flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-primary" />
                       AI Response
+                      {response && !isLoading && (
+                        <span className="text-xs font-normal text-muted-foreground ml-2">
+                          (~{Math.round(response.length / 4)} tokens)
+                        </span>
+                      )}
                     </label>
-                    {response && (
+                    {response && !isLoading && (
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={handleCopy}
+                        className="gap-2"
                       >
                         {copied ? (
                           <>
-                            <Check className="w-4 h-4 mr-2" />
+                            <Check className="w-4 h-4 text-green-500" />
                             Copied!
                           </>
                         ) : (
                           <>
-                            <Copy className="w-4 h-4 mr-2" />
+                            <Copy className="w-4 h-4" />
                             Copy
                           </>
                         )}
@@ -325,35 +417,71 @@ export default function PlaygroundPage() {
                     )}
                   </div>
 
-                  <div className="min-h-[200px] p-4 rounded-lg bg-muted/50 border border-border">
-                    {isLoading ? (
+                  <div className="min-h-[200px] p-5 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border">
+                    {isLoading && !response ? (
                       <div className="flex items-center justify-center h-48">
                         <div className="text-center">
-                          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+                          <div className="w-10 h-10 border-3 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
                           <p className="text-sm text-muted-foreground">Generating response...</p>
+                          <p className="text-xs text-muted-foreground mt-1">Using {selectedModel?.name}</p>
                         </div>
                       </div>
                     ) : (
-                      <pre className="whitespace-pre-wrap font-mono text-sm">
-                        {response}
-                      </pre>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
+                          {response}
+                          {isLoading && <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" />}
+                        </pre>
+                      </div>
                     )}
                   </div>
 
-                  {response && (
-                    <div className="mt-3 p-3 bg-primary/5 rounded-lg flex items-start gap-2 text-xs">
-                      <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                      <div className="text-muted-foreground">
-                        <strong className="text-foreground">Tokens used:</strong> ~{Math.round(response.length / 4)} tokens
-                        <br />
-                        <strong className="text-foreground">Model:</strong> {model}
-                        <br />
-                        <strong className="text-foreground">Temperature:</strong> {temperature}
+                  {response && !isLoading && (
+                    <div className="mt-4 p-4 bg-primary/5 rounded-xl border border-primary/10">
+                      <div className="flex flex-wrap gap-4 text-xs">
+                        <div className="flex items-center gap-2">
+                          <Brain className="w-4 h-4 text-primary" />
+                          <span className="text-muted-foreground">Model:</span>
+                          <span className="font-medium">{selectedModel?.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          <span className="text-muted-foreground">Temperature:</span>
+                          <span className="font-medium">{temperature}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-primary" />
+                          <span className="text-muted-foreground">Tokens:</span>
+                          <span className="font-medium">~{Math.round(response.length / 4)}</span>
+                        </div>
                       </div>
                     </div>
                   )}
                 </Card>
               </motion.div>
+            )}
+
+            {/* Not logged in CTA */}
+            {!session && (
+              <Card className="p-6 bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/30">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                      <Lock className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Save Your Experiments</h3>
+                      <p className="text-muted-foreground text-sm">Sign in to save prompts, history, and unlock all features</p>
+                    </div>
+                  </div>
+                  <Button asChild>
+                    <Link href="/login">
+                      Sign In
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Link>
+                  </Button>
+                </div>
+              </Card>
             )}
           </div>
         </div>

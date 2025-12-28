@@ -28,12 +28,12 @@ export function hasFullAccess(user: UserAccess | null): boolean {
 
 // Check if user can access specific difficulty level
 export function canAccessDifficulty(user: UserAccess | null, difficulty: Difficulty): boolean {
-  // Beginner content is always free
-  if (difficulty === "BEGINNER") {
+  // Beginner and Intermediate content is free for everyone
+  if (difficulty === "BEGINNER" || difficulty === "INTERMEDIATE") {
     return true;
   }
 
-  // Intermediate and Advanced require full access
+  // Advanced requires Pro plan or staff role
   return hasFullAccess(user);
 }
 

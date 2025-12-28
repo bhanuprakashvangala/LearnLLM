@@ -1,0 +1,92 @@
+{
+  "challenges": [
+    {
+      "id": "1",
+      "title": "Build Your First Chatbot",
+      "description": "Create a simple chatbot using OpenAI API that can answer questions about a specific topic",
+      "difficulty": "beginner",
+      "points": 100,
+      "timeEstimate": "30 min",
+      "category": "API Integration",
+      "skills": ["API", "Prompting", "JavaScript"],
+      "prerequisites": []
+    },
+    {
+      "id": "2",
+      "title": "Prompt Engineering Master",
+      "description": "Design 5 different prompts for various tasks using advanced techniques like few-shot learning",
+      "difficulty": "beginner",
+      "points": 150,
+      "timeEstimate": "45 min",
+      "category": "Prompt Engineering",
+      "skills": ["Prompting", "Chain of Thought", "Few-Shot"],
+      "prerequisites": []
+    },
+    {
+      "id": "3",
+      "title": "Document Q&A System",
+      "description": "Build a RAG system that can answer questions from uploaded PDF documents",
+      "difficulty": "intermediate",
+      "points": 250,
+      "timeEstimate": "2 hours",
+      "category": "RAG",
+      "skills": ["RAG", "Embeddings", "Vector DB", "LangChain"],
+      "prerequisites": ["1", "2"]
+    },
+    {
+      "id": "4",
+      "title": "Custom AI Agent",
+      "description": "Create an autonomous agent that can research topics and provide comprehensive summaries",
+      "difficulty": "intermediate",
+      "points": 300,
+      "timeEstimate": "3 hours",
+      "category": "AI Agents",
+      "skills": ["Agents", "Tools", "ReAct", "LangChain"],
+      "prerequisites": ["1", "2"]
+    },
+    {
+      "id": "5",
+      "title": "Semantic Search Engine",
+      "description": "Build a semantic search engine using embeddings and hybrid search techniques",
+      "difficulty": "intermediate",
+      "points": 350,
+      "timeEstimate": "3 hours",
+      "category": "Vector Search",
+      "skills": ["Embeddings", "Vector DB", "BM25", "Hybrid Search"],
+      "prerequisites": ["3"]
+    },
+    {
+      "id": "6",
+      "title": "Fine-tune Your Own Model",
+      "description": "Fine-tune a small language model on a custom dataset using LoRA",
+      "difficulty": "advanced",
+      "points": 500,
+      "timeEstimate": "4 hours",
+      "category": "Fine-tuning",
+      "skills": ["LoRA", "Fine-tuning", "PyTorch", "Hugging Face"],
+      "prerequisites": ["3", "4", "5"]
+    },
+    {
+      "id": "7",
+      "title": "Production RAG System",
+      "description": "Deploy a production-ready RAG application with caching, monitoring, and optimization",
+      "difficulty": "advanced",
+      "points": 600,
+      "timeEstimate": "6 hours",
+      "category": "Deployment",
+      "skills": ["RAG", "Production", "Monitoring", "Optimization"],
+      "prerequisites": ["3", "5"]
+    },
+    {
+      "id": "8",
+      "title": "Multi-Agent System",
+      "description": "Build a collaborative multi-agent system where agents work together to solve complex tasks",
+      "difficulty": "advanced",
+      "points": 700,
+      "timeEstimate": "8 hours",
+      "category": "Advanced Agents",
+      "skills": ["Multi-Agent", "Coordination", "Complex Tasks"],
+      "prerequisites": ["4", "6"]
+    }
+  ]
+}

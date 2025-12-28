@@ -1,37 +1,11 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Zap, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
-import toast from "react-hot-toast";
 
 export function HeroSection() {
-  const [email, setEmail] = React.useState("");
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const supabase = createClient();
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Assumes a 'leads' table with an 'email' column.
-    // You might need to create this table in your Supabase project.
-    const { error } = await supabase.from("leads").insert({ email });
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Thanks for joining the waitlist!");
-      setEmail("");
-    }
-
-    setIsSubmitting(false);
-  };
-
   return (
     <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden bg-background">
       {/* Clean Background Pattern */}
@@ -54,7 +28,7 @@ export function HeroSection() {
           >
             <div className="glass rounded-full px-6 py-2 inline-flex items-center gap-2">
               <span className="text-sm font-medium">
-                Master AI Development from Basics to Production
+                Trusted by 10,000+ Professionals Worldwide
               </span>
             </div>
           </motion.div>
@@ -69,7 +43,7 @@ export function HeroSection() {
             Learn{" "}
             <span className="gradient-text">AI & LLMs</span>
             <br />
-            The Skills Everyone Needs in 2025
+            The Skills Everyone Needs to Build Anything with AI
           </motion.h1>
 
           {/* Subheading */}
@@ -110,46 +84,26 @@ export function HeroSection() {
           >
             <Button variant="default" size="xl" asChild className="group">
               <Link href="/signup">
-                Start Free Course
+                Start Learning Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
             <Button variant="outline" size="xl" asChild>
-              <Link href="/playground">
-                Try AI Playground
-                <Sparkles className="w-5 h-5" />
+              <Link href="/learn">
+                Explore Courses
               </Link>
             </Button>
           </motion.div>
 
-          {/* Email Capture */}
-          <motion.div
+          {/* Social Proof */}
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="max-w-md mx-auto"
+            className="text-sm text-muted-foreground"
           >
-            <form onSubmit={handleEmailSubmit} className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="you@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="flex-1"
-              />
-              <Button
-                type="submit"
-                variant="default"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "..." : "Get Started"}
-              </Button>
-            </form>
-            <p className="text-xs text-muted-foreground mt-3">
-              Join 15,000+ developers. Free tier forever. No credit card required.
-            </p>
-          </motion.div>
+            Free forever. No credit card required. Join thousands already learning.
+          </motion.p>
         </div>
       </div>
     </section>
