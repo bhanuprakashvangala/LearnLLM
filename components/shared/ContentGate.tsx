@@ -262,32 +262,47 @@ export function ContentGate({ difficulty, children, title, slug }: ContentGatePr
             </>
           ) : (
             <>
-              {/* PRO upgrade prompt */}
+              {/* PRO upgrade prompt - Premium Design */}
               <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-primary" />
+                {/* Gradient icon background */}
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <Sparkles className="w-10 h-10 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Pro Content</h2>
-                <p className="text-muted-foreground mb-6">
-                  {title ? (
-                    <>
-                      <span className="font-medium text-foreground">"{title}"</span> is available for Pro members.
-                    </>
-                  ) : (
-                    <>Advanced lessons require a Pro subscription.</>
-                  )}
+
+                <div className="inline-block px-3 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-semibold rounded-full mb-4">
+                  ADVANCED CONTENT
+                </div>
+
+                <h2 className="text-2xl font-bold mb-3">Unlock This Lesson</h2>
+
+                {title && (
+                  <p className="text-foreground font-medium mb-2">"{title}"</p>
+                )}
+
+                <p className="text-sm text-muted-foreground mb-6">
+                  Get access to all advanced lessons, fine-tuning tutorials, and production deployment guides.
                 </p>
 
-                <Button asChild className="w-full h-11 font-semibold">
+                {/* Features list */}
+                <div className="text-left bg-muted/50 rounded-xl p-4 mb-6 space-y-2">
+                  {["All 83 lessons unlocked", "Advanced fine-tuning guides", "Production deployment", "Priority support"].map((feature) => (
+                    <div key={feature} className="flex items-center gap-2 text-sm">
+                      <Check className="w-4 h-4 text-purple-500" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Button asChild className="w-full h-12 font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 border-0">
                   <Link href="/pricing">
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Upgrade to Pro
+                    Upgrade to Pro - $19/mo
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>
 
                 <p className="text-xs text-muted-foreground mt-4">
-                  Pro includes all advanced lessons and premium features.
+                  7-day money-back guarantee
                 </p>
               </div>
             </>
