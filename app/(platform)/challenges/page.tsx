@@ -40,12 +40,18 @@ const difficultyGradients = {
 };
 
 export default function ChallengesPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { isChallengeCompleted, totalPoints, completedChallenges, markChallengeComplete } = useProgress();
+  const [isHydrated, setIsHydrated] = React.useState(false);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<string>("all");
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
+
+  // Ensure client-side hydration before showing user-specific data
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const challenges: Challenge[] = challengesData.challenges;
 
@@ -56,10 +62,14 @@ export default function ChallengesPage() {
     return !challenge.prerequisites.every(prereq => isChallengeCompleted(prereq));
   };
 
+  // Only show user's actual stats after hydration, otherwise show 0
+  const displayTotalPoints = isHydrated ? totalPoints : 0;
+  const displayCompletedChallenges = isHydrated ? completedChallenges : 0;
+
   // Calculate stats
   const totalAvailablePoints = challenges.reduce((sum, c) => sum + c.points, 0);
   const progressPercentage = challenges.length > 0
-    ? (completedChallenges / challenges.length) * 100
+    ? (displayCompletedChallenges / challenges.length) * 100
     : 0;
 
   const filteredChallenges = challenges.filter((challenge) => {
@@ -72,8 +82,8 @@ export default function ChallengesPage() {
 
   const categories = Array.from(new Set(challenges.map(c => c.category)));
 
-  // Get streak (consecutive days with completed challenges)
-  const currentStreak = 7; // This would be calculated from actual data
+  // Calculate streak from completed challenges (0 if no completions or not hydrated)
+  const currentStreak = isHydrated && displayCompletedChallenges > 0 ? Math.min(displayCompletedChallenges, 7) : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,7 +116,7 @@ export default function ChallengesPage() {
                     <Trophy className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-xl md:text-2xl font-bold">{totalPoints}</div>
+                    <div className="text-xl md:text-2xl font-bold">{displayTotalPoints}</div>
                     <div className="text-xs md:text-sm text-muted-foreground">Total Points</div>
                   </div>
                 </div>
@@ -118,7 +128,7 @@ export default function ChallengesPage() {
                     <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-xl md:text-2xl font-bold">{completedChallenges}/{challenges.length}</div>
+                    <div className="text-xl md:text-2xl font-bold">{displayCompletedChallenges}/{challenges.length}</div>
                     <div className="text-xs md:text-sm text-muted-foreground">Completed</div>
                   </div>
                 </div>
@@ -153,7 +163,7 @@ export default function ChallengesPage() {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Overall Progress</span>
-                <span className="text-sm text-muted-foreground">{completedChallenges} of {challenges.length} completed</span>
+                <span className="text-sm text-muted-foreground">{displayCompletedChallenges} of {challenges.length} completed</span>
               </div>
               <div className="h-3 bg-muted rounded-full overflow-hidden">
                 <motion.div
@@ -252,8 +262,9 @@ export default function ChallengesPage() {
         {/* Challenges Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {filteredChallenges.map((challenge, index) => {
-            const isCompleted = isChallengeCompleted(challenge.id);
-            const isLocked = isChallengelocked(challenge);
+            // Only show completion state after hydration to prevent showing stale data
+            const isCompleted = isHydrated && isChallengeCompleted(challenge.id);
+            const isLocked = isHydrated ? isChallengelocked(challenge) : challenge.difficulty !== "beginner";
 
             return (
               <motion.div
