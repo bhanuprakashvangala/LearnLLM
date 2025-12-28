@@ -63,7 +63,7 @@ export function canAccessChallenges(user: UserAccess | null): boolean {
 
 // Check if user can save playground experiments
 export function canSavePlayground(user: UserAccess | null): boolean {
-  return hasFullAccess(user);
+  return hasProAccess(user);
 }
 
 // Check if user is admin
