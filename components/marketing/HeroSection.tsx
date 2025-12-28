@@ -62,7 +62,7 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
           >
-            Whether you're a student, designer, marketer, or developer - master ChatGPT, prompt engineering, RAG, and more.
+            Whether you're a student, designer, marketer, or developer - master LLMs, LangChain, RAG, AI Agents, and more.
             <span className="text-foreground font-medium"> Start with no code, level up at your pace.</span>
           </motion.p>
 
