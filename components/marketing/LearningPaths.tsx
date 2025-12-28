@@ -74,7 +74,7 @@ const item = {
 
 export function LearningPaths() {
   return (
-    <section className="py-16 md:py-20 relative overflow-hidden bg-background">
+    <section className="min-h-screen py-12 md:py-16 relative overflow-hidden bg-background flex flex-col justify-center snap-start">
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}

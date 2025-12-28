@@ -67,7 +67,7 @@ const faqs = [
 
 export function FAQ() {
   return (
-    <section className="py-16 md:py-20 relative overflow-hidden bg-muted/20">
+    <section className="min-h-screen py-12 md:py-16 relative overflow-hidden bg-muted/20 flex flex-col justify-center snap-start">
       {/* Background decoration */}
       <div className="absolute top-0 left-0 w-full h-px bg-border" />
 

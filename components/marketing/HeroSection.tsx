@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   return (
-    <section className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden bg-background">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background snap-start">
       {/* Clean Background Pattern */}
       <div className="absolute inset-0 -z-10">
         {/* Subtle Grid Pattern */}

@@ -90,7 +90,7 @@ const item = {
 
 export function Features() {
   return (
-    <section id="features" className="py-16 md:py-20 relative overflow-hidden bg-muted/20">
+    <section id="features" className="min-h-screen py-12 md:py-16 relative overflow-hidden bg-muted/20 flex flex-col justify-center snap-start">
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}

@@ -8,7 +8,7 @@ import { FAQ } from "@/components/marketing/FAQ";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen snap-y snap-mandatory overflow-y-auto h-screen">
       <Navbar />
       <HeroSection />
       <LearningPaths />

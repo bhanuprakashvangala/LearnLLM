@@ -36,7 +36,7 @@ const socialLinks = [
 
 export function Footer() {
   return (
-    <footer className="relative border-t overflow-hidden bg-background">
+    <footer className="relative border-t overflow-hidden bg-background snap-start">
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
