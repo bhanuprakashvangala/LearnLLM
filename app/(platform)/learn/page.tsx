@@ -5,9 +5,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
-  BookOpen, Code, Rocket, ArrowRight, Clock, Users,
-  Trophy, Sparkles, CheckCircle2, Play, GraduationCap,
-  FileText, Layers, Target, Zap
+  BookOpen, Code, Rocket, ArrowRight, Clock,
+  Trophy, Play, GraduationCap, Layers
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,29 +79,6 @@ export default function LearnPage() {
               From complete beginner to production AI engineer. Learn at your own pace with
               hands-on tutorials, paper explanations, and real-world projects.
             </p>
-
-            {/* Quick Stats */}
-            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-primary" />
-                <span className="font-medium text-foreground">{totalLessons}+</span> Lessons
-              </span>
-              <span className="text-border">•</span>
-              <span className="flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-purple-500" />
-                <span className="font-medium text-foreground">15+</span> Papers
-              </span>
-              <span className="text-border">•</span>
-              <span className="flex items-center gap-1.5">
-                <Target className="w-4 h-4 text-amber-500" />
-                <span className="font-medium text-foreground">10+</span> Projects
-              </span>
-              <span className="text-border">•</span>
-              <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-500" />
-                Community
-              </span>
-            </div>
 
             {/* Progress for logged in users */}
             {session && completedLessons > 0 && (
@@ -248,96 +224,6 @@ export default function LearnPage() {
         </div>
       </section>
 
-      {/* Features Stats */}
-      <section className="py-16 bg-muted/30 border-y border-border">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="p-6"
-              >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <BookOpen className="w-8 h-8 text-primary" />
-                </div>
-                <div className="text-4xl font-bold text-primary mb-2">80+</div>
-                <div className="font-semibold mb-1">Comprehensive Lessons</div>
-                <div className="text-sm text-muted-foreground">
-                  From basics to advanced production systems
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="p-6"
-              >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-                  <FileText className="w-8 h-8 text-purple-600" />
-                </div>
-                <div className="text-4xl font-bold text-purple-600 mb-2">15+</div>
-                <div className="font-semibold mb-1">Research Papers</div>
-                <div className="text-sm text-muted-foreground">
-                  Explained in simple, understandable terms
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="p-6"
-              >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center">
-                  <Zap className="w-8 h-8 text-amber-600" />
-                </div>
-                <div className="text-4xl font-bold text-amber-600 mb-2">10+</div>
-                <div className="font-semibold mb-1">Hands-on Projects</div>
-                <div className="text-sm text-muted-foreground">
-                  Build portfolio-worthy AI applications
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 md:py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center"
-          >
-            <Sparkles className="w-12 h-12 mx-auto mb-6 text-primary" />
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to Start Your AI Journey?
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Join thousands of developers who are building the future with AI.
-              No prior experience required.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-base font-semibold group" asChild>
-                <Link href="/learn/beginner">
-                  <GraduationCap className="w-5 h-5 mr-2" />
-                  Start with Basics
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="text-base font-semibold" asChild>
-                <Link href="/pricing">
-                  View Pricing
-                </Link>
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
     </div>
   );
 }

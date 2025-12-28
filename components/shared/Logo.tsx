@@ -16,35 +16,36 @@ export function Logo({ className }: { className?: string }) {
           <stop offset="0%" stopColor="#22c55e" />
           <stop offset="100%" stopColor="#16a34a" />
         </linearGradient>
+        <linearGradient id="capGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#16a34a" />
+          <stop offset="100%" stopColor="#15803d" />
+        </linearGradient>
       </defs>
 
-      {/* Rounded square background */}
-      <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#logoGrad)" />
+      {/* Robot Head - rounded square */}
+      <rect x="4" y="8" width="24" height="20" rx="4" fill="url(#logoGrad)" />
 
-      {/* L letter stylized as code/learning */}
+      {/* Graduation Cap */}
+      <polygon points="16,2 28,7 16,12 4,7" fill="url(#capGrad)" />
+      <rect x="14" y="7" width="4" height="3" fill="#15803d" />
+
+      {/* Robot Eyes - glowing */}
+      <circle cx="11" cy="17" r="3" fill="white" />
+      <circle cx="21" cy="17" r="3" fill="white" />
+      <circle cx="11" cy="17" r="1.5" fill="#1e3a2f" />
+      <circle cx="21" cy="17" r="1.5" fill="#1e3a2f" />
+
+      {/* Robot Mouth - friendly smile */}
       <path
-        d="M10 8 L10 20 L14 20"
+        d="M10 23 Q16 26 22 23"
         stroke="white"
-        strokeWidth="3"
+        strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
         fill="none"
       />
 
-      {/* L second stroke */}
-      <path
-        d="M16 8 L16 20 L20 20"
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        opacity="0.7"
-      />
-
-      {/* M hint / neural dot */}
-      <circle cx="24" cy="12" r="2.5" fill="white" opacity="0.9" />
-      <circle cx="24" cy="20" r="1.5" fill="white" opacity="0.6" />
+      {/* Antenna */}
+      <circle cx="16" cy="4" r="1.5" fill="#22c55e" />
     </svg>
   );
 }
