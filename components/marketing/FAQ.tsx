@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { HelpCircle, Sparkles } from "lucide-react";
+import { HelpCircle, Headphones } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -131,7 +131,7 @@ export function FAQ() {
           </p>
           <Button variant="outline" asChild>
             <Link href="/contact">
-              <Sparkles className="w-4 h-4 mr-2" />
+              <Headphones className="w-4 h-4 mr-2" />
               Contact Support
             </Link>
           </Button>
