@@ -2,48 +2,57 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Brain } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Brain, Play, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background snap-start">
-      {/* Clean Background Pattern */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
+      {/* Premium Background Effects */}
       <div className="absolute inset-0 -z-10">
-        {/* Subtle Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:48px_48px]" />
+        {/* Animated gradient orbs */}
+        <div className="absolute top-0 -left-40 w-80 h-80 bg-primary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" />
+        <div className="absolute top-0 -right-40 w-80 h-80 bg-secondary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style={{ animationDelay: "2s" }} />
+        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-80 h-80 bg-accent/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style={{ animationDelay: "4s" }} />
 
-        {/* Minimal accent - single professional touch */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        {/* Grid pattern */}
+        <div className="absolute inset-0 bg-grid-pattern opacity-30" />
+
+        {/* Radial gradient overlay */}
+        <div className="absolute inset-0 bg-radial-gradient" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-5xl mx-auto text-center">
-          {/* Badge */}
+          {/* Animated Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-block mb-6"
+            className="inline-block mb-8"
           >
-            <div className="glass rounded-full px-6 py-2 inline-flex items-center gap-2">
-              <span className="text-sm font-medium">
+            <div className="glass rounded-full px-6 py-2.5 inline-flex items-center gap-3 border border-primary/20 shadow-lg">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              <span className="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Trusted by 10,000+ Professionals Worldwide
               </span>
             </div>
           </motion.div>
 
-          {/* Main Heading */}
+          {/* Main Heading with animated gradient */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 leading-tight"
+            className="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight tracking-tight"
           >
             Learn{" "}
-            <span className="gradient-text">AI & LLMs</span>
+            <span className="gradient-text-animated">AI & LLMs</span>
             <br />
-            The Skills Everyone Needs to Build Anything with AI
+            <span className="text-foreground/80">Build Anything with AI</span>
           </motion.h1>
 
           {/* Subheading */}
@@ -51,26 +60,27 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-3xl mx-auto"
+            className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
           >
-            Whether you're a student, designer, marketer, or developer - learn ChatGPT, prompt engineering, RAG, and more. Start with no code, level up at your pace.
+            Whether you're a student, designer, marketer, or developer - master ChatGPT, prompt engineering, RAG, and more.
+            <span className="text-foreground font-medium"> Start with no code, level up at your pace.</span>
           </motion.p>
 
-          {/* Stats */}
+          {/* Feature Pills */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-6 mb-6"
+            className="flex flex-wrap items-center justify-center gap-4 mb-10"
           >
             {[
-              { icon: Brain, label: "No Code to Pro", color: "text-primary" },
-              { icon: Zap, label: "For Everyone", color: "text-accent" },
-              { icon: Sparkles, label: "Practical Skills", color: "text-secondary" },
+              { icon: Brain, label: "No Code to Pro", color: "bg-primary/10 text-primary border-primary/20" },
+              { icon: Zap, label: "For Everyone", color: "bg-accent/10 text-accent border-accent/20" },
+              { icon: Sparkles, label: "Practical Skills", color: "bg-secondary/10 text-secondary border-secondary/20" },
             ].map((stat, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                <span className="text-sm font-medium">{stat.label}</span>
+              <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-full border ${stat.color} backdrop-blur-sm`}>
+                <stat.icon className="w-4 h-4" />
+                <span className="text-sm font-semibold">{stat.label}</span>
               </div>
             ))}
           </motion.div>
@@ -80,30 +90,42 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
           >
-            <Button variant="default" size="xl" asChild className="group">
+            <Button variant="default" size="xl" asChild className="group glow shadow-xl text-lg px-8 py-6">
               <Link href="/signup">
                 Start Learning Free
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button variant="outline" size="xl" asChild>
+            <Button variant="outline" size="xl" asChild className="text-lg px-8 py-6 border-2">
               <Link href="/learn">
+                <Play className="w-5 h-5 mr-2" />
                 Explore Courses
               </Link>
             </Button>
           </motion.div>
 
-          {/* Social Proof */}
-          <motion.p
+          {/* Social Proof Stats */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="text-sm text-muted-foreground"
+            className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground"
           >
-            Free forever. No credit card required. Join thousands already learning.
-          </motion.p>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              <span><strong className="text-foreground">10,000+</strong> learners</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-warning fill-warning" />
+              <span><strong className="text-foreground">4.9/5</strong> rating</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-secondary" />
+              <span><strong className="text-foreground">Free</strong> to start</span>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
