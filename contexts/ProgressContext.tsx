@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 
 interface LessonProgress {
@@ -43,10 +43,21 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [lessonProgress, setLessonProgress] = useState<Map<string, LessonProgress>>(new Map());
   const [challengeProgress, setChallengeProgress] = useState<Map<string, ChallengeProgress>>(new Map());
+  const previousUserIdRef = useRef<string | null>(null);
 
-  // Load progress from localStorage
+  // Load progress from localStorage when user changes
   useEffect(() => {
-    if (user) {
+    const currentUserId = user?.id || null;
+
+    // If user changed, reset progress first
+    if (previousUserIdRef.current !== currentUserId) {
+      setLessonProgress(new Map());
+      setChallengeProgress(new Map());
+      previousUserIdRef.current = currentUserId;
+    }
+
+    // Only load progress if user is logged in and has a valid ID
+    if (user && user.id) {
       const storageKey = `${STORAGE_KEY_LESSONS}_${user.id}`;
       const stored = localStorage.getItem(storageKey);
       if (stored) {
@@ -79,9 +90,9 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Save progress to localStorage
+  // Save progress to localStorage (only if user has valid ID)
   useEffect(() => {
-    if (user && lessonProgress.size > 0) {
+    if (user && user.id && lessonProgress.size > 0) {
       const storageKey = `${STORAGE_KEY_LESSONS}_${user.id}`;
       const data = Object.fromEntries(lessonProgress);
       localStorage.setItem(storageKey, JSON.stringify(data));
@@ -89,7 +100,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   }, [lessonProgress, user]);
 
   useEffect(() => {
-    if (user && challengeProgress.size > 0) {
+    if (user && user.id && challengeProgress.size > 0) {
       const storageKey = `${STORAGE_KEY_CHALLENGES}_${user.id}`;
       const data = Object.fromEntries(challengeProgress);
       localStorage.setItem(storageKey, JSON.stringify(data));
