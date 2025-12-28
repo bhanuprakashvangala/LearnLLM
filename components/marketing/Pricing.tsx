@@ -84,7 +84,7 @@ const item = {
 
 export function Pricing() {
   return (
-    <section id="pricing" className="py-32 relative overflow-hidden bg-background">
+    <section id="pricing" className="py-16 md:py-20 relative overflow-hidden bg-background">
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}

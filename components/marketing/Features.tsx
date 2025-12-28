@@ -90,7 +90,7 @@ const item = {
 
 export function Features() {
   return (
-    <section id="features" className="py-32 relative overflow-hidden bg-muted/20">
+    <section id="features" className="py-16 md:py-20 relative overflow-hidden bg-muted/20">
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -150,7 +150,7 @@ export function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-24"
+          className="mt-12 md:mt-16"
         >
           <div className="bg-card rounded-2xl p-10 md:p-16 shadow-xl border-2 border-border">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
