@@ -1,0 +1,110 @@
+{
+  "1": {
+    "title": "Build Your First Chatbot",
+    "steps": [
+      {
+        "id": "step-1",
+        "title": "Set Up Your Project",
+        "instruction": "First, let's create a new Node.js project and install the Groq SDK. This will let us connect to free AI models.",
+        "language": "bash",
+        "template": "# Run these commands in your terminal\nnpm init -y\nnpm install groq-sdk",
+        "readOnly": true,
+        "hint": "Make sure you have Node.js installed. You can check with: node --version"
+      },
+      {
+        "id": "step-2",
+        "title": "Import the Groq SDK",
+        "instruction": "Create a new file called `chatbot.js` and import the Groq SDK. We'll use this to communicate with the AI.",
+        "language": "javascript",
+        "template": "// Import the Groq SDK\nconst Groq = require('_____');\n\n// Create a new Groq client\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});",
+        "solution": "// Import the Groq SDK\nconst Groq = require('groq-sdk');\n\n// Create a new Groq client\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});",
+        "hint": "The package name matches what we installed: groq-sdk",
+        "validation": ["groq-sdk", "new Groq"]
+      },
+      {
+        "id": "step-3",
+        "title": "Create the Chat Function",
+        "instruction": "Now let's create an async function that sends a message to the AI and gets a response.",
+        "language": "javascript",
+        "template": "async function chat(userMessage) {\n  const response = await groq.chat.completions._____.({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: 'You are a helpful assistant.' },\n      { role: '_____', content: userMessage }\n    ]\n  });\n  \n  return response.choices[0].message.content;\n}",
+        "solution": "async function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: 'You are a helpful assistant.' },\n      { role: 'user', content: userMessage }\n    ]\n  });\n  \n  return response.choices[0].message.content;\n}",
+        "hint": "The method to create a completion is 'create'. The role for the user's message is 'user'.",
+        "validation": ["create", "user"]
+      },
+      {
+        "id": "step-4",
+        "title": "Add a Conversation Loop",
+        "instruction": "Let's make the chatbot interactive with a readline interface that keeps the conversation going.",
+        "language": "javascript",
+        "template": "const readline = require('readline');\n\nconst rl = readline.createInterface({\n  input: process.stdin,\n  output: process.stdout\n});\n\nfunction askQuestion() {\n  rl.question('You: ', async (input) => {\n    if (input.toLowerCase() === '_____') {\n      console.log('Goodbye!');\n      rl.close();\n      return;\n    }\n    \n    const response = await _____(input);\n    console.log('AI:', response);\n    askQuestion(); // Continue the conversation\n  });\n}\n\nconsole.log('Chatbot ready! Type \"exit\" to quit.');\naskQuestion();",
+        "solution": "const readline = require('readline');\n\nconst rl = readline.createInterface({\n  input: process.stdin,\n  output: process.stdout\n});\n\nfunction askQuestion() {\n  rl.question('You: ', async (input) => {\n    if (input.toLowerCase() === 'exit') {\n      console.log('Goodbye!');\n      rl.close();\n      return;\n    }\n    \n    const response = await chat(input);\n    console.log('AI:', response);\n    askQuestion(); // Continue the conversation\n  });\n}\n\nconsole.log('Chatbot ready! Type \"exit\" to quit.');\naskQuestion();",
+        "hint": "We check for 'exit' to quit, and call our 'chat' function to get the AI response.",
+        "validation": ["exit", "chat"]
+      },
+      {
+        "id": "step-5",
+        "title": "Complete Code",
+        "instruction": "Here's your complete chatbot! Save this as `chatbot.js` and run it with `GROQ_API_KEY=your_key node chatbot.js`",
+        "language": "javascript",
+        "template": "const Groq = require('groq-sdk');\nconst readline = require('readline');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: 'You are a helpful assistant.' },\n      { role: 'user', content: userMessage }\n    ]\n  });\n  \n  return response.choices[0].message.content;\n}\n\nconst rl = readline.createInterface({\n  input: process.stdin,\n  output: process.stdout\n});\n\nfunction askQuestion() {\n  rl.question('You: ', async (input) => {\n    if (input.toLowerCase() === 'exit') {\n      console.log('Goodbye!');\n      rl.close();\n      return;\n    }\n    \n    const response = await chat(input);\n    console.log('AI:', response);\n    askQuestion();\n  });\n}\n\nconsole.log('🤖 Chatbot ready! Type \"exit\" to quit.\\n');\naskQuestion();",
+        "readOnly": true,
+        "hint": "Copy this code and run it locally with your Groq API key!"
+      }
+    ]
+  },
+  "2": {
+    "title": "Prompt Engineering Master",
+    "steps": [
+      {
+        "id": "step-1",
+        "title": "Zero-Shot Prompting",
+        "instruction": "Zero-shot prompting means asking the AI to do something without any examples. Write a prompt that summarizes text.",
+        "language": "javascript",
+        "template": "const prompt = `_____:\n\n${textToSummarize}`;",
+        "solution": "const prompt = `Summarize the following text in 3 bullet points:\n\n${textToSummarize}`;",
+        "hint": "Be specific about what you want (summarize) and the format (bullet points).",
+        "validation": ["Summarize", "bullet"]
+      },
+      {
+        "id": "step-2",
+        "title": "Few-Shot Prompting",
+        "instruction": "Few-shot prompting provides examples to guide the AI. Create a sentiment analysis prompt with 2 examples.",
+        "language": "javascript",
+        "template": "const fewShotPrompt = `Analyze the sentiment of the text. Reply with: Positive, Negative, or Neutral.\n\nText: \"I love this product!\"\nSentiment: _____\n\nText: \"This is terrible, I want a refund.\"\nSentiment: _____\n\nText: \"${userText}\"\nSentiment:`;",
+        "solution": "const fewShotPrompt = `Analyze the sentiment of the text. Reply with: Positive, Negative, or Neutral.\n\nText: \"I love this product!\"\nSentiment: Positive\n\nText: \"This is terrible, I want a refund.\"\nSentiment: Negative\n\nText: \"${userText}\"\nSentiment:`;",
+        "hint": "The first example is positive (love), the second is negative (terrible, refund).",
+        "validation": ["Positive", "Negative"]
+      },
+      {
+        "id": "step-3",
+        "title": "Chain-of-Thought Prompting",
+        "instruction": "Chain-of-thought prompting asks the AI to show its reasoning. Complete this math problem prompt.",
+        "language": "javascript",
+        "template": "const cotPrompt = `Solve this problem step by step.\n\nProblem: If a store has 45 apples and sells 12, then receives 28 more, how many apples does it have?\n\nLet's think through this _____:\n1. Start with the initial amount\n2. Subtract what was sold\n3. Add what was received\n4. Calculate the final answer\n\nAnswer:`;",
+        "solution": "const cotPrompt = `Solve this problem step by step.\n\nProblem: If a store has 45 apples and sells 12, then receives 28 more, how many apples does it have?\n\nLet's think through this step by step:\n1. Start with the initial amount\n2. Subtract what was sold\n3. Add what was received\n4. Calculate the final answer\n\nAnswer:`;",
+        "hint": "The key phrase for chain-of-thought is 'step by step'.",
+        "validation": ["step by step"]
+      },
+      {
+        "id": "step-4",
+        "title": "Role Prompting",
+        "instruction": "Give the AI a specific role/persona to improve responses. Create a system prompt for a coding tutor.",
+        "language": "javascript",
+        "template": "const systemPrompt = `You are an experienced _____ tutor who:\n- Explains concepts in simple terms\n- Uses analogies and examples\n- Encourages students when they struggle\n- Never gives direct answers, instead guides with questions\n\nYour teaching style is patient and _____`;",
+        "solution": "const systemPrompt = `You are an experienced programming tutor who:\n- Explains concepts in simple terms\n- Uses analogies and examples\n- Encourages students when they struggle\n- Never gives direct answers, instead guides with questions\n\nYour teaching style is patient and supportive`;",
+        "hint": "Think about what kind of tutor (programming) and their demeanor (supportive, friendly).",
+        "validation": ["programming", "tutor"]
+      },
+      {
+        "id": "step-5",
+        "title": "Structured Output Prompting",
+        "instruction": "Ask the AI to return data in a specific format (JSON). Complete this product extraction prompt.",
+        "language": "javascript",
+        "template": "const structuredPrompt = `Extract product information from the text and return it as JSON.\n\nText: \"The new iPhone 15 Pro costs $999 and comes in 128GB, 256GB, and 512GB storage options.\"\n\nReturn a JSON object with these fields:\n- name: product name\n- price: price as a number\n- _____: array of available options\n\nJSON:`;",
+        "solution": "const structuredPrompt = `Extract product information from the text and return it as JSON.\n\nText: \"The new iPhone 15 Pro costs $999 and comes in 128GB, 256GB, and 512GB storage options.\"\n\nReturn a JSON object with these fields:\n- name: product name\n- price: price as a number\n- storage: array of available options\n\nJSON:`;",
+        "hint": "The text mentions storage options, so use 'storage' as the field name.",
+        "validation": ["storage", "JSON"]
+      }
+    ]
+  }
+}
