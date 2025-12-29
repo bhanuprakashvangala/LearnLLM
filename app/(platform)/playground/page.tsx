@@ -8,18 +8,16 @@ import {
   Play, Save, Share2, Download, RotateCcw, Settings,
   Code, MessageSquare, Sparkles, Zap, Copy, Check,
   ChevronDown, Info, Terminal, Wand2, Brain, Clock,
-  Lock, ArrowRight, Layers
+  Lock, ArrowRight, Layers, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 const models = [
-  { id: "gpt-4", name: "GPT-4", provider: "OpenAI", badge: "Most Capable" },
-  { id: "gpt-4-turbo", name: "GPT-4 Turbo", provider: "OpenAI", badge: "Fast" },
-  { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", provider: "OpenAI", badge: "Budget" },
-  { id: "claude-3-opus", name: "Claude 3 Opus", provider: "Anthropic", badge: "Powerful" },
-  { id: "claude-3-sonnet", name: "Claude 3 Sonnet", provider: "Anthropic", badge: "Balanced" },
+  { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "Meta (via Groq)", badge: "Most Capable" },
+  { id: "llama-3.1-8b", name: "Llama 3.1 8B", provider: "Meta (via Groq)", badge: "Fast" },
+  { id: "mixtral-8x7b", name: "Mixtral 8x7B", provider: "Mistral (via Groq)", badge: "Balanced" },
+  { id: "gemma2-9b", name: "Gemma 2 9B", provider: "Google (via Groq)", badge: "Efficient" },
 ];
 
 const promptTemplates = [
@@ -68,48 +66,82 @@ export default function PlaygroundPage() {
   const [response, setResponse] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [temperature, setTemperature] = React.useState(0.7);
-  const [maxTokens, setMaxTokens] = React.useState(1000);
-  const [model, setModel] = React.useState("gpt-4");
+  const [maxTokens, setMaxTokens] = React.useState(1024);
+  const [model, setModel] = React.useState("llama-3.3-70b");
   const [showSettings, setShowSettings] = React.useState(true);
   const [copied, setCopied] = React.useState(false);
   const [showTemplates, setShowTemplates] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleRun = async () => {
     if (!prompt.trim()) return;
 
     setIsLoading(true);
     setResponse("");
+    setError(null);
 
-    // Simulate AI response with streaming effect
-    const selectedModel = models.find(m => m.id === model);
-    const simulatedResponse = `This is a simulated response from ${selectedModel?.name || model}.
+    try {
+      const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt }
+      ];
 
-Based on your prompt, here's what I would respond:
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages,
+          model,
+          temperature,
+          maxTokens,
+        }),
+      });
 
-**Analysis:**
-Your question touches on several key concepts. Let me break this down:
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to generate response");
+      }
 
-1. **Context Understanding**: The prompt shows you're looking for ${prompt.includes('explain') ? 'an explanation' : prompt.includes('code') ? 'code assistance' : 'general help'}.
+      // Handle streaming response
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
 
-2. **Response Strategy**: I would approach this by providing clear, structured information.
+      if (!reader) {
+        throw new Error("No response body");
+      }
 
-3. **Key Points**:
-   - Temperature setting: ${temperature} (${temperature < 0.5 ? 'more focused' : temperature > 1 ? 'very creative' : 'balanced'})
-   - Max tokens: ${maxTokens}
+      let fullResponse = "";
 
-*Note: This is a demo response. Connect your API keys in settings to use real AI models.*`;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-    // Simulate typing effect
-    let currentText = "";
-    const words = simulatedResponse.split(" ");
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
 
-    for (let i = 0; i < words.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 30));
-      currentText += (i > 0 ? " " : "") + words[i];
-      setResponse(currentText);
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                fullResponse += parsed.content;
+                setResponse(fullResponse);
+              }
+            } catch {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleCopy = () => {
@@ -121,9 +153,10 @@ Your question touches on several key concepts. Let me break this down:
   const handleReset = () => {
     setPrompt("");
     setResponse("");
+    setError(null);
     setSystemPrompt("You are a helpful AI assistant.");
     setTemperature(0.7);
-    setMaxTokens(1000);
+    setMaxTokens(1024);
   };
 
   const selectedModel = models.find(m => m.id === model);
@@ -145,7 +178,7 @@ Your question touches on several key concepts. Let me break this down:
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold">AI Playground</h1>
                   <p className="text-sm text-muted-foreground">
-                    Experiment with AI prompts and parameters in real-time
+                    Experiment with free AI models powered by Groq
                   </p>
                 </div>
               </div>
@@ -175,6 +208,27 @@ Your question touches on several key concepts. Let me break this down:
       </div>
 
       <div className="container mx-auto px-4 py-6 md:py-8">
+        {/* Free AI Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-green-700 dark:text-green-400">Free AI Models</h3>
+                <p className="text-sm text-muted-foreground">
+                  Powered by Groq - ultra-fast inference with Llama 3.3, Mixtral, and Gemma models
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Left Sidebar - Templates & Settings */}
           <div className="xl:col-span-1 space-y-6">
@@ -248,7 +302,7 @@ Your question touches on several key concepts. Let me break this down:
                     </select>
                     {selectedModel && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Provider: {selectedModel.provider}
+                        {selectedModel.provider}
                       </p>
                     )}
                   </div>
@@ -289,9 +343,9 @@ Your question touches on several key concepts. Let me break this down:
                     </div>
                     <input
                       type="range"
-                      min="100"
-                      max="4000"
-                      step="100"
+                      min="256"
+                      max="4096"
+                      step="256"
                       value={maxTokens}
                       onChange={(e) => setMaxTokens(parseInt(e.target.value))}
                       className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
@@ -326,7 +380,7 @@ Your question touches on several key concepts. Let me break this down:
                 <Code className="w-4 h-4 text-primary" />
                 System Prompt
                 <span className="text-xs font-normal text-muted-foreground ml-2">
-                  (Define the AI's behavior)
+                  (Define the AI&apos;s behavior)
                 </span>
               </label>
               <textarea
@@ -373,13 +427,31 @@ Your question touches on several key concepts. Let me break this down:
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="w-4 h-4" />
-                  <span>Est. {Math.ceil(maxTokens / 100)}s</span>
+                  <span>Powered by Groq (ultra-fast)</span>
                 </div>
               </div>
             </Card>
 
+            {/* Error Display */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className="p-4 bg-red-500/10 border-red-500/30">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-red-700 dark:text-red-400">Error</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Response */}
-            {(response || isLoading) && (
+            {(response || isLoading) && !error && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

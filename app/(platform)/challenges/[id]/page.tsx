@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useProgress } from "@/contexts/ProgressContext";
+import { ChallengeAssistant } from "@/components/challenges/ChallengeAssistant";
 import challengesData from "@/data/challenges.json";
 
 interface Resource {
@@ -454,6 +455,13 @@ export default function ChallengePage() {
           </div>
         </div>
       </div>
+
+      {/* Challenge Assistant */}
+      <ChallengeAssistant
+        challengeTitle={challenge.title}
+        challengeDescription={challenge.description}
+        skills={challenge.skills}
+      />
     </div>
   );
 }
