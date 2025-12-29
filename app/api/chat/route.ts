@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 
-// Initialize Groq client
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
 // Available models on Groq (all free)
 const MODELS = {
   "llama-3.3-70b": "llama-3.3-70b-versatile",
@@ -13,6 +8,15 @@ const MODELS = {
   "mixtral-8x7b": "mixtral-8x7b-32768",
   "gemma2-9b": "gemma2-9b-it",
 } as const;
+
+// Lazy initialization of Groq client
+function getGroqClient() {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error("GROQ_API_KEY environment variable is not set");
+  }
+  return new Groq({ apiKey });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const groq = getGroqClient();
     const modelId = MODELS[model as keyof typeof MODELS] || MODELS["llama-3.3-70b"];
 
     // Create chat completion with streaming
@@ -83,10 +88,10 @@ export async function POST(request: NextRequest) {
 }
 
 // Non-streaming version for simple requests
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json({
     models: Object.keys(MODELS),
-    status: "ready",
+    status: process.env.GROQ_API_KEY ? "ready" : "api_key_missing",
     provider: "Groq",
   });
 }
