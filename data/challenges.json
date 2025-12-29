@@ -3,24 +3,61 @@
     {
       "id": "1",
       "title": "Build Your First Chatbot",
-      "description": "Create a simple chatbot using OpenAI API that can answer questions about a specific topic",
+      "description": "Create a simple chatbot using any LLM API (Claude, Gemini, or others) that can answer questions about a specific topic",
       "difficulty": "beginner",
       "points": 100,
       "timeEstimate": "30 min",
       "category": "API Integration",
       "skills": ["API", "Prompting", "JavaScript"],
-      "prerequisites": []
+      "prerequisites": [],
+      "instructions": [
+        "Choose an LLM provider (Claude API, Google Gemini, Groq, or any other)",
+        "Set up your development environment with Node.js or Python",
+        "Install the SDK for your chosen provider (e.g., @anthropic-ai/sdk, @google/generative-ai)",
+        "Create a simple script that sends a message to the API and displays the response",
+        "Add a system prompt to give your chatbot a specific personality or expertise",
+        "Implement a conversation loop that allows multiple back-and-forth messages",
+        "Test your chatbot with various questions to ensure it responds appropriately"
+      ],
+      "resources": [
+        {"title": "Anthropic Claude API Docs", "url": "https://docs.anthropic.com"},
+        {"title": "Google Gemini API Docs", "url": "https://ai.google.dev/docs"},
+        {"title": "Groq API Docs", "url": "https://console.groq.com/docs"}
+      ],
+      "hints": [
+        "Start with a free tier API to avoid costs while learning",
+        "Use environment variables to store your API keys securely",
+        "Keep your first chatbot simple - complexity can come later"
+      ]
     },
     {
       "id": "2",
       "title": "Prompt Engineering Master",
-      "description": "Design 5 different prompts for various tasks using advanced techniques like few-shot learning",
+      "description": "Design 5 different prompts for various tasks using advanced techniques like few-shot learning and chain of thought",
       "difficulty": "beginner",
       "points": 150,
       "timeEstimate": "45 min",
       "category": "Prompt Engineering",
       "skills": ["Prompting", "Chain of Thought", "Few-Shot"],
-      "prerequisites": []
+      "prerequisites": [],
+      "instructions": [
+        "Create a zero-shot prompt for text summarization",
+        "Design a few-shot prompt with 3 examples for sentiment analysis",
+        "Build a chain-of-thought prompt for solving math word problems",
+        "Write a role-playing prompt that gives the AI a specific persona",
+        "Craft a structured output prompt that returns JSON format",
+        "Test each prompt with multiple inputs to verify consistency",
+        "Document what makes each prompt effective"
+      ],
+      "resources": [
+        {"title": "Prompt Engineering Guide", "url": "https://www.promptingguide.ai"},
+        {"title": "Anthropic Prompt Library", "url": "https://docs.anthropic.com/claude/prompt-library"}
+      ],
+      "hints": [
+        "Be specific and clear in your instructions",
+        "Few-shot examples should be diverse and representative",
+        "Chain-of-thought works best for reasoning tasks"
+      ]
     },
     {
       "id": "3",
@@ -31,18 +68,55 @@
       "timeEstimate": "2 hours",
       "category": "RAG",
       "skills": ["RAG", "Embeddings", "Vector DB", "LangChain"],
-      "prerequisites": ["1", "2"]
+      "prerequisites": ["1", "2"],
+      "instructions": [
+        "Set up a vector database (Pinecone, Chroma, or Weaviate)",
+        "Create a document loader to read PDF files",
+        "Split documents into smaller chunks (500-1000 tokens each)",
+        "Generate embeddings for each chunk using an embedding model",
+        "Store the embeddings in your vector database",
+        "Implement a retrieval function that finds relevant chunks for a query",
+        "Combine retrieved context with the user question to generate answers",
+        "Add source citations to your responses"
+      ],
+      "resources": [
+        {"title": "LangChain RAG Tutorial", "url": "https://python.langchain.com/docs/tutorials/rag"},
+        {"title": "Pinecone Quickstart", "url": "https://docs.pinecone.io/guides/get-started/quickstart"}
+      ],
+      "hints": [
+        "Chunk size affects retrieval quality - experiment with different sizes",
+        "Use overlap between chunks to maintain context",
+        "Consider using hybrid search (semantic + keyword) for better results"
+      ]
     },
     {
       "id": "4",
       "title": "Custom AI Agent",
-      "description": "Create an autonomous agent that can research topics and provide comprehensive summaries",
+      "description": "Create an autonomous agent that can research topics and provide comprehensive summaries using tools",
       "difficulty": "intermediate",
       "points": 300,
       "timeEstimate": "3 hours",
       "category": "AI Agents",
       "skills": ["Agents", "Tools", "ReAct", "LangChain"],
-      "prerequisites": ["1", "2"]
+      "prerequisites": ["1", "2"],
+      "instructions": [
+        "Define 3-5 tools your agent can use (web search, calculator, file reader, etc.)",
+        "Create tool descriptions that help the LLM understand when to use each tool",
+        "Implement the ReAct pattern: Reasoning, Acting, and Observing",
+        "Build a loop that allows the agent to take multiple actions",
+        "Add error handling for when tools fail or return unexpected results",
+        "Implement a stopping condition to prevent infinite loops",
+        "Test your agent with complex multi-step tasks"
+      ],
+      "resources": [
+        {"title": "LangChain Agents", "url": "https://python.langchain.com/docs/modules/agents"},
+        {"title": "ReAct Paper", "url": "https://arxiv.org/abs/2210.03629"}
+      ],
+      "hints": [
+        "Start with simple tools before adding complex ones",
+        "Clear tool descriptions are crucial for agent performance",
+        "Limit the number of iterations to prevent runaway costs"
+      ]
     },
     {
       "id": "5",
@@ -53,18 +127,56 @@
       "timeEstimate": "3 hours",
       "category": "Vector Search",
       "skills": ["Embeddings", "Vector DB", "BM25", "Hybrid Search"],
-      "prerequisites": ["3"]
+      "prerequisites": ["3"],
+      "instructions": [
+        "Set up a dataset of documents to search (articles, products, or FAQs)",
+        "Implement BM25 keyword search as a baseline",
+        "Generate embeddings for all documents using a sentence transformer",
+        "Implement vector similarity search using cosine similarity",
+        "Create a hybrid search that combines BM25 and vector scores",
+        "Add a re-ranking step using a cross-encoder model",
+        "Build a simple UI to test search queries",
+        "Measure and compare search quality across methods"
+      ],
+      "resources": [
+        {"title": "Sentence Transformers", "url": "https://www.sbert.net"},
+        {"title": "Hybrid Search Explained", "url": "https://www.pinecone.io/learn/hybrid-search"}
+      ],
+      "hints": [
+        "Normalize scores before combining BM25 and vector results",
+        "Cross-encoder re-ranking is slow but significantly improves quality",
+        "Consider using reciprocal rank fusion for combining results"
+      ]
     },
     {
       "id": "6",
       "title": "Fine-tune Your Own Model",
-      "description": "Fine-tune a small language model on a custom dataset using LoRA",
+      "description": "Fine-tune a small language model on a custom dataset using LoRA techniques",
       "difficulty": "advanced",
       "points": 500,
       "timeEstimate": "4 hours",
       "category": "Fine-tuning",
       "skills": ["LoRA", "Fine-tuning", "PyTorch", "Hugging Face"],
-      "prerequisites": ["3", "4", "5"]
+      "prerequisites": ["3", "4", "5"],
+      "instructions": [
+        "Choose a base model (Llama, Mistral, or Phi)",
+        "Prepare your training dataset in the correct format (instruction/response pairs)",
+        "Set up your training environment with GPU access (Colab, RunPod, or local)",
+        "Configure LoRA parameters (rank, alpha, target modules)",
+        "Implement the training loop using PEFT library",
+        "Monitor training loss and validation metrics",
+        "Merge LoRA weights with the base model",
+        "Test your fine-tuned model on held-out examples"
+      ],
+      "resources": [
+        {"title": "Hugging Face PEFT", "url": "https://huggingface.co/docs/peft"},
+        {"title": "LoRA Paper", "url": "https://arxiv.org/abs/2106.09685"}
+      ],
+      "hints": [
+        "Start with a small dataset to verify your pipeline works",
+        "LoRA rank of 8-16 is usually sufficient for most tasks",
+        "Use gradient checkpointing to reduce memory usage"
+      ]
     },
     {
       "id": "7",
@@ -75,7 +187,26 @@
       "timeEstimate": "6 hours",
       "category": "Deployment",
       "skills": ["RAG", "Production", "Monitoring", "Optimization"],
-      "prerequisites": ["3", "5"]
+      "prerequisites": ["3", "5"],
+      "instructions": [
+        "Containerize your RAG application with Docker",
+        "Implement query caching using Redis to reduce API costs",
+        "Add request/response logging for debugging and analytics",
+        "Set up monitoring with latency tracking and error rates",
+        "Implement rate limiting to protect your endpoints",
+        "Add authentication and API key management",
+        "Optimize retrieval with query expansion and re-ranking",
+        "Deploy to a cloud platform (AWS, GCP, or Vercel)"
+      ],
+      "resources": [
+        {"title": "FastAPI Best Practices", "url": "https://fastapi.tiangolo.com/deployment"},
+        {"title": "LangSmith Monitoring", "url": "https://docs.smith.langchain.com"}
+      ],
+      "hints": [
+        "Cache both embeddings and LLM responses for maximum savings",
+        "Use async processing for better throughput",
+        "Implement graceful degradation when services are unavailable"
+      ]
     },
     {
       "id": "8",
@@ -86,7 +217,26 @@
       "timeEstimate": "8 hours",
       "category": "Advanced Agents",
       "skills": ["Multi-Agent", "Coordination", "Complex Tasks"],
-      "prerequisites": ["4", "6"]
+      "prerequisites": ["4", "6"],
+      "instructions": [
+        "Design your agent roles (researcher, writer, critic, coordinator)",
+        "Implement a message passing system between agents",
+        "Create a coordinator agent that delegates tasks",
+        "Build individual agents with specialized capabilities",
+        "Implement a shared memory or context system",
+        "Add conflict resolution when agents disagree",
+        "Create a workflow for agents to review each other's work",
+        "Test the system on a complex task requiring collaboration"
+      ],
+      "resources": [
+        {"title": "AutoGen Framework", "url": "https://microsoft.github.io/autogen"},
+        {"title": "CrewAI Docs", "url": "https://docs.crewai.com"}
+      ],
+      "hints": [
+        "Start with 2-3 agents before scaling up",
+        "Clear role definitions prevent agent confusion",
+        "Limit communication rounds to control costs and latency"
+      ]
     }
   ]
 }

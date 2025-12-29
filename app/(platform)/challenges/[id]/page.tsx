@@ -7,12 +7,18 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Trophy, Star, Clock, ArrowLeft, CheckCircle2, Lock,
-  Play, Code, Target, Sparkles, ChevronRight, AlertCircle
+  Code, Target, Sparkles, ChevronRight, AlertCircle,
+  BookOpen, Lightbulb, ExternalLink, ListChecks
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useProgress } from "@/contexts/ProgressContext";
 import challengesData from "@/data/challenges.json";
+
+interface Resource {
+  title: string;
+  url: string;
+}
 
 interface Challenge {
   id: string;
@@ -24,6 +30,9 @@ interface Challenge {
   category: string;
   skills: string[];
   prerequisites: string[];
+  instructions?: string[];
+  resources?: Resource[];
+  hints?: string[];
 }
 
 const difficultyColors = {
@@ -45,6 +54,7 @@ export default function ChallengePage() {
   const { isChallengeCompleted, markChallengeComplete } = useProgress();
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [isCompleting, setIsCompleting] = React.useState(false);
+  const [showHints, setShowHints] = React.useState(false);
 
   React.useEffect(() => {
     setIsHydrated(true);
@@ -63,7 +73,7 @@ export default function ChallengePage() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Challenge Not Found</h1>
           <p className="text-muted-foreground mb-6">
-            The challenge you're looking for doesn't exist.
+            The challenge you&apos;re looking for doesn&apos;t exist.
           </p>
           <Button asChild>
             <Link href="/challenges">
@@ -99,7 +109,6 @@ export default function ChallengePage() {
     }
 
     setIsCompleting(true);
-    // Simulate completion delay for better UX
     await new Promise(resolve => setTimeout(resolve, 500));
     markChallengeComplete(challenge.id, challenge.points);
     setIsCompleting(false);
@@ -127,7 +136,7 @@ export default function ChallengePage() {
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium border bg-white/20 text-white border-white/30`}>
+              <span className="px-3 py-1 rounded-full text-xs font-medium border bg-white/20 text-white border-white/30">
                 {challenge.difficulty}
               </span>
               <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
@@ -163,7 +172,7 @@ export default function ChallengePage() {
       <div className="container mx-auto px-4 -mt-24 relative pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Card */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -175,7 +184,7 @@ export default function ChallengePage() {
                   {challenge.description}
                 </p>
 
-                <h3 className="text-lg font-semibold mb-3">Skills You'll Practice</h3>
+                <h3 className="text-lg font-semibold mb-3">Skills You&apos;ll Practice</h3>
                 <div className="flex flex-wrap gap-2 mb-8">
                   {challenge.skills.map((skill) => (
                     <span
@@ -220,23 +229,109 @@ export default function ChallengePage() {
                     </div>
                   </>
                 )}
-
-                <h3 className="text-lg font-semibold mb-3">What You'll Build</h3>
-                <Card className="p-4 bg-gradient-to-r from-primary/5 to-purple-500/5 border-primary/20">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                      <Code className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Complete this challenge to demonstrate your understanding of {challenge.skills.slice(0, 2).join(" and ")}.
-                        You'll gain practical experience that applies directly to real-world LLM applications.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
               </Card>
             </motion.div>
+
+            {/* Instructions Section */}
+            {challenge.instructions && challenge.instructions.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <Card className="p-6 md:p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <ListChecks className="w-5 h-5 text-primary" />
+                    </div>
+                    <h2 className="text-xl font-semibold">Step-by-Step Instructions</h2>
+                  </div>
+                  <ol className="space-y-4">
+                    {challenge.instructions.map((instruction, index) => (
+                      <li key={index} className="flex gap-4">
+                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                          {index + 1}
+                        </span>
+                        <p className="text-muted-foreground pt-1">{instruction}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Resources Section */}
+            {challenge.resources && challenge.resources.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="p-6 md:p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <h2 className="text-xl font-semibold">Helpful Resources</h2>
+                  </div>
+                  <div className="space-y-3">
+                    {challenge.resources.map((resource, index) => (
+                      <a
+                        key={index}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-blue-500/50 hover:bg-blue-500/5 transition-colors group"
+                      >
+                        <span className="font-medium group-hover:text-blue-500 transition-colors">
+                          {resource.title}
+                        </span>
+                        <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+                      </a>
+                    ))}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Hints Section */}
+            {challenge.hints && challenge.hints.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+              >
+                <Card className="p-6 md:p-8">
+                  <button
+                    onClick={() => setShowHints(!showHints)}
+                    className="w-full flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                        <Lightbulb className="w-5 h-5 text-amber-500" />
+                      </div>
+                      <h2 className="text-xl font-semibold">Hints</h2>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {showHints ? "Hide" : "Show"} hints
+                    </span>
+                  </button>
+                  {showHints && (
+                    <div className="mt-6 space-y-3">
+                      {challenge.hints.map((hint, index) => (
+                        <div
+                          key={index}
+                          className="flex gap-3 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20"
+                        >
+                          <Lightbulb className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-muted-foreground">{hint}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </motion.div>
+            )}
           </div>
 
           {/* Sidebar */}
