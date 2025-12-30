@@ -86,11 +86,11 @@ export default function SignUpPage() {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-background via-background to-green-500/5 p-4">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 left-20 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-10 right-20 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-10 left-20 w-72 h-72 bg-green-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
       <motion.div
@@ -107,7 +107,7 @@ export default function SignUpPage() {
               <LogoText className="text-3xl" />
             </Link>
 
-            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-4 text-primary">
               Master LLMs & AI
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
@@ -134,16 +134,16 @@ export default function SignUpPage() {
             <div className="mt-12 p-6 bg-muted/50 rounded-xl border border-border">
               <div className="flex items-center gap-4 mb-3">
                 <div className="flex -space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
+                  <div className="w-10 h-10 rounded-full bg-green-700 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
                     SM
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-green-500 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
+                  <div className="w-10 h-10 rounded-full bg-green-600 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
                     JD
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-purple-500 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
+                  <div className="w-10 h-10 rounded-full bg-green-500 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
                     AK
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-orange-500 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
+                  <div className="w-10 h-10 rounded-full bg-green-400 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
                     MC
                   </div>
                 </div>
@@ -208,7 +208,18 @@ export default function SignUpPage() {
           <form onSubmit={handleEmailSignup} className="space-y-4">
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-sm">
-                {error === "ACCOUNT_EXISTS" ? (
+                {error.includes("Google") ? (
+                  <span>
+                    This email is linked to a Google account.{" "}
+                    <button
+                      type="button"
+                      onClick={() => handleSocialSignup("google")}
+                      className="underline font-semibold hover:text-red-700"
+                    >
+                      Sign in with Google
+                    </button>
+                  </span>
+                ) : error.includes("already exists") ? (
                   <span>
                     An account with this email already exists.{" "}
                     <Link href="/login" className="underline font-semibold hover:text-red-700">

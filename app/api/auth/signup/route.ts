@@ -7,13 +7,24 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, email, password } = body;
 
-    if (!email || !password) {
+    // Validate required fields
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    // Validate password length
     if (password.length < 8) {
       return NextResponse.json(
         { error: "Password must be at least 8 characters" },
@@ -21,30 +32,39 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user already exists
+    // Check if user already exists (including Google OAuth users)
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
+      // Check if user signed up with Google (no password)
+      if (!existingUser.hashedPassword) {
+        return NextResponse.json(
+          { error: "An account with this email already exists. Please sign in with Google." },
+          { status: 409 }
+        );
+      }
+      // User exists with email/password
       return NextResponse.json(
-        { error: "An account with this email already exists" },
-        { status: 400 }
+        { error: "An account with this email already exists. Please sign in instead." },
+        { status: 409 }
       );
     }
 
-    // Hash password
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create the user
     const user = await prisma.user.create({
       data: {
         name,
-        email,
+        email: email.toLowerCase(),
         hashedPassword,
       },
     });
 
+    // Return success (without sensitive data)
     return NextResponse.json({
       success: true,
       user: {
@@ -56,7 +76,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(
-      { error: "Failed to create account" },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
