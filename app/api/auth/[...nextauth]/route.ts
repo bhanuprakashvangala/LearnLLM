@@ -55,40 +55,83 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       // Handle Google OAuth - create or update user in database
-      if (account?.provider === "google" && profile) {
+      if (account?.provider === "google" && profile && user.email) {
         try {
+          console.log("Google Sign-In: Processing user", user.email);
+
           const existingUser = await prisma.user.findUnique({
-            where: { email: user.email! },
+            where: { email: user.email },
+            include: { accounts: true },
           });
 
           if (!existingUser) {
             // Create new user from Google profile
-            await prisma.user.create({
+            console.log("Google Sign-In: Creating new user", user.email);
+            const newUser = await prisma.user.create({
               data: {
-                email: user.email!,
-                name: user.name || profile.name,
+                email: user.email,
+                name: user.name || profile.name || "User",
                 image: user.image || (profile as any).picture,
                 emailVerified: new Date(),
+                accounts: {
+                  create: {
+                    type: account.type,
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                    access_token: account.access_token,
+                    refresh_token: account.refresh_token,
+                    expires_at: account.expires_at,
+                    token_type: account.token_type,
+                    scope: account.scope,
+                    id_token: account.id_token,
+                  },
+                },
               },
             });
+            console.log("Google Sign-In: User created successfully", newUser.id);
           } else {
             // Update existing user with latest Google info
-            // Also set emailVerified if user signed up with email but now uses Google
+            console.log("Google Sign-In: Updating existing user", user.email);
             await prisma.user.update({
-              where: { email: user.email! },
+              where: { email: user.email },
               data: {
                 name: user.name || profile.name || existingUser.name,
                 image: user.image || (profile as any).picture || existingUser.image,
                 emailVerified: existingUser.emailVerified || new Date(),
               },
             });
+
+            // Check if Google account is linked
+            const hasGoogleAccount = existingUser.accounts.some(
+              (acc) => acc.provider === "google"
+            );
+
+            if (!hasGoogleAccount) {
+              // Link Google account to existing user
+              console.log("Google Sign-In: Linking Google account to user", user.email);
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token,
+                  refresh_token: account.refresh_token,
+                  expires_at: account.expires_at,
+                  token_type: account.token_type,
+                  scope: account.scope,
+                  id_token: account.id_token,
+                },
+              });
+            }
+            console.log("Google Sign-In: User updated successfully");
           }
           return true;
         } catch (error) {
-          console.error("Error saving Google user:", error);
-          // Still allow sign-in even if database update fails
-          // User data just won't be synced
-          return true;
+          console.error("Google Sign-In ERROR:", error);
+          // Return false to block sign-in if database fails
+          // This helps identify the issue
+          return false;
         }
       }
       return true;
