@@ -76,7 +76,6 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error("Signup error:", error);
 
-    // Provide more specific error messages for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error details:", errorMessage);
 
@@ -88,8 +87,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // Return actual error in development for debugging
     return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
+      { error: `Database error: ${errorMessage}` },
       { status: 500 }
     );
   }
