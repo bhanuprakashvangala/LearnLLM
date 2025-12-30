@@ -3,9 +3,10 @@
 
 // 1. Choose your database provider (uncomment one):
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl is only needed for migrations, not for runtime queries
+  // If using Supabase connection pooler, set DIRECT_URL to the direct connection
 }
 
 generator client {
