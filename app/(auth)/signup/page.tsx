@@ -86,7 +86,7 @@ export default function SignUpPage() {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-background via-background to-green-500/5 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-green-500/5 py-8 px-4 overflow-y-auto">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-10 right-20 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse" />
@@ -134,17 +134,17 @@ export default function SignUpPage() {
             <div className="mt-12 p-6 bg-muted/50 rounded-xl border border-border">
               <div className="flex items-center gap-4 mb-3">
                 <div className="flex -space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-green-700 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
-                    SM
+                  <div className="w-10 h-10 rounded-full bg-green-700 border-2 border-background flex items-center justify-center text-lg">
+                    🤖
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-green-600 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
-                    JD
+                  <div className="w-10 h-10 rounded-full bg-green-600 border-2 border-background flex items-center justify-center text-lg">
+                    🧠
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-green-500 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
-                    AK
+                  <div className="w-10 h-10 rounded-full bg-green-500 border-2 border-background flex items-center justify-center text-lg">
+                    💡
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-green-400 border-2 border-background flex items-center justify-center text-white font-bold text-xs">
-                    MC
+                  <div className="w-10 h-10 rounded-full bg-green-400 border-2 border-background flex items-center justify-center text-lg">
+                    🚀
                   </div>
                 </div>
                 <div>
@@ -153,7 +153,7 @@ export default function SignUpPage() {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground italic">
-                "Best LLM learning platform I've found. Clear, practical, and comprehensive!" - Sarah M.
+                &ldquo;Best LLM learning platform I&apos;ve found. Clear, practical, and comprehensive!&rdquo; <span className="whitespace-nowrap">— Sarah M.</span>
               </p>
             </div>
           </div>
