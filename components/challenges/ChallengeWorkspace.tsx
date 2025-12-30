@@ -71,7 +71,7 @@ export function ChallengeWorkspace({
   const parseUserCode = (userCode: string) => {
     try {
       // Look for systemPrompt variable (handle template literals)
-      const templateMatch = userCode.match(/(?:const|let|var)\s+systemPrompt\s*=\s*`([^`]+)`/s);
+      const templateMatch = userCode.match(/(?:const|let|var)\s+systemPrompt\s*=\s*`([\s\S]*?)`/);
       const stringMatch = userCode.match(/(?:const|let|var)\s+systemPrompt\s*=\s*["']([^"']+)["']/);
       const systemPrompt = templateMatch ? templateMatch[1] : (stringMatch ? stringMatch[1] : "You are a helpful assistant.");
 
