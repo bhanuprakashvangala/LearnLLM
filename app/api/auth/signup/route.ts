@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
@@ -73,8 +73,21 @@ export async function POST(request: Request) {
         email: user.email,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Signup error:", error);
+
+    // Provide more specific error messages for debugging
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error details:", errorMessage);
+
+    // Check for common Prisma errors
+    if (errorMessage.includes("Unique constraint")) {
+      return NextResponse.json(
+        { error: "An account with this email already exists." },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }
