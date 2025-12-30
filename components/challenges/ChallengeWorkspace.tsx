@@ -224,9 +224,9 @@ export function ChallengeWorkspace({
   };
 
   return (
-    <div className="h-[calc(100vh-200px)] min-h-[600px] flex flex-col bg-green-50 dark:bg-[#0a1f0a] rounded-xl overflow-hidden border border-green-300 dark:border-[#1a3d1a]">
+    <div className="h-[calc(100vh-200px)] min-h-[600px] flex flex-col bg-green-50 dark:bg-black rounded-xl overflow-hidden border border-green-300 dark:border-neutral-800">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-green-100 dark:bg-[#0d2a0d] border-b border-green-300 dark:border-[#1a3d1a]">
+      <div className="flex items-center justify-between px-4 py-3 bg-green-100 dark:bg-neutral-900 border-b border-green-300 dark:border-neutral-800">
         <div className="flex items-center gap-3">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-green-400 dark:bg-green-600" />
@@ -277,7 +277,7 @@ export function ChallengeWorkspace({
 
       {/* Learning Panel */}
       {showLearn && (learningObjectives.length > 0 || concepts.length > 0) && (
-        <div className="px-4 py-4 bg-green-100 dark:bg-[#0d2a0d] border-b border-green-300 dark:border-[#1a3d1a] max-h-[300px] overflow-y-auto">
+        <div className="px-4 py-4 bg-green-100 dark:bg-neutral-900 border-b border-green-300 dark:border-neutral-800 max-h-[300px] overflow-y-auto">
           {/* Learning Objectives */}
           {learningObjectives.length > 0 && (
             <div className="mb-4">
@@ -305,7 +305,7 @@ export function ChallengeWorkspace({
               </h3>
               <div className="space-y-2">
                 {concepts.map((concept, i) => (
-                  <div key={i} className="bg-green-50 dark:bg-[#0a1f0a] rounded-lg border border-green-300 dark:border-[#1a3d1a]">
+                  <div key={i} className="bg-green-50 dark:bg-neutral-950 rounded-lg border border-green-300 dark:border-neutral-800">
                     <button
                       onClick={() => setExpandedConcept(expandedConcept === i ? null : i)}
                       className="w-full flex items-center justify-between px-3 py-2 text-left"
@@ -356,8 +356,8 @@ export function ChallengeWorkspace({
       {/* Main Content */}
       <div className="flex-1 flex">
         {/* Code Editor */}
-        <div className="flex-1 flex flex-col border-r border-green-300 dark:border-[#1a3d1a]">
-          <div className="px-4 py-2 bg-green-100 dark:bg-[#0d2a0d] border-b border-green-300 dark:border-[#1a3d1a] flex items-center justify-between">
+        <div className="flex-1 flex flex-col border-r border-green-300 dark:border-neutral-800">
+          <div className="px-4 py-2 bg-green-100 dark:bg-neutral-900 border-b border-green-300 dark:border-neutral-800 flex items-center justify-between">
             <span className="text-xs text-green-700 dark:text-green-500 font-mono">chatbot.js</span>
             <Button
               size="sm"
@@ -403,8 +403,8 @@ export function ChallengeWorkspace({
         </div>
 
         {/* Chat Preview */}
-        <div className="w-[400px] flex flex-col bg-green-50 dark:bg-[#0a1f0a]">
-          <div className="px-4 py-3 bg-green-100 dark:bg-[#0d2a0d] border-b border-green-300 dark:border-[#1a3d1a] flex items-center gap-2">
+        <div className="w-[400px] flex flex-col bg-green-50 dark:bg-black">
+          <div className="px-4 py-3 bg-green-100 dark:bg-neutral-900 border-b border-green-300 dark:border-neutral-800 flex items-center gap-2">
             <Bot className="w-5 h-5 text-green-600 dark:text-green-400" />
             <span className="text-sm font-medium text-black dark:text-white">Live Preview</span>
             {chatEnabled && (
@@ -444,7 +444,7 @@ export function ChallengeWorkspace({
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                   message.role === "user"
                     ? "bg-green-600 text-white"
-                    : "bg-green-100 dark:bg-[#153015] text-black dark:text-white border border-green-300 dark:border-[#1a3d1a]"
+                    : "bg-green-100 dark:bg-neutral-900 text-black dark:text-white border border-green-300 dark:border-neutral-800"
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
@@ -456,7 +456,7 @@ export function ChallengeWorkspace({
                 <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
-                <div className="bg-green-100 dark:bg-[#153015] border border-green-300 dark:border-[#1a3d1a] rounded-2xl px-4 py-2">
+                <div className="bg-green-100 dark:bg-neutral-900 border border-green-300 dark:border-neutral-800 rounded-2xl px-4 py-2">
                   <Loader2 className="w-4 h-4 animate-spin text-green-600 dark:text-green-400" />
                 </div>
               </div>
@@ -465,7 +465,7 @@ export function ChallengeWorkspace({
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-green-300 dark:border-[#1a3d1a]">
+          <div className="p-4 border-t border-green-300 dark:border-neutral-800">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -474,7 +474,7 @@ export function ChallengeWorkspace({
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
                 placeholder={chatEnabled ? "Test your chatbot..." : "Run your code first"}
                 disabled={!chatEnabled || isSending}
-                className="flex-1 bg-white dark:bg-[#153015] border border-green-300 dark:border-[#1a3d1a] rounded-lg px-4 py-2 text-sm text-black dark:text-white placeholder-green-500 dark:placeholder-green-700 focus:outline-none focus:border-green-500 disabled:opacity-50"
+                className="flex-1 bg-white dark:bg-neutral-900 border border-green-300 dark:border-neutral-800 rounded-lg px-4 py-2 text-sm text-black dark:text-white placeholder-green-500 dark:placeholder-green-700 focus:outline-none focus:border-green-500 disabled:opacity-50"
               />
               <Button
                 onClick={handleSendMessage}
@@ -489,7 +489,7 @@ export function ChallengeWorkspace({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-green-100 dark:bg-[#0d2a0d] border-t border-green-300 dark:border-[#1a3d1a] flex items-center justify-between">
+      <div className="px-4 py-3 bg-green-100 dark:bg-neutral-900 border-t border-green-300 dark:border-neutral-800 flex items-center justify-between">
         <p className="text-xs text-black/70 dark:text-white/70">{description}</p>
         {chatEnabled && messages.length > 2 && !hasViewedSolution && (
           <Button

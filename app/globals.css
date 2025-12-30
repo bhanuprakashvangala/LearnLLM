@@ -97,15 +97,15 @@
 }
 
 .dark {
-  /* Base Colors - Dark Mode */
-  --background: 10 31 10;
+  /* Base Colors - Dark Mode (Black background) */
+  --background: 0 0 0;
   --foreground: 248 250 252;
-  --muted: 13 42 13;
-  --muted-foreground: 148 163 148;
-  --card: 13 42 13;
+  --muted: 23 23 23;
+  --muted-foreground: 163 163 163;
+  --card: 23 23 23;
   --card-foreground: 248 250 252;
-  --border: 26 61 26;
-  --input: 21 48 21;
+  --border: 38 38 38;
+  --input: 38 38 38;
 
   /* Brand Colors - All Green */
   --primary: 74 222 128; /* Light green for dark mode */
@@ -116,7 +116,7 @@
   --accent-foreground: 255 255 255;
 
   /* Glassmorphism - Dark */
-  --glass-bg: 13 42 13 / 0.8;
+  --glass-bg: 23 23 23 / 0.8;
   --glass-border: 74 222 128 / 0.1;
 
   /* Shadows - Dark mode with green glow */
