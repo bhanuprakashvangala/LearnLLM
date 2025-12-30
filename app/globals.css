@@ -16,23 +16,23 @@
   --border: 229 231 235;
   --input: 255 255 255;
 
-  /* GeeksforGeeks Style Colors */
-  --primary: 47 141 70; /* GFG Green */
+  /* All Green Color Scheme */
+  --primary: 22 163 74; /* Green */
   --primary-foreground: 255 255 255;
-  --secondary: 66 133 244; /* Simple Blue */
+  --secondary: 34 197 94; /* Lighter Green */
   --secondary-foreground: 255 255 255;
-  --accent: 255 152 0; /* Orange accent */
+  --accent: 21 128 61; /* Darker Green */
   --accent-foreground: 255 255 255;
 
-  /* Semantic Colors */
-  --success: 76 175 80;
+  /* Semantic Colors - All Green */
+  --success: 34 197 94;
   --success-foreground: 255 255 255;
-  --warning: 255 152 0;
+  --warning: 22 163 74;
   --warning-foreground: 255 255 255;
-  --error: 244 67 54;
+  --error: 21 128 61;
   --error-foreground: 255 255 255;
-  --info: 66 133 244;
-  --info-foreground: 255 255 255;
+  --info: 74 222 128;
+  --info-foreground: 10 31 10;
 
   /* No fancy gradients - keep it simple */
   --gradient-start: 47 141 70;
@@ -97,30 +97,30 @@
 }
 
 .dark {
-  /* Base Colors - Dark Mode (Warm) */
-  --background: 15 23 42;
+  /* Base Colors - Dark Mode */
+  --background: 10 31 10;
   --foreground: 248 250 252;
-  --muted: 30 41 59;
-  --muted-foreground: 148 163 184;
-  --card: 30 41 59;
+  --muted: 13 42 13;
+  --muted-foreground: 148 163 148;
+  --card: 13 42 13;
   --card-foreground: 248 250 252;
-  --border: 51 65 85;
-  --input: 51 65 85;
+  --border: 26 61 26;
+  --input: 21 48 21;
 
-  /* Brand Colors - consistent */
-  --primary: 96 165 250; /* Lighter blue for dark */
-  --primary-foreground: 15 23 42; /* Dark text for contrast on light blue */
-  --secondary: 248 113 113; /* Lighter coral for dark */
-  --secondary-foreground: 15 23 42; /* Dark text for contrast on coral */
-  --accent: 192 132 252; /* Lighter purple for dark */
-  --accent-foreground: 15 23 42; /* Dark text for contrast on purple */
+  /* Brand Colors - All Green */
+  --primary: 74 222 128; /* Light green for dark mode */
+  --primary-foreground: 10 31 10; /* Dark text for contrast */
+  --secondary: 34 197 94; /* Green */
+  --secondary-foreground: 10 31 10;
+  --accent: 22 163 74; /* Darker green */
+  --accent-foreground: 255 255 255;
 
   /* Glassmorphism - Dark */
-  --glass-bg: 30 41 59 / 0.8;
-  --glass-border: 255 255 255 / 0.1;
+  --glass-bg: 13 42 13 / 0.8;
+  --glass-border: 74 222 128 / 0.1;
 
-  /* Shadows - Dark mode */
-  --shadow-glow: 0 0 20px rgb(96 165 250 / 0.3);
+  /* Shadows - Dark mode with green glow */
+  --shadow-glow: 0 0 20px rgb(74 222 128 / 0.3);
 }
 
 /* Global Styles */
