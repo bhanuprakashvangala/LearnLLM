@@ -28,12 +28,19 @@ interface Challenge {
   prerequisites: string[];
 }
 
+interface Concept {
+  title: string;
+  explanation: string;
+}
+
 interface ChallengeStepsType {
   title: string;
   description: string;
   starterCode: string;
   solution: string;
   hints: string[];
+  learningObjectives?: string[];
+  concepts?: Concept[];
 }
 
 const difficultyGradients = {
@@ -145,6 +152,8 @@ export default function ChallengePage() {
             starterCode={stepsData.starterCode}
             solution={stepsData.solution}
             hints={stepsData.hints}
+            learningObjectives={stepsData.learningObjectives}
+            concepts={stepsData.concepts}
             onComplete={handleComplete}
           />
         </div>

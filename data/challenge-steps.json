@@ -2,6 +2,29 @@
   "1": {
     "title": "Build Your First Chatbot",
     "description": "Create a chatbot that can have conversations using the Groq API",
+    "learningObjectives": [
+      "Understand how LLM APIs work",
+      "Learn about system prompts and their role",
+      "Create a conversational AI assistant"
+    ],
+    "concepts": [
+      {
+        "title": "What is an LLM API?",
+        "explanation": "An LLM (Large Language Model) API lets you send text to an AI model and get intelligent responses back. Think of it like texting a very smart friend - you send a message, they think about it, and reply."
+      },
+      {
+        "title": "The System Prompt",
+        "explanation": "The system prompt tells the AI WHO it should be and HOW it should behave. It's like giving an actor their character description before a play. Change it to create different personalities!"
+      },
+      {
+        "title": "Messages Array",
+        "explanation": "Conversations are stored as an array of messages, each with a 'role' (system, user, or assistant) and 'content'. This lets the AI remember the conversation context."
+      },
+      {
+        "title": "Temperature",
+        "explanation": "Temperature (0.0 to 1.0) controls creativity. Low = focused and consistent answers. High = more creative but unpredictable. For chatbots, 0.7 is a good balance."
+      }
+    ],
     "starterCode": "// Build Your First Chatbot\n// Complete the code below to create a working chatbot\n\nconst Groq = require('groq-sdk');\n\n// Step 1: Create your Groq client\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Step 2: Define your chatbot's personality\n// Change this to give your chatbot a unique personality!\nconst systemPrompt = \"You are a helpful assistant.\";\n\n// Step 3: Create the chat function\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.7\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Your chatbot is ready! Try it in the preview -->",
     "solution": "// Build Your First Chatbot - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// A friendly coding tutor chatbot\nconst systemPrompt = `You are CodeBuddy, a friendly and encouraging coding tutor. \nYou help beginners learn programming with:\n- Simple explanations using real-world analogies\n- Short code examples when helpful\n- Encouragement and positive reinforcement\n- Breaking down complex topics into small steps\n\nKeep responses concise and beginner-friendly.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.7\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try asking: \"What is a variable?\" or \"How do loops work?\"",
     "hints": [
@@ -14,8 +37,31 @@
   "2": {
     "title": "Prompt Engineering Master",
     "description": "Learn different prompting techniques to get better AI responses",
+    "learningObjectives": [
+      "Master role prompting for specialized responses",
+      "Learn few-shot prompting with examples",
+      "Understand chain-of-thought reasoning"
+    ],
+    "concepts": [
+      {
+        "title": "Role Prompting",
+        "explanation": "Tell the AI WHO it is - an expert, teacher, critic, etc. This focuses its knowledge and changes how it responds. 'You are a senior software engineer' gives different answers than 'You are a beginner-friendly tutor'."
+      },
+      {
+        "title": "Few-Shot Prompting",
+        "explanation": "Give the AI 2-3 examples of the input/output format you want. It learns the pattern and follows it. Like teaching by showing: 'Input: apple -> Output: fruit. Input: carrot -> Output: ?'"
+      },
+      {
+        "title": "Chain of Thought",
+        "explanation": "Ask the AI to 'think step by step' or break down its reasoning. This improves accuracy for complex problems because the AI shows its work, just like in math class."
+      },
+      {
+        "title": "Output Formatting",
+        "explanation": "Specify exactly how you want the response structured - bullet points, numbered lists, markdown headers, JSON, etc. The AI will follow your format if you're clear about it."
+      }
+    ],
     "starterCode": "// Prompt Engineering Challenge\n// Master different prompting techniques!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// TECHNIQUE 1: Role Prompting\n// Give the AI a specific role/persona\nconst systemPrompt = `You are an expert code reviewer.\nWhen reviewing code, you:\n- Point out bugs and issues\n- Suggest improvements\n- Explain WHY something is good or bad\n- Rate code quality from 1-10`;\n\n// TECHNIQUE 2: Few-Shot Prompting\n// Provide examples to guide the AI's responses\n// Try adding examples in your messages!\n\n// TECHNIQUE 3: Chain of Thought\n// Ask the AI to \"think step by step\"\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3  // Lower = more focused\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Review this code: function add(a,b) { return a + b }\"",
-    "solution": "// Prompt Engineering Master - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Advanced system prompt combining multiple techniques\nconst systemPrompt = `You are an expert senior software engineer doing code reviews.\n\n## Your Review Process (Chain of Thought):\n1. First, understand what the code is trying to do\n2. Check for bugs, errors, or edge cases\n3. Evaluate code style and readability\n4. Suggest specific improvements\n5. Give an overall rating\n\n## Output Format:\n**Purpose:** [What the code does]\n**Issues Found:** [List any bugs/problems]\n**Suggestions:** [Improvements]\n**Rating:** [X/10]\n\n## Examples of Good Feedback:\n- \"This function handles null values well\" ✅\n- \"Missing error handling for empty arrays\" ⚠️\n- \"Consider using const instead of let here\" 💡\n\nBe constructive and educational in your feedback.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant', \n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Review: const data = fetch(url).then(r => r.json())\"",
+    "solution": "// Prompt Engineering Master - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Advanced system prompt combining multiple techniques\nconst systemPrompt = `You are an expert senior software engineer doing code reviews.\n\n## Your Review Process (Chain of Thought):\n1. First, understand what the code is trying to do\n2. Check for bugs, errors, or edge cases\n3. Evaluate code style and readability\n4. Suggest specific improvements\n5. Give an overall rating\n\n## Output Format:\n**Purpose:** [What the code does]\n**Issues Found:** [List any bugs/problems]\n**Suggestions:** [Improvements]\n**Rating:** [X/10]\n\n## Examples of Good Feedback:\n- \"This function handles null values well\" OK\n- \"Missing error handling for empty arrays\" Warning\n- \"Consider using const instead of let here\" Tip\n\nBe constructive and educational in your feedback.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant', \n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Review: const data = fetch(url).then(r => r.json())\"",
     "hints": [
       "Role prompting: Tell the AI WHO it is (expert, teacher, critic) to get specialized responses",
       "Few-shot: Give 2-3 examples of the input/output format you want",

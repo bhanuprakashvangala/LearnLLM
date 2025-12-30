@@ -5,13 +5,19 @@ import Editor from "@monaco-editor/react";
 import {
   Send, Play, RotateCcw, Eye, EyeOff, Lightbulb,
   CheckCircle2, Bot, User, Loader2, AlertTriangle,
-  Sparkles, Trophy, ChevronRight
+  Trophy, ChevronRight, BookOpen, GraduationCap,
+  ChevronDown, ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+interface Concept {
+  title: string;
+  explanation: string;
 }
 
 interface ChallengeWorkspaceProps {
@@ -21,6 +27,8 @@ interface ChallengeWorkspaceProps {
   starterCode: string;
   solution: string;
   hints: string[];
+  learningObjectives?: string[];
+  concepts?: Concept[];
   onComplete: () => void;
 }
 
@@ -31,6 +39,8 @@ export function ChallengeWorkspace({
   starterCode,
   solution,
   hints,
+  learningObjectives = [],
+  concepts = [],
   onComplete,
 }: ChallengeWorkspaceProps) {
   const [code, setCode] = React.useState(starterCode);
@@ -45,6 +55,8 @@ export function ChallengeWorkspace({
   const [chatEnabled, setChatEnabled] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [isCompleted, setIsCompleted] = React.useState(false);
+  const [showLearn, setShowLearn] = React.useState(true);
+  const [expandedConcept, setExpandedConcept] = React.useState<number | null>(0);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -58,12 +70,13 @@ export function ChallengeWorkspace({
   // Extract system prompt and config from user code
   const parseUserCode = (userCode: string) => {
     try {
-      // Look for systemPrompt variable
-      const systemMatch = userCode.match(/(?:const|let|var)\s+systemPrompt\s*=\s*[`"']([^`"']+)[`"']/);
-      const systemPrompt = systemMatch ? systemMatch[1] : "You are a helpful assistant.";
+      // Look for systemPrompt variable (handle template literals)
+      const templateMatch = userCode.match(/(?:const|let|var)\s+systemPrompt\s*=\s*`([^`]+)`/s);
+      const stringMatch = userCode.match(/(?:const|let|var)\s+systemPrompt\s*=\s*["']([^"']+)["']/);
+      const systemPrompt = templateMatch ? templateMatch[1] : (stringMatch ? stringMatch[1] : "You are a helpful assistant.");
 
       // Look for model variable
-      const modelMatch = userCode.match(/model:\s*[`"']([^`"']+)[`"']/);
+      const modelMatch = userCode.match(/model:\s*['"`]([^'"`]+)['"`]/);
       const model = modelMatch ? modelMatch[1] : "llama-3.1-8b-instant";
 
       // Look for temperature
@@ -211,23 +224,32 @@ export function ChallengeWorkspace({
   };
 
   return (
-    <div className="h-[calc(100vh-200px)] min-h-[600px] flex flex-col bg-[#0d1117] rounded-xl overflow-hidden border border-[#30363d]">
+    <div className="h-[calc(100vh-200px)] min-h-[600px] flex flex-col bg-[#0a1f0a] dark:bg-[#0a1f0a] rounded-xl overflow-hidden border border-[#1a3d1a] dark:border-[#1a3d1a]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#161b22] border-b border-[#30363d]">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#0d2a0d] dark:bg-[#0d2a0d] border-b border-[#1a3d1a]">
         <div className="flex items-center gap-3">
           <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-            <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+            <div className="w-3 h-3 rounded-full bg-red-500/80" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+            <div className="w-3 h-3 rounded-full bg-green-500" />
           </div>
-          <span className="text-sm font-medium text-gray-300">{title}</span>
+          <span className="text-sm font-medium text-green-200">{title}</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
             size="sm"
             variant="ghost"
+            onClick={() => setShowLearn(!showLearn)}
+            className="text-green-300 hover:text-green-100 hover:bg-green-900/30"
+          >
+            <BookOpen className="w-4 h-4 mr-1" />
+            Learn
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => setShowHint(!showHint)}
-            className="text-gray-400 hover:text-yellow-400 hover:bg-yellow-400/10"
+            className="text-yellow-400 hover:text-yellow-200 hover:bg-yellow-900/20"
           >
             <Lightbulb className="w-4 h-4 mr-1" />
             Hint
@@ -236,7 +258,7 @@ export function ChallengeWorkspace({
             size="sm"
             variant="ghost"
             onClick={handleViewSolution}
-            className="text-gray-400 hover:text-blue-400 hover:bg-blue-400/10"
+            className="text-blue-400 hover:text-blue-200 hover:bg-blue-900/20"
           >
             {showSolution ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
             Solution
@@ -245,7 +267,7 @@ export function ChallengeWorkspace({
             size="sm"
             variant="ghost"
             onClick={handleReset}
-            className="text-gray-400 hover:text-red-400 hover:bg-red-400/10"
+            className="text-red-400 hover:text-red-200 hover:bg-red-900/20"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
             Reset
@@ -253,9 +275,64 @@ export function ChallengeWorkspace({
         </div>
       </div>
 
+      {/* Learning Panel */}
+      {showLearn && (learningObjectives.length > 0 || concepts.length > 0) && (
+        <div className="px-4 py-4 bg-[#0d2a0d] border-b border-[#1a3d1a] max-h-[300px] overflow-y-auto">
+          {/* Learning Objectives */}
+          {learningObjectives.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-green-300 flex items-center gap-2 mb-2">
+                <GraduationCap className="w-4 h-4" />
+                What You'll Learn
+              </h3>
+              <ul className="space-y-1">
+                {learningObjectives.map((objective, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-green-200/80">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    {objective}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Key Concepts */}
+          {concepts.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-green-300 flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4" />
+                Key Concepts
+              </h3>
+              <div className="space-y-2">
+                {concepts.map((concept, i) => (
+                  <div key={i} className="bg-[#0a1f0a] rounded-lg border border-[#1a3d1a]">
+                    <button
+                      onClick={() => setExpandedConcept(expandedConcept === i ? null : i)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-left"
+                    >
+                      <span className="text-sm font-medium text-green-200">{concept.title}</span>
+                      {expandedConcept === i ? (
+                        <ChevronUp className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-green-400" />
+                      )}
+                    </button>
+                    {expandedConcept === i && (
+                      <div className="px-3 pb-3 text-sm text-green-200/70 leading-relaxed">
+                        {concept.explanation}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Hint Banner */}
       {showHint && (
-        <div className="px-4 py-3 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center justify-between">
+        <div className="px-4 py-3 bg-yellow-900/20 border-b border-yellow-700/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Lightbulb className="w-5 h-5 text-yellow-500" />
             <p className="text-sm text-yellow-200">{hints[currentHintIndex]}</p>
@@ -270,7 +347,7 @@ export function ChallengeWorkspace({
 
       {/* Solution Warning */}
       {hasViewedSolution && !showSolution && (
-        <div className="px-4 py-2 bg-orange-500/10 border-b border-orange-500/20 flex items-center gap-2">
+        <div className="px-4 py-2 bg-orange-900/20 border-b border-orange-700/30 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-orange-500" />
           <p className="text-sm text-orange-300">You viewed the solution. Complete without viewing to earn points.</p>
         </div>
@@ -279,14 +356,14 @@ export function ChallengeWorkspace({
       {/* Main Content */}
       <div className="flex-1 flex">
         {/* Code Editor */}
-        <div className="flex-1 flex flex-col border-r border-[#30363d]">
-          <div className="px-4 py-2 bg-[#161b22] border-b border-[#30363d] flex items-center justify-between">
-            <span className="text-xs text-gray-500 font-mono">chatbot.js</span>
+        <div className="flex-1 flex flex-col border-r border-[#1a3d1a]">
+          <div className="px-4 py-2 bg-[#0d2a0d] border-b border-[#1a3d1a] flex items-center justify-between">
+            <span className="text-xs text-green-600 font-mono">chatbot.js</span>
             <Button
               size="sm"
               onClick={handleRun}
               disabled={isRunning}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-700 hover:bg-green-600 text-white"
             >
               {isRunning ? (
                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
@@ -319,20 +396,20 @@ export function ChallengeWorkspace({
           </div>
 
           {error && (
-            <div className="px-4 py-3 bg-red-500/10 border-t border-red-500/20">
+            <div className="px-4 py-3 bg-red-900/20 border-t border-red-700/30">
               <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
         </div>
 
         {/* Chat Preview */}
-        <div className="w-[400px] flex flex-col bg-[#0d1117]">
-          <div className="px-4 py-3 bg-[#161b22] border-b border-[#30363d] flex items-center gap-2">
-            <Bot className="w-5 h-5 text-purple-400" />
-            <span className="text-sm font-medium text-gray-300">Live Preview</span>
+        <div className="w-[400px] flex flex-col bg-[#0a1f0a]">
+          <div className="px-4 py-3 bg-[#0d2a0d] border-b border-[#1a3d1a] flex items-center gap-2">
+            <Bot className="w-5 h-5 text-green-400" />
+            <span className="text-sm font-medium text-green-200">Live Preview</span>
             {chatEnabled && (
               <span className="ml-auto flex items-center gap-1 text-xs text-green-400">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 Running
               </span>
             )}
@@ -343,9 +420,9 @@ export function ChallengeWorkspace({
             {!chatEnabled && messages.length === 0 && (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center">
-                  <Bot className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">Write your code and click Run</p>
-                  <p className="text-gray-600 text-xs mt-1">Your chatbot will appear here</p>
+                  <Bot className="w-12 h-12 text-green-800 mx-auto mb-3" />
+                  <p className="text-green-600 text-sm">Write your code and click Run</p>
+                  <p className="text-green-700 text-xs mt-1">Your chatbot will appear here</p>
                 </div>
               </div>
             )}
@@ -356,7 +433,7 @@ export function ChallengeWorkspace({
                 className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === "user" ? "bg-blue-600" : "bg-purple-600"
+                  message.role === "user" ? "bg-blue-600" : "bg-green-700"
                 }`}>
                   {message.role === "user" ? (
                     <User className="w-4 h-4 text-white" />
@@ -367,7 +444,7 @@ export function ChallengeWorkspace({
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                   message.role === "user"
                     ? "bg-blue-600 text-white"
-                    : "bg-[#1c2128] text-gray-200 border border-[#30363d]"
+                    : "bg-[#153015] text-green-100 border border-[#1a3d1a]"
                 }`}>
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
@@ -376,11 +453,11 @@ export function ChallengeWorkspace({
 
             {isSending && (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
-                <div className="bg-[#1c2128] border border-[#30363d] rounded-2xl px-4 py-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-purple-400" />
+                <div className="bg-[#153015] border border-[#1a3d1a] rounded-2xl px-4 py-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-green-400" />
                 </div>
               </div>
             )}
@@ -388,7 +465,7 @@ export function ChallengeWorkspace({
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-[#30363d]">
+          <div className="p-4 border-t border-[#1a3d1a]">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -397,12 +474,12 @@ export function ChallengeWorkspace({
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
                 placeholder={chatEnabled ? "Test your chatbot..." : "Run your code first"}
                 disabled={!chatEnabled || isSending}
-                className="flex-1 bg-[#1c2128] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 disabled:opacity-50"
+                className="flex-1 bg-[#153015] border border-[#1a3d1a] rounded-lg px-4 py-2 text-sm text-green-100 placeholder-green-700 focus:outline-none focus:border-green-500 disabled:opacity-50"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!chatEnabled || isSending || !input.trim()}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-green-700 hover:bg-green-600"
               >
                 <Send className="w-4 h-4" />
               </Button>
@@ -412,19 +489,19 @@ export function ChallengeWorkspace({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-[#161b22] border-t border-[#30363d] flex items-center justify-between">
-        <p className="text-xs text-gray-500">{description}</p>
+      <div className="px-4 py-3 bg-[#0d2a0d] border-t border-[#1a3d1a] flex items-center justify-between">
+        <p className="text-xs text-green-600">{description}</p>
         {chatEnabled && messages.length > 2 && !hasViewedSolution && (
           <Button
             onClick={handleComplete}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500"
           >
             <Trophy className="w-4 h-4 mr-2" />
             Complete Challenge
           </Button>
         )}
         {hasViewedSolution && (
-          <Button onClick={handleReset} variant="outline" className="border-orange-500 text-orange-400 hover:bg-orange-500/10">
+          <Button onClick={handleReset} variant="outline" className="border-orange-500 text-orange-400 hover:bg-orange-900/20">
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset to Try Again
           </Button>
