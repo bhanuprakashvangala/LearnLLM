@@ -26,7 +26,6 @@ export default function SignUpPage() {
     setIsLoading(true);
     setError("");
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       setIsLoading(false);
@@ -34,7 +33,6 @@ export default function SignUpPage() {
     }
 
     try {
-      // First, create the user account
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,7 +42,6 @@ export default function SignUpPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Check if account already exists
         if (data.error?.includes("already exists")) {
           setError("ACCOUNT_EXISTS");
         } else {
@@ -54,7 +51,6 @@ export default function SignUpPage() {
         return;
       }
 
-      // Then sign them in
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
@@ -78,278 +74,230 @@ export default function SignUpPage() {
   };
 
   const benefits = [
-    "Access to 83 comprehensive lessons",
+    "83 comprehensive lessons",
     "Interactive coding playground",
-    "Hands-on challenges and projects",
-    "Track your progress",
-    "Certificate of completion",
+    "Hands-on challenges",
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-green-500/5 py-8 px-4 overflow-y-auto">
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-green-500/5 p-4 overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 right-20 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 left-20 w-72 h-72 bg-green-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-10 right-20 w-72 h-72 bg-green-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 left-20 w-56 h-56 bg-green-600/10 rounded-full blur-3xl" />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-6xl relative z-10 grid lg:grid-cols-2 gap-8 items-center"
+        className="w-full max-w-5xl relative z-10 grid lg:grid-cols-2 gap-6 items-center"
       >
         {/* Left Side - Benefits */}
-        <div className="hidden lg:block space-y-8">
-          <div>
-            <Link href="/" className="flex items-center gap-2 mb-8">
-              <Logo className="w-12 h-12" />
-              <LogoText className="text-3xl" />
-            </Link>
+        <div className="hidden lg:block">
+          <Link href="/" className="flex items-center gap-2 mb-6">
+            <Logo className="w-10 h-10" />
+            <LogoText className="text-2xl" />
+          </Link>
 
-            <h1 className="text-5xl font-bold mb-4 text-primary">
-              Master LLMs & AI
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Join thousands learning to build with AI. From beginner to advanced in one place.
-            </p>
+          <h1 className="text-4xl font-bold mb-3 text-primary">
+            Master LLMs & AI
+          </h1>
+          <p className="text-lg text-muted-foreground mb-6">
+            Join thousands learning to build with AI.
+          </p>
 
-            <div className="space-y-4">
-              {benefits.map((benefit, index) => (
-                <motion.div
-                  key={benefit}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className="flex items-center gap-3"
-                >
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-primary" />
-                  </div>
-                  <span className="text-foreground font-medium">{benefit}</span>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="mt-12 p-6 bg-muted/50 rounded-xl border border-border">
-              <div className="flex items-center gap-4 mb-3">
-                <div className="flex -space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-green-700 border-2 border-background flex items-center justify-center text-lg">
-                    🤖
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-green-600 border-2 border-background flex items-center justify-center text-lg">
-                    🧠
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-green-500 border-2 border-background flex items-center justify-center text-lg">
-                    💡
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-green-400 border-2 border-background flex items-center justify-center text-lg">
-                    🚀
-                  </div>
+          <div className="space-y-3 mb-6">
+            {benefits.map((benefit, index) => (
+              <motion.div
+                key={benefit}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * index }}
+                className="flex items-center gap-2"
+              >
+                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-primary" />
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">10,000+</div>
-                  <div className="text-sm text-muted-foreground">Active Learners</div>
-                </div>
+                <span className="text-foreground">{benefit}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="p-4 bg-muted/50 rounded-xl border border-border">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex -space-x-2">
+                <div className="w-8 h-8 rounded-full bg-green-700 border-2 border-background flex items-center justify-center text-white font-bold text-xs">S</div>
+                <div className="w-8 h-8 rounded-full bg-green-600 border-2 border-background flex items-center justify-center text-white font-bold text-xs">J</div>
+                <div className="w-8 h-8 rounded-full bg-green-500 border-2 border-background flex items-center justify-center text-white font-bold text-xs">A</div>
+                <div className="w-8 h-8 rounded-full bg-green-400 border-2 border-background flex items-center justify-center text-white font-bold text-xs">M</div>
               </div>
-              <p className="text-sm text-muted-foreground italic">
-                &ldquo;Best LLM learning platform I&apos;ve found. Clear, practical, and comprehensive!&rdquo; <span className="whitespace-nowrap">— Sarah M.</span>
-              </p>
+              <div>
+                <div className="text-xl font-bold">10,000+</div>
+                <div className="text-xs text-muted-foreground">Active Learners</div>
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground italic">
+              &ldquo;Best LLM learning platform. Clear and practical!&rdquo; — Sarah M.
+            </p>
           </div>
         </div>
 
         {/* Right Side - Signup Form */}
-        <div className="bg-card border-2 border-border rounded-2xl shadow-2xl p-8">
+        <div className="bg-card border-2 border-border rounded-2xl shadow-2xl p-6">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
-            <Logo className="w-10 h-10" />
-            <LogoText className="text-2xl" />
+          <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
+            <Logo className="w-8 h-8" />
+            <LogoText className="text-xl" />
           </div>
 
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
-              <Sparkles className="w-4 h-4" />
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 rounded-full text-xs font-medium text-primary mb-2">
+              <Sparkles className="w-3 h-3" />
               Start Learning for Free
             </div>
-            <h2 className="text-3xl font-bold mb-2">Create Your Account</h2>
-            <p className="text-muted-foreground">
-              Get started in seconds with social sign-in
-            </p>
+            <h2 className="text-2xl font-bold">Create Your Account</h2>
           </div>
 
-          {/* Social Signup Buttons */}
-          <div className="space-y-3 mb-6">
-            <Button
-              variant="outline"
-              className="w-full h-11 font-medium hover:scale-[1.02] transition-all"
-              onClick={() => handleSocialSignup("google")}
-              disabled={isLoading}
-            >
-              <Chrome className="w-5 h-5 mr-2" />
-              Continue with Google
-            </Button>
-          </div>
+          {/* Social Signup */}
+          <Button
+            variant="outline"
+            className="w-full h-10 font-medium mb-4"
+            onClick={() => handleSocialSignup("google")}
+            disabled={isLoading}
+          >
+            <Chrome className="w-4 h-4 mr-2" />
+            Continue with Google
+          </Button>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-card text-muted-foreground">
-                Or sign up with email
-              </span>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-3 bg-card text-muted-foreground">Or sign up with email</span>
             </div>
           </div>
 
           {/* Email Signup Form */}
-          <form onSubmit={handleEmailSignup} className="space-y-4">
+          <form onSubmit={handleEmailSignup} className="space-y-3">
             {error && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-sm">
+              <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 text-xs">
                 {error.includes("Google") ? (
                   <span>
-                    This email is linked to a Google account.{" "}
-                    <button
-                      type="button"
-                      onClick={() => handleSocialSignup("google")}
-                      className="underline font-semibold hover:text-red-700"
-                    >
+                    Email linked to Google.{" "}
+                    <button type="button" onClick={() => handleSocialSignup("google")} className="underline font-semibold">
                       Sign in with Google
                     </button>
                   </span>
                 ) : error.includes("already exists") ? (
                   <span>
-                    An account with this email already exists.{" "}
-                    <Link href="/login" className="underline font-semibold hover:text-red-700">
-                      Sign in instead
-                    </Link>
+                    Account exists.{" "}
+                    <Link href="/login" className="underline font-semibold">Sign in instead</Link>
                   </span>
-                ) : (
-                  error
-                )}
+                ) : error}
               </div>
             )}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="pl-10 h-11"
-                  required
-                  disabled={isLoading}
-                />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="name" className="block text-xs font-medium mb-1">Name</label>
+                <div className="relative">
+                  <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="pl-8 h-9 text-sm"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-xs font-medium mb-1">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="pl-8 h-9 text-sm"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10 h-11"
-                  required
-                  disabled={isLoading}
-                />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="password" className="block text-xs font-medium mb-1">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="8+ characters"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="pl-8 h-9 text-sm"
+                    required
+                    minLength={8}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="confirmPassword" className="block text-xs font-medium mb-1">Confirm</label>
+                <div className="relative">
+                  <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="pl-8 h-9 text-sm"
+                    required
+                    minLength={8}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="At least 8 characters"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 h-11"
-                  required
-                  minLength={8}
-                  disabled={isLoading}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Must be at least 8 characters long
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="pl-10 h-11"
-                  required
-                  minLength={8}
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-12 font-semibold text-base group mt-6"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full h-10 font-semibold group" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  Creating account...
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Creating...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5 mr-2" />
+                  <Sparkles className="w-4 h-4 mr-2" />
                   Create Free Account
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </Button>
           </form>
 
-          {/* Login Link */}
-          <p className="text-center mt-6 text-sm text-muted-foreground">
+          {/* Footer */}
+          <p className="text-center mt-3 text-xs text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary font-semibold hover:underline">
-              Sign In
-            </Link>
+            <Link href="/login" className="text-primary font-semibold hover:underline">Sign In</Link>
           </p>
-
-          {/* Terms */}
-          <p className="text-center mt-4 text-xs text-muted-foreground px-6">
+          <p className="text-center mt-2 text-[10px] text-muted-foreground">
             By signing up, you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-foreground">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline hover:text-foreground">
-              Privacy Policy
-            </Link>
+            <Link href="/terms" className="underline">Terms</Link> and{" "}
+            <Link href="/privacy" className="underline">Privacy Policy</Link>
           </p>
         </div>
       </motion.div>
