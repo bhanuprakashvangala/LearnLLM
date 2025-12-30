@@ -237,6 +237,188 @@
         "Clear role definitions prevent agent confusion",
         "Limit communication rounds to control costs and latency"
       ]
+    },
+    {
+      "id": "9",
+      "title": "Text Classification Pipeline",
+      "description": "Build an AI that categorizes text into predefined categories with confidence scores",
+      "difficulty": "beginner",
+      "points": 120,
+      "timeEstimate": "30 min",
+      "category": "Classification",
+      "skills": ["Classification", "Prompting", "JSON Output"],
+      "prerequisites": ["1"],
+      "instructions": [
+        "Define 5-10 categories for classification",
+        "Create a prompt that explains the categories",
+        "Request structured JSON output with category and confidence",
+        "Test with diverse examples",
+        "Handle edge cases and ambiguous inputs"
+      ],
+      "resources": [
+        {"title": "Text Classification Guide", "url": "https://www.promptingguide.ai/applications/classification"}
+      ],
+      "hints": [
+        "Clear category definitions improve accuracy",
+        "Include examples for each category in your prompt",
+        "Ask for confidence scores to handle uncertainty"
+      ]
+    },
+    {
+      "id": "10",
+      "title": "Language Translation Bot",
+      "description": "Create a multi-language translator that preserves tone and context",
+      "difficulty": "beginner",
+      "points": 130,
+      "timeEstimate": "35 min",
+      "category": "NLP",
+      "skills": ["Translation", "Prompting", "Multi-language"],
+      "prerequisites": ["1"],
+      "instructions": [
+        "Support translation between 5+ languages",
+        "Preserve the original tone (formal, casual, etc.)",
+        "Handle idioms and cultural expressions",
+        "Provide alternative translations when appropriate",
+        "Detect the source language automatically"
+      ],
+      "resources": [
+        {"title": "LLM Translation Best Practices", "url": "https://docs.anthropic.com"}
+      ],
+      "hints": [
+        "Ask the AI to explain idioms rather than literal translation",
+        "Include context about the text's purpose",
+        "Request multiple translation options for ambiguous phrases"
+      ]
+    },
+    {
+      "id": "11",
+      "title": "Conversation Memory System",
+      "description": "Build a chatbot that remembers context across multiple messages",
+      "difficulty": "intermediate",
+      "points": 200,
+      "timeEstimate": "1 hour",
+      "category": "Memory",
+      "skills": ["Context Management", "Memory", "Conversation"],
+      "prerequisites": ["1", "2"],
+      "instructions": [
+        "Implement a message history array",
+        "Add context window management for long conversations",
+        "Create a summary system for older messages",
+        "Track key facts mentioned in the conversation",
+        "Handle context overflow gracefully"
+      ],
+      "resources": [
+        {"title": "Conversation Memory Patterns", "url": "https://python.langchain.com/docs/modules/memory"}
+      ],
+      "hints": [
+        "Store both user and assistant messages",
+        "Summarize old messages to save tokens",
+        "Extract and store key facts separately"
+      ]
+    },
+    {
+      "id": "12",
+      "title": "AI Content Moderator",
+      "description": "Create an AI system that detects and flags inappropriate content",
+      "difficulty": "intermediate",
+      "points": 220,
+      "timeEstimate": "1 hour",
+      "category": "Safety",
+      "skills": ["Content Moderation", "Classification", "Safety"],
+      "prerequisites": ["2", "9"],
+      "instructions": [
+        "Define content categories (spam, hate speech, NSFW, etc.)",
+        "Create a multi-label classification system",
+        "Implement severity scoring (low, medium, high)",
+        "Handle context-dependent cases",
+        "Provide explanations for flagged content"
+      ],
+      "resources": [
+        {"title": "AI Safety Guidelines", "url": "https://docs.anthropic.com/claude/docs/content-moderation"}
+      ],
+      "hints": [
+        "Consider context - some words are only harmful in certain contexts",
+        "Provide clear reasoning for moderation decisions",
+        "Balance false positives and false negatives"
+      ]
+    },
+    {
+      "id": "13",
+      "title": "Data Extraction Pipeline",
+      "description": "Extract structured data from unstructured text like emails, invoices, or articles",
+      "difficulty": "intermediate",
+      "points": 280,
+      "timeEstimate": "2 hours",
+      "category": "Data Extraction",
+      "skills": ["Entity Extraction", "NER", "JSON Output"],
+      "prerequisites": ["2", "5"],
+      "instructions": [
+        "Define the data schema you want to extract",
+        "Create extraction prompts for different document types",
+        "Handle missing or uncertain information",
+        "Validate extracted data",
+        "Support multiple output formats"
+      ],
+      "resources": [
+        {"title": "Structured Data Extraction", "url": "https://www.promptingguide.ai/applications/structured_outputs"}
+      ],
+      "hints": [
+        "Be very specific about the output schema",
+        "Ask the AI to say 'unknown' for missing information",
+        "Include validation logic for extracted data"
+      ]
+    },
+    {
+      "id": "14",
+      "title": "AI Writing Assistant",
+      "description": "Build a comprehensive writing assistant that helps with drafts, editing, and style",
+      "difficulty": "intermediate",
+      "points": 320,
+      "timeEstimate": "2.5 hours",
+      "category": "Writing",
+      "skills": ["Writing", "Editing", "Style Analysis"],
+      "prerequisites": ["2", "6"],
+      "instructions": [
+        "Implement grammar and spelling correction",
+        "Create tone analysis and adjustment features",
+        "Add style suggestions based on context",
+        "Support multiple writing formats (email, blog, report)",
+        "Provide readability scoring"
+      ],
+      "resources": [
+        {"title": "Writing with AI", "url": "https://www.promptingguide.ai/applications/writing"}
+      ],
+      "hints": [
+        "Different writing contexts need different styles",
+        "Show tracked changes for editing suggestions",
+        "Explain why changes improve the writing"
+      ]
+    },
+    {
+      "id": "15",
+      "title": "AI Workflow Automation",
+      "description": "Chain multiple AI tasks together to automate complex workflows",
+      "difficulty": "advanced",
+      "points": 550,
+      "timeEstimate": "5 hours",
+      "category": "Automation",
+      "skills": ["Workflow", "Chaining", "Automation"],
+      "prerequisites": ["4", "7"],
+      "instructions": [
+        "Design a multi-step workflow with 3+ stages",
+        "Implement data passing between stages",
+        "Add conditional logic based on AI outputs",
+        "Handle errors and retries gracefully",
+        "Monitor workflow progress and status"
+      ],
+      "resources": [
+        {"title": "LangChain Chains", "url": "https://python.langchain.com/docs/modules/chains"}
+      ],
+      "hints": [
+        "Break complex tasks into simple, focused steps",
+        "Validate outputs before passing to next stage",
+        "Log each step for debugging"
+      ]
     }
   ]
 }

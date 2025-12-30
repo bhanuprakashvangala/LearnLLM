@@ -25,13 +25,13 @@
         "explanation": "Temperature (0.0 to 1.0) controls creativity. Low = focused and consistent answers. High = more creative but unpredictable. For chatbots, 0.7 is a good balance."
       }
     ],
-    "starterCode": "// Build Your First Chatbot\n// Complete the code below to create a working chatbot\n\nconst Groq = require('groq-sdk');\n\n// Step 1: Create your Groq client\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Step 2: Define your chatbot's personality\n// Change this to give your chatbot a unique personality!\nconst systemPrompt = \"You are a helpful assistant.\";\n\n// Step 3: Create the chat function\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.7\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Your chatbot is ready! Try it in the preview -->",
-    "solution": "// Build Your First Chatbot - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// A friendly coding tutor chatbot\nconst systemPrompt = `You are CodeBuddy, a friendly and encouraging coding tutor. \nYou help beginners learn programming with:\n- Simple explanations using real-world analogies\n- Short code examples when helpful\n- Encouragement and positive reinforcement\n- Breaking down complex topics into small steps\n\nKeep responses concise and beginner-friendly.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.7\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try asking: \"What is a variable?\" or \"How do loops work?\"",
+    "starterCode": "// BUILD YOUR FIRST CHATBOT\n// Follow the steps below to create a working chatbot!\n\nconst Groq = require('groq-sdk');\n\n// STEP 1: Initialize the Groq client\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// STEP 2: Define your chatbot's personality\n// TODO: Change this to give your chatbot a unique personality!\nconst systemPrompt = \"You are a helpful assistant.\";\n\n// STEP 3: Create the chat function\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.7\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// TRY IT: Click Run and test your chatbot! -->",
+    "solution": "// BUILD YOUR FIRST CHATBOT - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// A friendly coding tutor chatbot with personality\nconst systemPrompt = `You are CodeBuddy, a friendly and encouraging coding tutor.\n\nYour personality:\n- Patient and supportive\n- Uses simple analogies to explain concepts\n- Celebrates small wins with encouragement\n- Breaks complex topics into bite-sized pieces\n\nWhen helping:\n1. First acknowledge the question\n2. Explain the concept simply\n3. Give a short code example if helpful\n4. Encourage them to try it\n\nKeep responses concise (2-3 paragraphs max).`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.7\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"What is a variable?\" or \"Explain loops to me\"",
     "hints": [
-      "The systemPrompt tells the AI how to behave. Try making it a specific character like a pirate, teacher, or chef!",
-      "You can change the temperature: 0.1 = focused answers, 1.0 = creative answers",
-      "Try adding personality traits like 'You always use emojis' or 'You speak like Shakespeare'",
-      "The model 'llama-3.1-8b-instant' is fast. You can also try 'llama-3.3-70b-versatile' for smarter responses"
+      "The systemPrompt is the KEY to your chatbot's personality. Make it detailed!",
+      "Try making your bot a specific character: pirate, chef, sports coach, etc.",
+      "Add specific instructions like 'Always use emojis' or 'Speak formally'",
+      "Temperature 0.7 is balanced. Try 0.3 for serious bots, 0.9 for creative ones."
     ]
   },
   "2": {
@@ -45,28 +45,483 @@
     "concepts": [
       {
         "title": "Role Prompting",
-        "explanation": "Tell the AI WHO it is - an expert, teacher, critic, etc. This focuses its knowledge and changes how it responds. 'You are a senior software engineer' gives different answers than 'You are a beginner-friendly tutor'."
+        "explanation": "Tell the AI WHO it is - an expert, teacher, critic, etc. This focuses its knowledge. 'You are a senior software engineer' gives very different answers than 'You are a beginner-friendly tutor'."
       },
       {
         "title": "Few-Shot Prompting",
-        "explanation": "Give the AI 2-3 examples of the input/output format you want. It learns the pattern and follows it. Like teaching by showing: 'Input: apple -> Output: fruit. Input: carrot -> Output: ?'"
+        "explanation": "Give 2-3 examples of input/output format you want. The AI learns the pattern. Like: 'apple -> fruit, carrot -> vegetable, salmon -> ?' The AI will answer 'fish'."
       },
       {
         "title": "Chain of Thought",
-        "explanation": "Ask the AI to 'think step by step' or break down its reasoning. This improves accuracy for complex problems because the AI shows its work, just like in math class."
+        "explanation": "Ask the AI to 'think step by step'. This dramatically improves accuracy on complex problems because the AI shows its reasoning, catching mistakes along the way."
       },
       {
         "title": "Output Formatting",
-        "explanation": "Specify exactly how you want the response structured - bullet points, numbered lists, markdown headers, JSON, etc. The AI will follow your format if you're clear about it."
+        "explanation": "Tell the AI exactly how to format responses: bullet points, JSON, markdown tables. Be specific: 'Respond in JSON with keys: summary, pros, cons'."
       }
     ],
-    "starterCode": "// Prompt Engineering Challenge\n// Master different prompting techniques!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// TECHNIQUE 1: Role Prompting\n// Give the AI a specific role/persona\nconst systemPrompt = `You are an expert code reviewer.\nWhen reviewing code, you:\n- Point out bugs and issues\n- Suggest improvements\n- Explain WHY something is good or bad\n- Rate code quality from 1-10`;\n\n// TECHNIQUE 2: Few-Shot Prompting\n// Provide examples to guide the AI's responses\n// Try adding examples in your messages!\n\n// TECHNIQUE 3: Chain of Thought\n// Ask the AI to \"think step by step\"\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3  // Lower = more focused\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Review this code: function add(a,b) { return a + b }\"",
-    "solution": "// Prompt Engineering Master - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Advanced system prompt combining multiple techniques\nconst systemPrompt = `You are an expert senior software engineer doing code reviews.\n\n## Your Review Process (Chain of Thought):\n1. First, understand what the code is trying to do\n2. Check for bugs, errors, or edge cases\n3. Evaluate code style and readability\n4. Suggest specific improvements\n5. Give an overall rating\n\n## Output Format:\n**Purpose:** [What the code does]\n**Issues Found:** [List any bugs/problems]\n**Suggestions:** [Improvements]\n**Rating:** [X/10]\n\n## Examples of Good Feedback:\n- \"This function handles null values well\" OK\n- \"Missing error handling for empty arrays\" Warning\n- \"Consider using const instead of let here\" Tip\n\nBe constructive and educational in your feedback.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant', \n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Review: const data = fetch(url).then(r => r.json())\"",
+    "starterCode": "// PROMPT ENGINEERING MASTER\n// Learn techniques that make AI responses 10x better!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// TECHNIQUE 1: Role Prompting\n// Give the AI a specific expert role\nconst systemPrompt = `You are an expert code reviewer.\n\nWhen reviewing code:\n- Point out bugs and issues\n- Suggest improvements  \n- Explain WHY something is good or bad\n- Rate code quality from 1-10`;\n\n// TODO: Try adding these techniques:\n// - Few-shot examples in the prompt\n// - \"Think step by step\" instruction\n// - Specific output format\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Review: function add(a,b) { return a + b }\"",
+    "solution": "// PROMPT ENGINEERING MASTER - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Advanced prompt combining ALL techniques\nconst systemPrompt = `You are an expert senior software engineer doing code reviews.\n\n## Your Process (Chain of Thought):\n1. First, understand what the code does\n2. Check for bugs and edge cases\n3. Evaluate readability and style\n4. Suggest specific improvements\n5. Give a final rating\n\n## Output Format (ALWAYS use this):\n**Purpose:** [One sentence]\n**Issues:** [Bullet list or \"None found\"]\n**Suggestions:** [Numbered improvements]\n**Rating:** [X/10] - [One word: Poor/Fair/Good/Excellent]\n\n## Examples of Good Feedback:\n- Input: \"x = x + 1\" -> \"Consider using x++ or x += 1 for clarity\"\n- Input: \"var data\" -> \"Use const or let instead of var (ES6+)\"\n- Input: \"// TODO\" -> \"Unfinished code - needs implementation\"\n\nBe constructive. Explain the WHY behind each suggestion.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Review: const data = fetch(url).then(r => r.json())\"",
     "hints": [
-      "Role prompting: Tell the AI WHO it is (expert, teacher, critic) to get specialized responses",
-      "Few-shot: Give 2-3 examples of the input/output format you want",
-      "Chain of thought: Add 'Think step by step' or number the steps you want",
-      "Lower temperature (0.1-0.3) for factual tasks, higher (0.7-1.0) for creative tasks"
+      "Role prompting: Be specific! 'Senior engineer with 10 years experience' > 'engineer'",
+      "Few-shot: Add 2-3 input->output examples in your prompt",
+      "Chain of thought: Add '## Steps:' with numbered reasoning steps",
+      "Output format: Define exact structure with headers and bullet points"
+    ]
+  },
+  "3": {
+    "title": "Document Q&A System",
+    "description": "Build a RAG system that can answer questions from documents",
+    "learningObjectives": [
+      "Understand what RAG (Retrieval Augmented Generation) is",
+      "Learn how to provide context to LLMs",
+      "Build a system that answers from your own data"
+    ],
+    "concepts": [
+      {
+        "title": "What is RAG?",
+        "explanation": "RAG = Retrieval Augmented Generation. Instead of relying only on what the AI was trained on, you RETRIEVE relevant information from your documents and AUGMENT the prompt with it. This lets AI answer questions about YOUR specific data."
+      },
+      {
+        "title": "Context Window",
+        "explanation": "LLMs have a 'context window' - the amount of text they can process at once. You can't feed a whole book, so you retrieve only the RELEVANT chunks and include those in the prompt."
+      },
+      {
+        "title": "Document Chunking",
+        "explanation": "Split documents into smaller pieces (chunks) of 500-1000 characters. This makes retrieval more precise - you find the exact paragraph that answers the question, not the whole document."
+      },
+      {
+        "title": "The RAG Prompt Pattern",
+        "explanation": "A RAG prompt has 3 parts: 1) Instructions on how to answer, 2) The retrieved context/documents, 3) The user's question. Tell the AI to ONLY use the provided context."
+      }
+    ],
+    "starterCode": "// DOCUMENT Q&A SYSTEM\n// Build a simple RAG system that answers from context!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// STEP 1: Your document/knowledge base\n// In a real app, this would come from a database\nconst documents = `\n## Company Vacation Policy\n- All employees get 20 days paid vacation per year\n- Vacation days reset on January 1st\n- Unused days can be carried over (max 5 days)\n- Request vacation at least 2 weeks in advance\n- Manager approval required for requests over 5 days\n\n## Sick Leave Policy  \n- Unlimited sick days with doctor's note\n- First 3 days don't require documentation\n- Notify your manager before 9 AM if sick\n`;\n\n// STEP 2: Create the RAG prompt\nconst systemPrompt = `You are an HR assistant that answers employee questions.\n\nIMPORTANT RULES:\n- ONLY answer based on the provided context\n- If the answer isn't in the context, say \"I don't have that information\"\n- Quote the relevant policy when answering\n- Be helpful and concise`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Context:\\n${documents}\\n\\nQuestion: ${userMessage}` }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"How many vacation days do I get?\"",
+    "solution": "// DOCUMENT Q&A SYSTEM - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Knowledge base with multiple topics\nconst documents = `\n## Company Vacation Policy\n- All employees get 20 days paid vacation per year\n- Vacation days reset on January 1st  \n- Unused days can be carried over (max 5 days)\n- Request vacation at least 2 weeks in advance\n- Manager approval required for requests over 5 days\n- Holidays (10 days) are separate from vacation\n\n## Sick Leave Policy\n- Unlimited sick days with doctor's note\n- First 3 days don't require documentation\n- Notify your manager before 9 AM if sick\n- Mental health days count as sick leave\n\n## Remote Work Policy\n- Hybrid: 3 days office, 2 days remote\n- Fully remote requires VP approval\n- Must be available 9 AM - 5 PM local time\n- VPN required for remote access\n`;\n\nconst systemPrompt = `You are a helpful HR assistant answering employee policy questions.\n\n## Your Rules:\n1. ONLY use information from the provided context\n2. If info isn't in context, say: \"I don't have information about that in my current documents.\"\n3. Always cite which policy section you're referencing\n4. Be friendly but professional\n\n## Response Format:\n- Give a direct answer first\n- Then provide relevant details\n- End with \"Anything else about [topic]?\" if appropriate`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { \n        role: 'user', \n        content: `## Available Documentation:\\n${documents}\\n\\n## Employee Question:\\n${userMessage}` \n      }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Can I work from home?\" or \"What if I'm sick?\"",
+    "hints": [
+      "RAG = give the AI YOUR data as context, then ask questions about it",
+      "Always tell the AI to ONLY use the provided context (prevents hallucination)",
+      "Format your context clearly with headers and bullet points",
+      "Low temperature (0.3) keeps answers factual and consistent"
+    ]
+  },
+  "4": {
+    "title": "Custom AI Agent",
+    "description": "Create an AI that can use tools and take actions",
+    "learningObjectives": [
+      "Understand what AI agents are",
+      "Learn the ReAct pattern (Reason + Act)",
+      "Build an AI that decides which tools to use"
+    ],
+    "concepts": [
+      {
+        "title": "What is an AI Agent?",
+        "explanation": "An AI agent is an LLM that can TAKE ACTIONS, not just chat. It can call functions, search the web, run calculations, or interact with APIs. It decides WHAT to do based on the user's request."
+      },
+      {
+        "title": "The ReAct Pattern",
+        "explanation": "ReAct = Reasoning + Acting. The AI: 1) THINKS about what to do, 2) ACTS by calling a tool, 3) OBSERVES the result, 4) Repeats until done. This lets it solve multi-step problems."
+      },
+      {
+        "title": "Tool Definitions",
+        "explanation": "You describe available tools to the AI: name, what it does, and parameters. The AI reads these descriptions and decides which tool fits the task. Clear descriptions = better tool selection."
+      },
+      {
+        "title": "Function Calling",
+        "explanation": "Modern LLMs can output structured tool calls instead of just text. You parse this output, run the actual function, and feed the result back to the AI for the next step."
+      }
+    ],
+    "starterCode": "// CUSTOM AI AGENT\n// Build an AI that can use tools!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// STEP 1: Define your tools\nconst tools = {\n  calculator: (expression) => {\n    try { return eval(expression); }\n    catch { return 'Error: Invalid expression'; }\n  },\n  weather: (city) => {\n    // Simulated weather data\n    const temps = { 'new york': 72, 'london': 59, 'tokyo': 68 };\n    return temps[city.toLowerCase()] || 'City not found';\n  },\n  date: () => new Date().toLocaleDateString()\n};\n\n// STEP 2: Create agent prompt\nconst systemPrompt = `You are a helpful assistant with access to tools.\n\nAvailable tools:\n- calculator(expression): Math calculations like \"2+2\" or \"100*0.15\"\n- weather(city): Get temperature for a city\n- date(): Get today's date\n\nWhen you need a tool, respond with:\nTOOL: toolname(argument)\n\nOtherwise, just respond normally.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"What's 15% of 200?\" or \"What's the weather in Tokyo?\"",
+    "solution": "// CUSTOM AI AGENT - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Comprehensive tool definitions\nconst tools = {\n  calculator: (expr) => {\n    try { return `Result: ${eval(expr)}`; }\n    catch { return 'Error: Invalid math expression'; }\n  },\n  weather: (city) => {\n    const data = {\n      'new york': { temp: 72, condition: 'Sunny' },\n      'london': { temp: 59, condition: 'Cloudy' },\n      'tokyo': { temp: 68, condition: 'Clear' },\n      'paris': { temp: 64, condition: 'Rainy' }\n    };\n    const info = data[city.toLowerCase()];\n    return info ? `${city}: ${info.temp}F, ${info.condition}` : 'City not found';\n  },\n  date: () => `Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`,\n  reminder: (text) => `Reminder set: \"${text}\"`\n};\n\nconst systemPrompt = `You are a helpful AI assistant with tool access.\n\n## Available Tools:\n1. calculator(expression) - Math: \"2+2\", \"100*0.15\", \"Math.sqrt(16)\"\n2. weather(city) - Weather for: new york, london, tokyo, paris\n3. date() - Get today's date\n4. reminder(text) - Set a reminder\n\n## How to Use Tools:\nWhen you need a tool, respond EXACTLY like this:\nTHOUGHT: [Why you need this tool]\nTOOL: toolname(argument)\n\n## Rules:\n- Use tools when needed for accurate info\n- For general chat, respond normally without tools\n- Be helpful and conversational`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Calculate 20% tip on $85\" or \"Is it raining in Paris?\"",
+    "hints": [
+      "Agents = LLMs that can use tools and take actions",
+      "Define tools clearly: name, what it does, example usage",
+      "The ReAct pattern: Think -> Act -> Observe -> Repeat",
+      "Use low temperature (0.3) for reliable tool selection"
+    ]
+  },
+  "5": {
+    "title": "Sentiment Analyzer",
+    "description": "Build an AI that analyzes emotions in text",
+    "learningObjectives": [
+      "Learn structured output from LLMs",
+      "Understand sentiment analysis",
+      "Parse LLM responses into usable data"
+    ],
+    "concepts": [
+      {
+        "title": "Sentiment Analysis",
+        "explanation": "Determining the emotional tone of text: positive, negative, or neutral. Advanced analysis detects specific emotions like joy, anger, fear, or sadness. Used for analyzing reviews, social media, customer feedback."
+      },
+      {
+        "title": "Structured Output",
+        "explanation": "Instead of free-form text, we ask the LLM to respond in a specific format (like JSON). This makes it easy to use the response in code - you can parse it and access specific fields."
+      },
+      {
+        "title": "JSON Mode",
+        "explanation": "Many LLMs support 'JSON mode' that guarantees valid JSON output. Even without it, you can strongly prompt for JSON and parse the response. Always handle parsing errors gracefully."
+      },
+      {
+        "title": "Confidence Scores",
+        "explanation": "Ask the AI to rate its confidence (0-100%). This helps you know when to trust the result. Low confidence might mean ambiguous text or multiple interpretations."
+      }
+    ],
+    "starterCode": "// SENTIMENT ANALYZER\n// Build an AI that detects emotions in text!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are a sentiment analysis expert.\n\nAnalyze the emotional tone of text and respond in this EXACT format:\n{\n  \"sentiment\": \"positive\" | \"negative\" | \"neutral\",\n  \"confidence\": 0-100,\n  \"emotions\": [\"list\", \"of\", \"emotions\"],\n  \"summary\": \"Brief explanation\"\n}\n\nEmotion options: joy, sadness, anger, fear, surprise, disgust, trust, anticipation\n\nALWAYS respond with valid JSON only. No other text.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Analyze this text: \"${userMessage}\"` }\n    ],\n    temperature: 0.2\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"I just got promoted! Best day ever!\"\n// Or: \"This product broke after one day. Terrible.\"",
+    "solution": "// SENTIMENT ANALYZER - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are an expert sentiment and emotion analyzer.\n\n## Your Task:\nAnalyze text for emotional content and provide structured analysis.\n\n## Response Format (STRICT JSON):\n{\n  \"sentiment\": \"positive\" | \"negative\" | \"neutral\" | \"mixed\",\n  \"confidence\": <number 0-100>,\n  \"intensity\": \"mild\" | \"moderate\" | \"strong\",\n  \"emotions\": {\n    \"primary\": \"<main emotion>\",\n    \"secondary\": [\"<other emotions>\"]\n  },\n  \"indicators\": [\"words or phrases that indicate sentiment\"],\n  \"summary\": \"<one sentence explanation>\"\n}\n\n## Emotion Categories:\n- Positive: joy, love, excitement, gratitude, hope, pride\n- Negative: anger, sadness, fear, disgust, frustration, disappointment\n- Neutral: curiosity, surprise, confusion\n\n## Rules:\n1. ONLY output valid JSON\n2. Be specific about emotions (not just positive/negative)\n3. Note mixed feelings when present\n4. Identify specific words that signal sentiment\n\nRespond with JSON only. No markdown, no explanation.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Analyze: \"${userMessage}\"` }\n    ],\n    temperature: 0.2\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"The service was slow but the food was amazing!\"\n// Or: \"I can't believe they cancelled my order again!\"",
+    "hints": [
+      "Use very low temperature (0.2) for consistent structured output",
+      "Be VERY specific about the JSON format you want",
+      "Include examples of valid responses in your prompt",
+      "'ONLY output JSON' helps prevent extra text"
+    ]
+  },
+  "6": {
+    "title": "Content Summarizer",
+    "description": "Build an AI that creates summaries at different lengths",
+    "learningObjectives": [
+      "Control output length and format",
+      "Create multi-format summaries",
+      "Learn extractive vs abstractive summarization"
+    ],
+    "concepts": [
+      {
+        "title": "Extractive vs Abstractive",
+        "explanation": "Extractive summarization picks key sentences from the original. Abstractive rewrites content in new words. LLMs are great at abstractive - they truly understand and rephrase."
+      },
+      {
+        "title": "Length Control",
+        "explanation": "You can specify output length in words, sentences, bullet points, or even characters. Be explicit: 'Summarize in exactly 3 bullet points' or 'Keep under 50 words'."
+      },
+      {
+        "title": "Audience Adaptation",
+        "explanation": "Good summaries adapt to the audience. A summary for executives differs from one for engineers. Specify who the summary is for and what they care about."
+      },
+      {
+        "title": "Key Information Extraction",
+        "explanation": "Beyond summarizing, you can extract specific info: key dates, names, numbers, action items. Combine summarization with structured extraction for powerful results."
+      }
+    ],
+    "starterCode": "// CONTENT SUMMARIZER\n// Create summaries at different lengths and formats!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are an expert content summarizer.\n\nWhen given text, provide THREE different summaries:\n\n1. **Tweet** (under 280 chars): Catchy, shareable version\n2. **Brief** (2-3 sentences): Key points only\n3. **Detailed** (1 paragraph): Comprehensive summary\n\nFormat your response exactly like this:\n\n**Tweet:**\n[your tweet here]\n\n**Brief:**\n[2-3 sentences]\n\n**Detailed:**\n[full paragraph]\n\nMake each summary self-contained and valuable on its own.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Summarize this:\\n\\n${userMessage}` }\n    ],\n    temperature: 0.5\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try pasting a long article or news story!",
+    "solution": "// CONTENT SUMMARIZER - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are an expert content summarizer and analyst.\n\n## Your Task:\nProvide comprehensive summaries at multiple levels.\n\n## Response Format:\n\n**TWEET** (max 280 characters):\n[Engaging, shareable one-liner with relevant emoji]\n\n**TLDR** (1 sentence):\n[The absolute core message]\n\n**KEY POINTS** (3-5 bullets):\n- [Main point 1]\n- [Main point 2]\n- [Main point 3]\n\n**EXECUTIVE SUMMARY** (2-3 sentences):\n[For busy readers who need context and conclusions]\n\n**DETAILED SUMMARY** (1 paragraph):\n[Comprehensive coverage of all important information]\n\n**EXTRACTED DATA**:\n- Topics: [comma-separated list]\n- Sentiment: [positive/negative/neutral]\n- Action Items: [if any, otherwise \"None\"]\n\n## Rules:\n1. Each section must stand alone\n2. No fluff - every word should add value\n3. Preserve key facts, numbers, and names\n4. Maintain original meaning`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Content to summarize:\\n\\n${userMessage}` }\n    ],\n    temperature: 0.5\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: Paste any article, email, or long text!",
+    "hints": [
+      "Specify EXACT length constraints: '280 chars', '3 bullets', '50 words'",
+      "Different audiences need different summaries - specify the reader",
+      "Ask for multiple formats in one response for efficiency",
+      "Include 'preserve key facts and numbers' to avoid losing important details"
+    ]
+  },
+  "7": {
+    "title": "Code Explainer",
+    "description": "Build an AI that explains code to beginners",
+    "learningObjectives": [
+      "Create educational AI assistants",
+      "Learn to simplify complex topics",
+      "Build multi-level explanations"
+    ],
+    "concepts": [
+      {
+        "title": "Explain Like I'm 5 (ELI5)",
+        "explanation": "A prompt technique where you ask the AI to explain as if to a child. This forces simple analogies and avoids jargon. Great for learning complex topics or creating beginner content."
+      },
+      {
+        "title": "Progressive Disclosure",
+        "explanation": "Start simple, then add complexity. First explain WHAT it does, then HOW, then WHY. This prevents overwhelming beginners while still providing depth for those who want it."
+      },
+      {
+        "title": "Analogies and Metaphors",
+        "explanation": "Connect new concepts to familiar things. 'A variable is like a labeled box' or 'A function is like a recipe'. Good AI prompts ask for real-world comparisons."
+      },
+      {
+        "title": "Line-by-Line Breakdown",
+        "explanation": "For code explanation, walk through each line. Explain what it does and why it's needed. This methodical approach ensures no step is skipped."
+      }
+    ],
+    "starterCode": "// CODE EXPLAINER\n// Help beginners understand code!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are a friendly coding teacher who explains code to complete beginners.\n\n## Your Style:\n- Use simple, everyday language\n- Avoid jargon (or explain it if you must use it)\n- Use real-world analogies\n- Be encouraging and patient\n\n## Response Format:\n**What This Code Does:**\n[Simple 1-2 sentence overview]\n\n**Step-by-Step Breakdown:**\n[Go through each part]\n\n**Real-World Analogy:**\n[Compare to something familiar]\n\n**Try This:**\n[A simple modification they can try]`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Explain this code:\\n\\n${userMessage}` }\n    ],\n    temperature: 0.6\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"for (let i = 0; i < 5; i++) { console.log(i); }\"",
+    "solution": "// CODE EXPLAINER - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are CodeMentor, a patient and encouraging teacher who makes coding easy to understand.\n\n## Your Teaching Philosophy:\n- Everyone can learn to code\n- No question is too basic\n- Confusion is part of learning\n- Analogies make everything clearer\n\n## Response Format:\n\n**In Plain English:**\n[What does this code DO in one simple sentence]\n\n**The Analogy:**\n[Compare this to something from everyday life - cooking, organizing, games, etc.]\n\n**Line by Line:**\n[Go through each line with simple explanations]\n\\`\\`\\`\nLine 1: explanation\nLine 2: explanation\n\\`\\`\\`\n\n**Key Concepts:**\n- [Concept 1]: [simple definition]\n- [Concept 2]: [simple definition]\n\n**Common Mistakes:**\n- [What beginners often get wrong]\n\n**Practice Challenge:**\n[A tiny modification they can try to test understanding]\n\n## Rules:\n- Define ANY technical term you use\n- Use encouraging language\n- Relate to real-world examples whenever possible`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Please explain this code to me:\\n\\n${userMessage}` }\n    ],\n    temperature: 0.6\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"const greeting = (name) => `Hello, ${name}!`;\"",
+    "hints": [
+      "'Explain like I'm 5' forces simple language and good analogies",
+      "Ask for line-by-line breakdown for thorough explanations",
+      "Include 'define any technical terms' to catch jargon",
+      "Add a practice challenge to reinforce learning"
+    ]
+  },
+  "8": {
+    "title": "Multi-Agent System",
+    "description": "Build multiple AI agents that work together",
+    "learningObjectives": [
+      "Understand multi-agent architectures",
+      "Learn agent coordination patterns",
+      "Build AI teams that collaborate"
+    ],
+    "concepts": [
+      {
+        "title": "Agent Specialization",
+        "explanation": "Instead of one general AI, use multiple specialized agents. A 'researcher' finds info, a 'writer' creates content, a 'critic' reviews. Each agent has focused expertise."
+      },
+      {
+        "title": "Agent Communication",
+        "explanation": "Agents pass information to each other. The coordinator assigns tasks, workers do them, and pass results back. Think of it like a team chat where specialists collaborate."
+      },
+      {
+        "title": "Coordinator Pattern",
+        "explanation": "A 'boss' agent decides who does what. It reads the task, breaks it down, assigns to specialists, and combines their work. This orchestration is key to complex tasks."
+      },
+      {
+        "title": "Review Loops",
+        "explanation": "One agent creates, another reviews. The reviewer provides feedback, creator improves. This back-and-forth produces higher quality than single-pass generation."
+      }
+    ],
+    "starterCode": "// MULTI-AGENT SYSTEM\n// Build a team of AI agents that work together!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Define specialized agents\nconst agents = {\n  researcher: `You are a Research Agent. Your job is to:\n- Gather relevant information\n- List key facts and data points\n- Cite sources when possible\nRespond with: RESEARCH FINDINGS: [your findings]`,\n\n  writer: `You are a Writer Agent. Your job is to:\n- Take research and write engaging content\n- Use clear, simple language\n- Structure with headers and bullets\nRespond with: DRAFT: [your content]`,\n\n  critic: `You are a Critic Agent. Your job is to:\n- Review content for accuracy and clarity\n- Suggest specific improvements\n- Rate quality from 1-10\nRespond with: REVIEW: [your feedback]`\n};\n\n// The coordinator decides which agent to use\nconst systemPrompt = `You are a Coordinator. You manage a team of agents:\n- researcher: gathers information\n- writer: creates content\n- critic: reviews and improves\n\nFor the user's request, respond with which agent should work first:\nAGENT: [researcher|writer|critic]\nTASK: [what they should do]`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.5\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Write a blog post about AI safety\"",
+    "solution": "// MULTI-AGENT SYSTEM - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Specialized agent personas\nconst agents = {\n  researcher: `You are RESEARCHER, an expert at gathering and synthesizing information.\n\n## Your Process:\n1. Identify key topics to research\n2. Gather relevant facts and data\n3. Note any gaps or uncertainties\n\n## Output Format:\nRESEARCH COMPLETE\n\n**Key Facts:**\n- [fact 1]\n- [fact 2]\n\n**Important Context:**\n[background info]\n\n**Questions to Explore:**\n[what needs more research]`,\n\n  writer: `You are WRITER, a skilled content creator.\n\n## Your Process:\n1. Review provided research\n2. Create engaging, clear content\n3. Structure for readability\n\n## Output Format:\nDRAFT COMPLETE\n\n[Your well-structured content with headers]`,\n\n  critic: `You are CRITIC, a constructive reviewer.\n\n## Your Process:\n1. Check accuracy and completeness\n2. Evaluate clarity and engagement\n3. Provide specific improvements\n\n## Output Format:\nREVIEW COMPLETE\n\n**Strengths:**\n- [what works well]\n\n**Improvements Needed:**\n- [specific suggestion 1]\n- [specific suggestion 2]\n\n**Quality Score:** [X/10]`\n};\n\nconst systemPrompt = `You are COORDINATOR, managing a content creation team.\n\n## Your Team:\n- RESEARCHER: Gathers facts and context\n- WRITER: Creates engaging content\n- CRITIC: Reviews and improves\n\n## Your Workflow:\n1. Analyze the request\n2. Assign to appropriate agent\n3. Explain the task\n\n## Response Format:\n**Analysis:** [What needs to be done]\n\n**Assignment:**\nAGENT: [researcher/writer/critic]\nTASK: [Specific instructions]\n\n**Expected Outcome:** [What we're aiming for]`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.5\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Create a guide to learning Python\"",
+    "hints": [
+      "Specialized agents > one general agent for complex tasks",
+      "Clear role definitions prevent agent confusion",
+      "Use a coordinator to orchestrate the team",
+      "Review loops (create->critique->improve) boost quality"
+    ]
+  },
+  "9": {
+    "title": "Text Classification Pipeline",
+    "description": "Build an AI that categorizes text into predefined categories",
+    "learningObjectives": [
+      "Understand text classification concepts",
+      "Learn to define clear categories",
+      "Get structured JSON output from LLMs"
+    ],
+    "concepts": [
+      {
+        "title": "What is Classification?",
+        "explanation": "Classification is sorting things into categories. Email goes into 'work' or 'personal', reviews are 'positive' or 'negative'. LLMs are great at this because they understand nuance and context."
+      },
+      {
+        "title": "Mutually Exclusive vs Multi-Label",
+        "explanation": "Mutually exclusive: only ONE category (a fruit is apple OR orange). Multi-label: can have MULTIPLE (a movie can be 'action' AND 'comedy'). Choose based on your use case."
+      },
+      {
+        "title": "Confidence Scores",
+        "explanation": "How sure is the AI? A confidence score (0-100%) tells you. 95% = very confident. 60% = uncertain, maybe needs human review. This helps you handle edge cases."
+      },
+      {
+        "title": "Category Definitions Matter",
+        "explanation": "Vague categories = poor results. Don't just say 'spam'. Define it: 'Messages selling products, containing suspicious links, or requesting personal information'. The clearer, the better."
+      }
+    ],
+    "starterCode": "// TEXT CLASSIFICATION PIPELINE\n// Categorize text into predefined categories!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Define your categories clearly\nconst categories = {\n  'urgent': 'Time-sensitive, needs immediate action',\n  'question': 'Asking for information or help',\n  'feedback': 'Opinions, reviews, or suggestions',\n  'request': 'Asking for something to be done',\n  'information': 'Sharing facts or updates'\n};\n\nconst systemPrompt = `You are a text classifier.\n\n## Available Categories:\n${Object.entries(categories).map(([k,v]) => `- ${k}: ${v}`).join('\\n')}\n\n## Response Format (JSON only):\n{\n  \"category\": \"category_name\",\n  \"confidence\": 0-100,\n  \"reasoning\": \"brief explanation\"\n}\n\nRespond with valid JSON only.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Classify: \"${userMessage}\"` }\n    ],\n    temperature: 0.2\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Can you please send me the report by 5pm today?\"",
+    "solution": "// TEXT CLASSIFICATION PIPELINE - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Well-defined categories with examples\nconst categories = {\n  'urgent': {\n    description: 'Time-sensitive, needs immediate action',\n    examples: ['ASAP', 'deadline today', 'emergency']\n  },\n  'question': {\n    description: 'Asking for information or clarification',\n    examples: ['How do I...?', 'What is...?', 'Can you explain...?']\n  },\n  'feedback': {\n    description: 'Opinions, reviews, complaints, or praise',\n    examples: ['I think...', 'Great job on...', 'This could be better...']\n  },\n  'request': {\n    description: 'Asking for action or deliverables',\n    examples: ['Please send...', 'Can you create...', 'I need...']\n  },\n  'information': {\n    description: 'Sharing facts, updates, or announcements',\n    examples: ['FYI...', 'Update:', 'The meeting is at...']\n  }\n};\n\nconst systemPrompt = `You are an expert text classifier for business communications.\n\n## Categories:\n${Object.entries(categories).map(([k,v]) => \n  `- **${k}**: ${v.description}\\n  Examples: ${v.examples.join(', ')}`\n).join('\\n')}\n\n## Classification Rules:\n1. Consider the PRIMARY intent (even if multiple apply)\n2. 'urgent' overrides other categories if time-sensitive\n3. Confidence < 70% means the text is ambiguous\n\n## Response Format:\n{\n  \"category\": \"<primary category>\",\n  \"confidence\": <0-100>,\n  \"secondary_category\": \"<if applicable, else null>\",\n  \"keywords\": [\"words that influenced decision\"],\n  \"reasoning\": \"<why this category>\"\n}\n\nJSON only. No markdown.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Classify this message:\\n\"${userMessage}\"` }\n    ],\n    temperature: 0.2\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"The server is down! We need it fixed before the client demo at 2pm!\"",
+    "hints": [
+      "Define categories with examples - the AI learns patterns better",
+      "Use low temperature (0.2) for consistent classification",
+      "Add a 'secondary_category' for texts that fit multiple categories",
+      "Confidence scores help you know when to escalate to human review"
+    ]
+  },
+  "10": {
+    "title": "Language Translation Bot",
+    "description": "Create a translator that preserves tone and handles idioms",
+    "learningObjectives": [
+      "Build a context-aware translator",
+      "Handle idioms and cultural expressions",
+      "Preserve tone across languages"
+    ],
+    "concepts": [
+      {
+        "title": "More Than Word Replacement",
+        "explanation": "Good translation isn't swapping words. 'It's raining cats and dogs' shouldn't translate literally! LLMs understand idioms and find equivalent expressions in the target language."
+      },
+      {
+        "title": "Tone Preservation",
+        "explanation": "A formal business email should stay formal when translated. A casual text should stay casual. Tell the AI about the context so it picks appropriate vocabulary."
+      },
+      {
+        "title": "Language Detection",
+        "explanation": "LLMs can automatically detect the source language. You don't need to specify - just say 'translate this to Spanish' and it figures out the rest."
+      },
+      {
+        "title": "Cultural Adaptation",
+        "explanation": "Some concepts don't exist in other cultures. A good translator adapts - explaining or finding the closest equivalent. 'Thanksgiving' might need context for non-American audiences."
+      }
+    ],
+    "starterCode": "// LANGUAGE TRANSLATION BOT\n// Translate text while preserving meaning and tone!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are an expert translator who preserves meaning, tone, and cultural nuances.\n\n## Your Process:\n1. Detect the source language\n2. Understand the tone (formal, casual, professional)\n3. Identify idioms or cultural references\n4. Translate naturally, not literally\n\n## Response Format:\n**Detected Language:** [language]\n**Tone:** [formal/casual/professional/friendly]\n**Translation:** [your translation]\n**Notes:** [any cultural adaptations made]`;\n\nasync function chat(userMessage) {\n  // Format: \"to [language]: [text]\"\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: userMessage }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"to Spanish: I'm over the moon about this opportunity!\"",
+    "solution": "// LANGUAGE TRANSLATION BOT - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are a professional translator with expertise in cultural nuances.\n\n## Your Translation Philosophy:\n- Meaning over literal words\n- Tone must match the original\n- Idioms need equivalent expressions, not literal translation\n- Cultural references may need brief explanation\n\n## Process:\n1. Detect source language automatically\n2. Analyze the tone and formality level\n3. Identify idioms, slang, or cultural references\n4. Translate naturally for native speakers\n5. Note any significant adaptations\n\n## Response Format:\n{\n  \"source_language\": \"<detected language>\",\n  \"target_language\": \"<requested language>\",\n  \"tone\": \"<formal/casual/professional/friendly/urgent>\",\n  \"translation\": \"<your translation>\",\n  \"idioms_found\": [\"<original>\", \"<how you handled it>\"],\n  \"alternative\": \"<alternative translation if ambiguous>\",\n  \"cultural_notes\": \"<any context needed>\"\n}\n\n## Supported Languages:\nEnglish, Spanish, French, German, Italian, Portuguese, Japanese, Chinese, Korean, Hindi, Arabic\n\nRespond with JSON only.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Translate: ${userMessage}` }\n    ],\n    temperature: 0.3\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"to French: Let's touch base next week and circle back on this.\"\n// (Business jargon is tricky to translate!)",
+    "hints": [
+      "Idioms are the hardest - ask AI to find equivalent expressions",
+      "Include context like 'business email' or 'casual chat' for better tone",
+      "Request alternatives for ambiguous translations",
+      "Temperature 0.3 balances accuracy with natural-sounding output"
+    ]
+  },
+  "11": {
+    "title": "Conversation Memory System",
+    "description": "Build a chatbot that remembers your conversation",
+    "learningObjectives": [
+      "Implement conversation history",
+      "Manage context window limits",
+      "Build a fact extraction system"
+    ],
+    "concepts": [
+      {
+        "title": "The Message Array",
+        "explanation": "Conversations are stored as an array of messages: [{role: 'user', content: 'Hi'}, {role: 'assistant', content: 'Hello!'}]. Each API call sends the FULL history, so the AI knows what was said before."
+      },
+      {
+        "title": "Context Window Limits",
+        "explanation": "LLMs have a maximum token limit (4K-128K+ tokens). Long conversations can hit this limit. You need strategies: truncate old messages, summarize history, or extract key facts."
+      },
+      {
+        "title": "Memory Summarization",
+        "explanation": "Instead of keeping every message, periodically ask the AI to summarize the conversation so far. Store the summary instead of raw messages. Compress history without losing important context."
+      },
+      {
+        "title": "Fact Extraction",
+        "explanation": "Extract and store key facts separately: user's name, preferences, important decisions. These facts persist even when old messages are deleted, maintaining personalization."
+      }
+    ],
+    "starterCode": "// CONVERSATION MEMORY SYSTEM\n// Build a chatbot that remembers context!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Store conversation history\nlet conversationHistory = [];\nconst MAX_MESSAGES = 10; // Keep last 10 messages\n\nconst systemPrompt = `You are a helpful assistant with memory.\n\nYou remember everything discussed in our conversation.\nReference previous messages when relevant.\nIf the user mentioned their name, use it!\n\nBe conversational and build on previous context.`;\n\nasync function chat(userMessage) {\n  // Add user message to history\n  conversationHistory.push({ role: 'user', content: userMessage });\n  \n  // Trim history if too long\n  if (conversationHistory.length > MAX_MESSAGES) {\n    conversationHistory = conversationHistory.slice(-MAX_MESSAGES);\n  }\n  \n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      ...conversationHistory\n    ],\n    temperature: 0.7\n  });\n  \n  const assistantMessage = response.choices[0].message.content;\n  \n  // Add assistant response to history\n  conversationHistory.push({ role: 'assistant', content: assistantMessage });\n  \n  return assistantMessage;\n}\n\n// Try a multi-turn conversation:\n// 1. \"Hi, my name is Alex\"\n// 2. \"What's my favorite color? It's blue.\"\n// 3. \"What do you remember about me?\"",
+    "solution": "// CONVERSATION MEMORY SYSTEM - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Advanced memory system\nlet conversationHistory = [];\nlet extractedFacts = {}; // Persistent facts\nlet conversationSummary = ''; // Compressed history\n\nconst MAX_RECENT_MESSAGES = 6;\n\nconst systemPrompt = `You are a helpful assistant with excellent memory.\n\n## Your Memory:\n- You remember the full conversation\n- You track important facts about the user\n- You reference previous context naturally\n\n## Memory Rules:\n1. Use the user's name if mentioned\n2. Reference their preferences and interests\n3. Build on previous topics\n4. Acknowledge when you're recalling something\n\nBe natural - don't over-reference memory.`;\n\n// Extract facts from conversation\nasync function extractFacts(message) {\n  const factPrompt = `Extract any personal facts from this message as JSON:\n\"${message}\"\n\nReturn: {\"name\": \"...\", \"preferences\": [...], \"mentioned\": [...]}\nReturn {} if no facts found.`;\n\n  // In a real app, you'd call the API here\n  // For demo, we'll do simple extraction\n  const nameMatcher = message.match(/(?:my name is|I'm|I am) (\\w+)/i);\n  if (nameMatcher) extractedFacts.name = nameMatcher[1];\n  \n  const likeMatcher = message.match(/(?:I like|I love|my favorite is) (.+?)(?:\\.|$)/i);\n  if (likeMatcher) {\n    extractedFacts.preferences = extractedFacts.preferences || [];\n    extractedFacts.preferences.push(likeMatcher[1]);\n  }\n}\n\nasync function chat(userMessage) {\n  // Extract facts from user message\n  await extractFacts(userMessage);\n  \n  conversationHistory.push({ role: 'user', content: userMessage });\n  \n  // Build context with facts\n  let memoryContext = systemPrompt;\n  if (Object.keys(extractedFacts).length > 0) {\n    memoryContext += `\\n\\n## Known Facts:\\n${JSON.stringify(extractedFacts)}`;\n  }\n  if (conversationSummary) {\n    memoryContext += `\\n\\n## Previous Conversation Summary:\\n${conversationSummary}`;\n  }\n  \n  // Keep only recent messages\n  const recentMessages = conversationHistory.slice(-MAX_RECENT_MESSAGES);\n  \n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: memoryContext },\n      ...recentMessages\n    ],\n    temperature: 0.7\n  });\n  \n  const assistantMessage = response.choices[0].message.content;\n  conversationHistory.push({ role: 'assistant', content: assistantMessage });\n  \n  return assistantMessage;\n}\n\n// Try: \"My name is Sarah and I love hiking!\" then \"What do you know about me?\"",
+    "hints": [
+      "Store conversation as array of {role, content} objects",
+      "Trim old messages when history gets too long",
+      "Extract key facts (name, preferences) and store separately",
+      "Summarize old conversations instead of deleting them"
+    ]
+  },
+  "12": {
+    "title": "AI Content Moderator",
+    "description": "Build an AI that detects inappropriate content",
+    "learningObjectives": [
+      "Understand content moderation categories",
+      "Build multi-label classification",
+      "Handle context-dependent moderation"
+    ],
+    "concepts": [
+      {
+        "title": "Moderation Categories",
+        "explanation": "Common categories: hate speech, harassment, spam, misinformation, NSFW content, violence, self-harm. Each needs clear definition - what counts as 'harassment' vs 'criticism'?"
+      },
+      {
+        "title": "Severity Levels",
+        "explanation": "Not all violations are equal. A mild swear word vs explicit threats need different responses. Use severity levels: low (warning), medium (flag for review), high (block immediately)."
+      },
+      {
+        "title": "Context Matters",
+        "explanation": "The word 'kill' in 'kill the process' (tech) vs 'I'll kill you' (threat) - same word, different contexts. Good moderation considers the full context, not just keyword matching."
+      },
+      {
+        "title": "False Positive Balance",
+        "explanation": "Too strict = blocking harmless content (bad UX). Too lenient = missing violations (unsafe). Find the balance. Confidence scores help - only auto-block high-confidence violations."
+      }
+    ],
+    "starterCode": "// AI CONTENT MODERATOR\n// Detect and flag inappropriate content!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are a content moderation AI.\n\n## Categories to Check:\n- spam: Promotional, repetitive, or bot-like content\n- harassment: Personal attacks, bullying, threats\n- hate_speech: Discrimination based on identity\n- misinformation: False claims presented as facts\n- inappropriate: Adult content, excessive violence\n\n## Response Format (JSON):\n{\n  \"flagged\": true/false,\n  \"categories\": [\"list of violated categories\"],\n  \"severity\": \"low\" | \"medium\" | \"high\",\n  \"confidence\": 0-100,\n  \"explanation\": \"why this was flagged or not\"\n}\n\nConsider context. Not every negative word is a violation.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Moderate: \"${userMessage}\"` }\n    ],\n    temperature: 0.1\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Check out my website for free money!!!\" (spam)\n// Or: \"I respectfully disagree with your opinion.\" (should pass)",
+    "solution": "// AI CONTENT MODERATOR - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are an expert content moderator for a community platform.\n\n## Moderation Categories:\n\n### SPAM (auto-flag)\n- Promotional links or repeated ads\n- Bot-like repetitive messages\n- Crypto/financial scams\n\n### HARASSMENT (severity matters)\n- Low: Rude but not targeted\n- Medium: Personal insults, name-calling\n- High: Threats, doxxing, coordinated attacks\n\n### HATE_SPEECH (always high severity)\n- Discrimination based on race, gender, religion, sexuality\n- Slurs or dehumanizing language\n- Calls for violence against groups\n\n### MISINFORMATION (context-dependent)\n- Medical misinformation (high severity)\n- Political conspiracy theories\n- Verifiably false claims stated as fact\n\n### INAPPROPRIATE\n- NSFW content in non-NSFW spaces\n- Graphic violence descriptions\n- Drug promotion\n\n## Important Context Rules:\n1. Sarcasm and jokes need careful evaluation\n2. Discussing controversial topics != hate speech\n3. Criticism != harassment\n4. News reporting != promoting violence\n\n## Response Format:\n{\n  \"flagged\": boolean,\n  \"action\": \"allow\" | \"warn\" | \"review\" | \"remove\",\n  \"categories\": [],\n  \"severity\": \"none\" | \"low\" | \"medium\" | \"high\",\n  \"confidence\": 0-100,\n  \"context_considered\": \"<what context you evaluated>\",\n  \"explanation\": \"<detailed reasoning>\"\n}\n\nRespond with JSON only. Be fair and consider context.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Content to moderate:\\n\"${userMessage}\"` }\n    ],\n    temperature: 0.1\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"You're an idiot if you believe that!\" (harassment - medium)\n// vs: \"I think that argument has some flaws...\" (should allow)",
+    "hints": [
+      "Context is CRITICAL - same words can be ok or harmful",
+      "Use severity levels: allow/warn/review/remove",
+      "Very low temperature (0.1) for consistent moderation",
+      "Always explain the reasoning for transparency"
+    ]
+  },
+  "13": {
+    "title": "Data Extraction Pipeline",
+    "description": "Extract structured data from unstructured text",
+    "learningObjectives": [
+      "Define extraction schemas",
+      "Handle missing information gracefully",
+      "Build robust extraction prompts"
+    ],
+    "concepts": [
+      {
+        "title": "Schema Definition",
+        "explanation": "Define what data you want to extract BEFORE writing prompts. What fields? What types? What's required vs optional? A clear schema = consistent extraction."
+      },
+      {
+        "title": "Named Entity Recognition (NER)",
+        "explanation": "Extracting specific types of information: names (PERSON), places (LOCATION), companies (ORG), dates (DATE), money (MONEY). LLMs excel at this with proper prompting."
+      },
+      {
+        "title": "Handling Missing Data",
+        "explanation": "Not all information exists in every text. Tell the AI to return 'null' or 'unknown' for missing fields rather than guessing. Guessing creates bad data."
+      },
+      {
+        "title": "Validation",
+        "explanation": "After extraction, validate the data. Is the email format valid? Is the date realistic? Is the phone number the right length? Add validation logic after extraction."
+      }
+    ],
+    "starterCode": "// DATA EXTRACTION PIPELINE\n// Extract structured data from messy text!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Define your extraction schema\nconst schema = {\n  contact: {\n    name: 'Full name of person',\n    email: 'Email address',\n    phone: 'Phone number',\n    company: 'Company or organization'\n  }\n};\n\nconst systemPrompt = `You are a data extraction expert.\n\n## Your Task:\nExtract contact information from text.\n\n## Schema:\n${JSON.stringify(schema, null, 2)}\n\n## Rules:\n- Extract ONLY what's explicitly mentioned\n- Use null for missing fields (don't guess!)\n- Normalize formats (e.g., phone: \"(555) 123-4567\")\n\n## Response Format:\n{\n  \"name\": \"...\",\n  \"email\": \"...\",\n  \"phone\": \"...\",\n  \"company\": \"...\"\n}\n\nJSON only.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Extract from:\\n\"${userMessage}\"` }\n    ],\n    temperature: 0.1\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Hi! I'm John Smith from Acme Corp. Reach me at john@acme.com\"",
+    "solution": "// DATA EXTRACTION PIPELINE - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Comprehensive extraction schema\nconst schema = {\n  contact: {\n    name: { type: 'string', required: true },\n    email: { type: 'email', required: false },\n    phone: { type: 'phone', required: false },\n    company: { type: 'string', required: false },\n    title: { type: 'string', required: false }\n  },\n  context: {\n    source_type: 'email | linkedin | business_card | other',\n    confidence: 'number 0-100'\n  }\n};\n\nconst systemPrompt = `You are an expert data extraction system.\n\n## Extraction Schema:\n- name: Full name (first + last if available)\n- email: Valid email format or null\n- phone: Normalized to (XXX) XXX-XXXX format\n- company: Organization name\n- title: Job title/position\n\n## Extraction Rules:\n1. ONLY extract explicitly stated information\n2. Use null for anything not clearly mentioned\n3. Don't infer or guess - accuracy > completeness\n4. Normalize formats consistently\n5. Handle multiple contacts if present\n\n## Validation:\n- Email must contain @ and valid domain\n- Phone must have 10+ digits\n- Name should have at least first name\n\n## Response Format:\n{\n  \"extracted\": {\n    \"name\": \"<full name or null>\",\n    \"email\": \"<valid email or null>\",\n    \"phone\": \"<formatted phone or null>\",\n    \"company\": \"<company name or null>\",\n    \"title\": \"<job title or null>\"\n  },\n  \"source_snippets\": [\"<exact text where each field was found>\"],\n  \"confidence\": <0-100>,\n  \"validation_notes\": \"<any concerns about data quality>\"\n}\n\nJSON only. No markdown.`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Extract contact information from:\\n\\n\"${userMessage}\"` }\n    ],\n    temperature: 0.1\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"Please contact Sarah Johnson, VP of Engineering at TechCorp.\n// She can be reached at sarah.j@techcorp.com or (555) 867-5309.\"",
+    "hints": [
+      "Define your schema FIRST, then write prompts around it",
+      "Always use null for missing data - never let AI guess",
+      "Include 'source_snippets' to see WHERE data was found",
+      "Add confidence scores to handle uncertain extractions"
+    ]
+  },
+  "14": {
+    "title": "AI Writing Assistant",
+    "description": "Build an AI that helps improve writing",
+    "learningObjectives": [
+      "Analyze and improve text quality",
+      "Adapt tone for different contexts",
+      "Provide actionable writing feedback"
+    ],
+    "concepts": [
+      {
+        "title": "Writing Analysis",
+        "explanation": "Before improving text, analyze it: What's the tone? Reading level? Are sentences too long? Is it clear? Understanding the current state helps identify specific improvements."
+      },
+      {
+        "title": "Tone Adjustment",
+        "explanation": "The same message needs different tones for different audiences. An email to your CEO vs your teammate. 'Make this more formal' or 'make this friendlier' are common adjustments."
+      },
+      {
+        "title": "Readability Metrics",
+        "explanation": "Readability scores (like Flesch-Kincaid) measure how easy text is to read. Lower = simpler. Academic papers score 30-50. Social media should score 60-70. Match your audience."
+      },
+      {
+        "title": "Tracked Changes",
+        "explanation": "Don't just rewrite - show what changed and why. This helps writers learn and verify changes don't alter meaning. 'Changed X to Y because...'"
+      }
+    ],
+    "starterCode": "// AI WRITING ASSISTANT\n// Help improve any text!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are a professional writing coach.\n\n## Your Services:\n1. Analyze - Evaluate the writing quality\n2. Improve - Suggest specific enhancements\n3. Rewrite - Provide an improved version\n\n## Analysis Points:\n- Clarity: Is the message clear?\n- Tone: Formal, casual, professional?\n- Grammar: Any errors?\n- Structure: Well-organized?\n- Conciseness: Any wordiness?\n\n## Response Format:\n**Analysis:**\n[Your assessment]\n\n**Suggestions:**\n- [Specific improvement 1]\n- [Specific improvement 2]\n\n**Improved Version:**\n[Rewritten text]\n\n**Changes Made:**\n[What you changed and why]`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Improve this writing:\\n\\n${userMessage}` }\n    ],\n    temperature: 0.5\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"I wanted to reach out and see if maybe you would be able to \n// help me with the project we talked about the other day if you have time.\"",
+    "solution": "// AI WRITING ASSISTANT - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\nconst systemPrompt = `You are an expert writing coach and editor.\n\n## Analysis Framework:\n\n### Clarity Score (1-10)\n- Is the main point obvious?\n- Are sentences easy to follow?\n- Any ambiguous phrases?\n\n### Tone Assessment\n- Current: formal/casual/professional/friendly/neutral\n- Appropriate for: email/report/social/academic/creative\n\n### Readability\n- Sentence length average\n- Complex vs simple words\n- Estimated reading level\n\n### Issues Checklist\n- Grammar errors\n- Wordiness (\"in order to\" -> \"to\")\n- Passive voice overuse\n- Weak verbs (is, was, have)\n- Filler words (very, really, just)\n\n## Response Format:\n\n**ANALYSIS**\nClarity: X/10 - [brief note]\nTone: [current tone]\nReadability: [grade level]\n\n**ISSUES FOUND**\n1. [Issue]: \"[example from text]\"\n2. [Issue]: \"[example from text]\"\n\n**SUGGESTED IMPROVEMENTS**\n- [Change 1]: [why it's better]\n- [Change 2]: [why it's better]\n\n**REWRITTEN VERSION**\n[Your improved version]\n\n**CHANGE LOG**\n- \"[original]\" -> \"[changed]\" (reason)\n\n**WRITING TIP**\n[One actionable tip for the writer to remember]`;\n\nasync function chat(userMessage) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: `Please review and improve this text:\\n\\n\"${userMessage}\"` }\n    ],\n    temperature: 0.5\n  });\n  \n  return response.choices[0].message.content;\n}\n\n// Try: \"We are writing to inform you that your request has been received\n// and is currently being processed by our team at this time.\"",
+    "hints": [
+      "Analyze BEFORE improving - understand what's wrong first",
+      "Show changes explicitly: 'original' -> 'improved' (reason)",
+      "Include a 'writing tip' to help users learn",
+      "Balance improvement with preserving the author's voice"
+    ]
+  },
+  "15": {
+    "title": "AI Workflow Automation",
+    "description": "Chain multiple AI tasks together",
+    "learningObjectives": [
+      "Design multi-step AI workflows",
+      "Pass data between stages",
+      "Handle errors in AI pipelines"
+    ],
+    "concepts": [
+      {
+        "title": "Workflow Design",
+        "explanation": "Break complex tasks into stages. Instead of 'write a blog post about X', do: 1) Research X, 2) Create outline, 3) Write draft, 4) Edit and polish. Each stage is simpler and more reliable."
+      },
+      {
+        "title": "Data Passing",
+        "explanation": "Output from stage 1 becomes input for stage 2. The research feeds the outline, the outline feeds the draft. Design clear interfaces between stages."
+      },
+      {
+        "title": "Error Handling",
+        "explanation": "What if stage 2 fails? Retry? Skip? Fall back to default? Good workflows handle failures gracefully. Log errors, provide fallbacks, and notify when intervention is needed."
+      },
+      {
+        "title": "Conditional Logic",
+        "explanation": "Sometimes the next step depends on the output. If sentiment is negative, route to support. If content is long, summarize first. Add decision points to your workflow."
+      }
+    ],
+    "starterCode": "// AI WORKFLOW AUTOMATION\n// Chain multiple AI tasks together!\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Stage 1: Analyze the input\nasync function analyzeContent(text) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [{\n      role: 'user',\n      content: `Analyze this text and return JSON: {\"topic\": \"...\", \"sentiment\": \"...\", \"key_points\": [...]}\n\nText: \"${text}\"`\n    }],\n    temperature: 0.3\n  });\n  return JSON.parse(response.choices[0].message.content);\n}\n\n// Stage 2: Generate based on analysis\nasync function generateResponse(analysis) {\n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [{\n      role: 'user',\n      content: `Based on this analysis, write a brief response:\n${JSON.stringify(analysis)}`\n    }],\n    temperature: 0.7\n  });\n  return response.choices[0].message.content;\n}\n\n// The workflow\nasync function chat(userMessage) {\n  // Stage 1: Analyze\n  const analysis = await analyzeContent(userMessage);\n  \n  // Stage 2: Generate\n  const response = await generateResponse(analysis);\n  \n  return `**Analysis:**\\n${JSON.stringify(analysis, null, 2)}\\n\\n**Response:**\\n${response}`;\n}\n\n// Try: \"I love this product but the shipping was too slow\"",
+    "solution": "// AI WORKFLOW AUTOMATION - SOLUTION\n\nconst Groq = require('groq-sdk');\n\nconst groq = new Groq({\n  apiKey: process.env.GROQ_API_KEY\n});\n\n// Workflow stages with error handling\n\nasync function stage1_analyze(input) {\n  console.log('Stage 1: Analyzing input...');\n  try {\n    const response = await groq.chat.completions.create({\n      model: 'llama-3.1-8b-instant',\n      messages: [{\n        role: 'system',\n        content: 'You are a content analyzer. Return ONLY valid JSON.'\n      }, {\n        role: 'user',\n        content: `Analyze:\\n\"${input}\"\\n\\nReturn: {\"topic\": \"...\", \"sentiment\": \"positive|negative|neutral\", \"intent\": \"question|feedback|request|information\", \"key_points\": [\"...\"], \"requires_action\": boolean}`\n      }],\n      temperature: 0.2\n    });\n    return { success: true, data: JSON.parse(response.choices[0].message.content) };\n  } catch (error) {\n    return { success: false, error: 'Analysis failed', fallback: { topic: 'unknown', sentiment: 'neutral' } };\n  }\n}\n\nasync function stage2_route(analysis) {\n  console.log('Stage 2: Routing based on analysis...');\n  // Conditional routing logic\n  if (analysis.sentiment === 'negative') {\n    return { route: 'support', priority: 'high' };\n  } else if (analysis.intent === 'question') {\n    return { route: 'qa', priority: 'normal' };\n  } else if (analysis.requires_action) {\n    return { route: 'action', priority: 'normal' };\n  }\n  return { route: 'general', priority: 'low' };\n}\n\nasync function stage3_respond(analysis, routing) {\n  console.log(`Stage 3: Generating ${routing.route} response...`);\n  const prompts = {\n    support: 'Respond with empathy, acknowledge the issue, offer solution.',\n    qa: 'Answer the question clearly and helpfully.',\n    action: 'Acknowledge the request and outline next steps.',\n    general: 'Respond in a friendly, helpful manner.'\n  };\n  \n  const response = await groq.chat.completions.create({\n    model: 'llama-3.1-8b-instant',\n    messages: [{\n      role: 'system',\n      content: `You are a helpful assistant. ${prompts[routing.route]}`\n    }, {\n      role: 'user',\n      content: `Context: ${JSON.stringify(analysis)}\\n\\nRespond appropriately.`\n    }],\n    temperature: 0.7\n  });\n  return response.choices[0].message.content;\n}\n\n// Main workflow orchestrator\nasync function chat(userMessage) {\n  const workflow = {\n    input: userMessage,\n    stages: [],\n    output: null\n  };\n  \n  // Stage 1: Analyze\n  const analysis = await stage1_analyze(userMessage);\n  workflow.stages.push({ name: 'analyze', ...analysis });\n  \n  if (!analysis.success) {\n    return `Workflow error at Stage 1. Using fallback.`;\n  }\n  \n  // Stage 2: Route\n  const routing = await stage2_route(analysis.data);\n  workflow.stages.push({ name: 'route', ...routing });\n  \n  // Stage 3: Respond\n  const response = await stage3_respond(analysis.data, routing);\n  workflow.stages.push({ name: 'respond', success: true });\n  \n  workflow.output = response;\n  \n  return `**Workflow Complete**\\n\\nAnalysis: ${JSON.stringify(analysis.data, null, 2)}\\nRoute: ${routing.route} (${routing.priority} priority)\\n\\n**Response:**\\n${response}`;\n}\n\n// Try: \"Your product broke after 2 days! I want a refund!\"",
+    "hints": [
+      "Break complex tasks into simple, focused stages",
+      "Each stage should have one clear job",
+      "Add error handling and fallbacks at each stage",
+      "Use conditional routing based on AI analysis"
     ]
   }
 }
