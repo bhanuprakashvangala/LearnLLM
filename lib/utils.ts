@@ -44,10 +44,16 @@ export function calculateReadingTime(text: string): number {
 }
 
 /**
- * Generate a random ID
+ * Generate a random ID using cryptographically secure random values
  */
 export function generateId(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback using crypto.getRandomValues
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /**
