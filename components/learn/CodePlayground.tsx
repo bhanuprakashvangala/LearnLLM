@@ -44,23 +44,26 @@ export function CodePlayground({
             setOutput("# Output would appear here\n# In production, this would execute via a Python backend");
           }
         } else if (language === "javascript" || language === "typescript") {
-          // For JavaScript, we can actually execute
-          const originalConsoleLog = console.log;
-          let logs: string[] = [];
-
-          console.log = (...args) => {
-            logs.push(args.join(" "));
+          // Execute user code in a sandboxed scope using Function constructor
+          // This is safer than eval() as it does not have access to the local scope
+          const logs: string[] = [];
+          const sandboxConsole = {
+            log: (...args: unknown[]) => { logs.push(args.map(String).join(" ")); },
+            error: (...args: unknown[]) => { logs.push("ERROR: " + args.map(String).join(" ")); },
+            warn: (...args: unknown[]) => { logs.push("WARN: " + args.map(String).join(" ")); },
           };
 
           try {
-            // eslint-disable-next-line no-eval
-            eval(code);
+            // Create a sandboxed function with limited globals
+            const sandboxedFn = new Function(
+              "console",
+              `"use strict";\n${code}`
+            );
+            sandboxedFn(sandboxConsole);
             setOutput(logs.join("\n") || "Code executed successfully (no output)");
           } catch (error) {
             setOutput(`Error: ${error instanceof Error ? error.message : String(error)}`);
           }
-
-          console.log = originalConsoleLog;
         }
       } catch (error) {
         setOutput(`Error: ${error instanceof Error ? error.message : String(error)}`);

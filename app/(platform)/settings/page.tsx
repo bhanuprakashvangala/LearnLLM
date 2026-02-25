@@ -51,7 +51,7 @@ export default function SettingsPage() {
             </h2>
 
             <div className="flex items-center gap-6 mb-6">
-              {session.user.image ? (
+              {session.user.image && /^https?:\/\//i.test(session.user.image) ? (
                 <img
                   src={session.user.image}
                   alt={session.user.name || "User"}

@@ -57,8 +57,6 @@ export const authOptions: NextAuthOptions = {
       // Handle Google OAuth - create or update user in database
       if (account?.provider === "google" && profile && user.email) {
         try {
-          console.log("Google Sign-In: Processing user", user.email);
-
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
             include: { accounts: true },
@@ -66,7 +64,6 @@ export const authOptions: NextAuthOptions = {
 
           if (!existingUser) {
             // Create new user from Google profile
-            console.log("Google Sign-In: Creating new user", user.email);
             const newUser = await prisma.user.create({
               data: {
                 email: user.email,
@@ -88,10 +85,8 @@ export const authOptions: NextAuthOptions = {
                 },
               },
             });
-            console.log("Google Sign-In: User created successfully", newUser.id);
           } else {
             // Update existing user with latest Google info
-            console.log("Google Sign-In: Updating existing user", user.email);
             await prisma.user.update({
               where: { email: user.email },
               data: {
@@ -108,7 +103,6 @@ export const authOptions: NextAuthOptions = {
 
             if (!hasGoogleAccount) {
               // Link Google account to existing user
-              console.log("Google Sign-In: Linking Google account to user", user.email);
               await prisma.account.create({
                 data: {
                   userId: existingUser.id,
@@ -124,13 +118,10 @@ export const authOptions: NextAuthOptions = {
                 },
               });
             }
-            console.log("Google Sign-In: User updated successfully");
           }
           return true;
         } catch (error) {
-          console.error("Google Sign-In ERROR:", error);
           // Return false to block sign-in if database fails
-          // This helps identify the issue
           return false;
         }
       }
@@ -165,7 +156,6 @@ export const authOptions: NextAuthOptions = {
           }
         }
       } catch (error) {
-        console.error("Error in JWT callback:", error);
         // Continue without database data - user can still sign in
       }
       return token;
@@ -188,7 +178,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

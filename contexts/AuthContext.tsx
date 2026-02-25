@@ -78,7 +78,6 @@ function AuthContextProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser = (data: Partial<User>) => {
     // This would need an API call to update user data in the database
-    console.log('Update user:', data);
   };
 
   return (

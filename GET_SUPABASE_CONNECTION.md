@@ -6,7 +6,7 @@ We need to get the correct connection string from Supabase. Follow these steps:
 
 ### 1. Go to Your Supabase Project
 
-Visit: https://supabase.com/dashboard/project/emvqsczrvbgoinunrswg/settings/database
+Visit: https://supabase.com/dashboard/project/[YOUR-PROJECT-ID]/settings/database
 
 ### 2. Get the Connection String
 
@@ -26,19 +26,19 @@ On the **Database Settings** page:
 1. Click on the **"Connection pooling"** tab (or "Transaction mode")
 2. You'll see a connection string that looks like:
    ```
-   postgresql://postgres.emvqsczrvbgoinunrswg:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+   postgresql://postgres.[YOUR-PROJECT-ID]:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
    ```
 
    OR it might look like:
    ```
-   postgresql://postgres:[YOUR-PASSWORD]@db.emvqsczrvbgoinunrswg.supabase.co:5432/postgres?pgbouncer=true
+   postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-ID].supabase.co:5432/postgres?pgbouncer=true
    ```
 
 3. Copy the ENTIRE string
 
 ### 4. Replace [YOUR-PASSWORD]
 
-In the connection string you copied, replace `[YOUR-PASSWORD]` with your actual password: `Gknb@8897534317`
+In the connection string you copied, replace `[YOUR-PASSWORD]` with your actual database password.
 
 **IMPORTANT**: If your password contains special characters like `@`, you need to URL-encode them:
 - `@` becomes `%40`
@@ -46,30 +46,30 @@ In the connection string you copied, replace `[YOUR-PASSWORD]` with your actual 
 - `$` becomes `%24`
 - `%` becomes `%25`
 
-So your password `Gknb@8897534317` becomes `Gknb%408897534317`
+> **SECURITY NOTE:** Never commit your real database password to version control. Store it only in `.env.local` (which is gitignored) or in your hosting platform's environment variable settings.
 
 ### 5. Examples of Correct Connection Strings
 
 **Option 1 (Connection Pooler - Port 6543):**
 ```
-postgresql://postgres.emvqsczrvbgoinunrswg:Gknb%408897534317@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+postgresql://postgres.[YOUR-PROJECT-ID]:[YOUR-URL-ENCODED-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 ```
 
 **Option 2 (Direct with pgbouncer - Port 5432):**
 ```
-postgresql://postgres:Gknb%408897534317@db.emvqsczrvbgoinunrswg.supabase.co:5432/postgres?pgbouncer=true
+postgresql://postgres:[YOUR-URL-ENCODED-PASSWORD]@db.[YOUR-PROJECT-ID].supabase.co:5432/postgres?pgbouncer=true
 ```
 
 **Option 3 (Session mode - Port 6543):**
 ```
-postgresql://postgres.emvqsczrvbgoinunrswg:Gknb%408897534317@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+postgresql://postgres.[YOUR-PROJECT-ID]:[YOUR-URL-ENCODED-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
 ```
 
 ### 6. Check if Project is Active
 
 Also verify:
 1. Your Supabase project is **not paused**
-2. Go to: https://supabase.com/dashboard/project/emvqsczrvbgoinunrswg
+2. Go to: https://supabase.com/dashboard/project/[YOUR-PROJECT-ID]
 3. If you see a message saying "Project is paused", click **"Restore project"**
 
 ### 7. Copy the Connection String Here

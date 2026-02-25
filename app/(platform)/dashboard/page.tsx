@@ -99,7 +99,7 @@ export default function DashboardPage() {
           className="mb-8"
         >
           <div className="flex items-center gap-4 mb-2">
-            {session.user.image ? (
+            {session.user.image && /^https?:\/\//i.test(session.user.image) ? (
               <img
                 src={session.user.image}
                 alt={session.user.name || "User"}

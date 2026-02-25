@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import Groq from "groq-sdk";
 
 // Available models on Groq (all free)
@@ -8,6 +10,25 @@ const MODELS = {
   "mixtral-8x7b": "mixtral-8x7b-32768",
   "gemma2-9b": "gemma2-9b-it",
 } as const;
+
+// Simple in-memory rate limiter
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX = 20; // max requests per window
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute window
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
 
 // Lazy initialization of Groq client
 function getGroqClient() {
@@ -20,6 +41,24 @@ function getGroqClient() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please log in to use this feature." },
+        { status: 401 }
+      );
+    }
+
+    // Rate limiting per user
+    const rateLimitKey = session.user.id || session.user.email || "unknown";
+    if (!checkRateLimit(rateLimitKey)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { messages, model = "llama-3.3-70b", temperature = 0.7, maxTokens = 1024 } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {
@@ -29,16 +68,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate model is in allowed list
+    if (!(model in MODELS)) {
+      return NextResponse.json(
+        { error: "Invalid model specified" },
+        { status: 400 }
+      );
+    }
+
     // Check if API key is configured
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: "Groq API key not configured. Please add GROQ_API_KEY to your environment variables." },
-        { status: 500 }
+        { error: "AI service is not configured. Please contact the administrator." },
+        { status: 503 }
       );
     }
 
     const groq = getGroqClient();
-    const modelId = MODELS[model as keyof typeof MODELS] || MODELS["llama-3.3-70b"];
+    const modelId = MODELS[model as keyof typeof MODELS];
 
     // Create chat completion with streaming
     const completion = await groq.chat.completions.create({
@@ -76,12 +123,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    console.error("Chat API error:", error);
-
-    const errorMessage = error instanceof Error ? error.message : "Failed to generate response";
+    console.error("Chat API error:", error instanceof Error ? error.message : "Unknown error");
 
     return NextResponse.json(
-      { error: errorMessage },
+      { error: "Failed to generate response. Please try again." },
       { status: 500 }
     );
   }

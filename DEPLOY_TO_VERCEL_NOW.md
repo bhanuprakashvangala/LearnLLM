@@ -61,16 +61,16 @@ You may need to enter your GitHub credentials.
 
 ```env
 DATABASE_URL
-postgresql://postgres:Gknb%408897534317@db.emvqsczrvbgoinunrswg.supabase.co:5432/postgres
+postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-ID].supabase.co:5432/postgres
 
 NEXT_PUBLIC_SUPABASE_URL
-https://emvqsczrvbgoinunrswg.supabase.co
+https://[YOUR-PROJECT-ID].supabase.co
 
 NEXT_PUBLIC_SUPABASE_ANON_KEY
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtdnFzY3pydmJnb2ludW5yc3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMzQ3MzEsImV4cCI6MjA3ODkxMDczMX0.zjSzOHG9hxQmVwAQtUsj2kFTkWMEWyXRlRsBD5y5kQA
+[YOUR-SUPABASE-ANON-KEY]
 
 NEXTAUTH_SECRET
-bkscryeYxVNq6tfVhS+1nBcCRoFrCQ7cMxMRK6tTR+s=
+[GENERATE-WITH: openssl rand -base64 32]
 
 NEXTAUTH_URL
 https://your-app-name.vercel.app
@@ -81,6 +81,8 @@ https://your-app-name.vercel.app
 NODE_ENV
 production
 ```
+
+> **SECURITY NOTE:** Never commit real credentials to version control. Get your actual values from the Supabase dashboard and Vercel environment variables settings.
 
 **Note:** For `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL`, use placeholder `https://your-app-name.vercel.app` for now. We'll update after first deployment.
 

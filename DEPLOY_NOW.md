@@ -13,14 +13,14 @@ Your app is ready to deploy! Follow these steps to get it live.
 
 ### Step 1: Get Your Supabase Database Password
 
-1. Go to your Supabase dashboard: https://supabase.com/dashboard/project/emvqsczrvbgoinunrswg
+1. Go to your Supabase dashboard: https://supabase.com/dashboard/project/[YOUR-PROJECT-ID]
 2. Click on **Settings** (left sidebar, bottom)
 3. Click on **Database**
 4. Scroll down to **Connection string**
 5. Select **URI** tab
 6. Copy the connection string (it looks like this):
    ```
-   postgresql://postgres:[YOUR-PASSWORD]@db.emvqsczrvbgoinunrswg.supabase.co:5432/postgres
+   postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-ID].supabase.co:5432/postgres
    ```
 7. Replace `[YOUR-PASSWORD]` with your actual database password
 
@@ -30,7 +30,7 @@ Your app is ready to deploy! Follow these steps to get it live.
 
 Open `.env.local` and replace this line:
 ```env
-DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.emvqsczrvbgoinunrswg.supabase.co:5432/postgres"
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-ID].supabase.co:5432/postgres"
 ```
 
 With your actual connection string (with real password).
@@ -101,14 +101,16 @@ git push -u origin main
 7. Add these variables:
 
 ```env
-DATABASE_URL=postgresql://postgres:YOUR-PASSWORD@db.emvqsczrvbgoinunrswg.supabase.co:5432/postgres
-NEXT_PUBLIC_SUPABASE_URL=https://emvqsczrvbgoinunrswg.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtdnFzY3pydmJnb2ludW5yc3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzMzQ3MzEsImV4cCI6MjA3ODkxMDczMX0.zjSzOHG9hxQmVwAQtUsj2kFTkWMEWyXRlRsBD5y5kQA
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-ID].supabase.co:5432/postgres
+NEXT_PUBLIC_SUPABASE_URL=https://[YOUR-PROJECT-ID].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[YOUR-SUPABASE-ANON-KEY]
 NEXTAUTH_URL=https://your-app-name.vercel.app
-NEXTAUTH_SECRET=bkscryeYxVNq6tfVhS+1nBcCRoFrCQ7cMxMRK6tTR+s=
+NEXTAUTH_SECRET=[GENERATE-WITH: openssl rand -base64 32]
 NEXT_PUBLIC_APP_URL=https://your-app-name.vercel.app
 NODE_ENV=production
 ```
+
+> **SECURITY NOTE:** Get your actual values from the Supabase dashboard. Never commit real secrets to version control.
 
 8. Click **"Deploy"**
 9. Wait 2-3 minutes for deployment to complete

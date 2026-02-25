@@ -103,6 +103,59 @@ CREATE TABLE "PlaygroundSave" (
     CONSTRAINT "PlaygroundSave_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
 );
 
+-- Enable Row Level Security on all tables
+ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Account" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Session" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "VerificationToken" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "UserProgress" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ChallengeCompletion" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PlaygroundSave" ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies: Users can only access their own data
+CREATE POLICY "Users can view own data" ON "User"
+    FOR SELECT USING (auth.uid()::text = "id");
+
+CREATE POLICY "Users can update own data" ON "User"
+    FOR UPDATE USING (auth.uid()::text = "id");
+
+CREATE POLICY "Accounts belong to user" ON "Account"
+    FOR ALL USING (auth.uid()::text = "userId");
+
+CREATE POLICY "Sessions belong to user" ON "Session"
+    FOR ALL USING (auth.uid()::text = "userId");
+
+CREATE POLICY "Users can manage own progress" ON "UserProgress"
+    FOR ALL USING (auth.uid()::text = "userId");
+
+CREATE POLICY "Users can manage own challenges" ON "ChallengeCompletion"
+    FOR ALL USING (auth.uid()::text = "userId");
+
+CREATE POLICY "Users can manage own playground saves" ON "PlaygroundSave"
+    FOR ALL USING (auth.uid()::text = "userId");
+
+-- Allow service role full access (for server-side operations via Prisma)
+CREATE POLICY "Service role full access to users" ON "User"
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access to accounts" ON "Account"
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access to sessions" ON "Session"
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access to verification tokens" ON "VerificationToken"
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access to progress" ON "UserProgress"
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access to challenges" ON "ChallengeCompletion"
+    FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access to playground" ON "PlaygroundSave"
+    FOR ALL USING (auth.role() = 'service_role');
+
 -- Create indexes for better performance
 CREATE INDEX "Account_userId_idx" ON "Account"("userId");
 CREATE INDEX "Session_userId_idx" ON "Session"("userId");
