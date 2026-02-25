@@ -22,29 +22,33 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email.toLowerCase() },
+          });
 
-        if (!user || !user.hashedPassword) {
+          if (!user || !user.hashedPassword) {
+            return null;
+          }
+
+          const isCorrectPassword = await bcrypt.compare(
+            credentials.password,
+            user.hashedPassword
+          );
+
+          if (!isCorrectPassword) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          };
+        } catch {
           return null;
         }
-
-        const isCorrectPassword = await bcrypt.compare(
-          credentials.password,
-          user.hashedPassword
-        );
-
-        if (!isCorrectPassword) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        };
       },
     }),
   ],
@@ -64,7 +68,7 @@ export const authOptions: NextAuthOptions = {
 
           if (!existingUser) {
             // Create new user from Google profile
-            const newUser = await prisma.user.create({
+            await prisma.user.create({
               data: {
                 email: user.email,
                 name: user.name || profile.name || "User",
