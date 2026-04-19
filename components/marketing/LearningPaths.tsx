@@ -83,16 +83,17 @@ export function LearningPaths() {
           className="mb-16"
         >
           <div className="flex items-center gap-3 mb-5">
-            <span className="section-label">01 / Paths</span>
+            <span className="section-label">Tracks</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-3xl leading-tight">
-            Three paths.{" "}
-            <span className="text-primary">One destination.</span>
+            Built for every team member —{" "}
+            <span className="text-primary">from first hire to staff engineer.</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
-            Pick the one that matches where you are today. You can switch tracks
-            anytime — lessons in each path are self-contained.
+            Three structured tracks, each self-contained. Onboard non-technical
+            colleagues, level up builders, and get your senior engineers to
+            production-ready on the modern AI stack.
           </p>
         </motion.div>
 

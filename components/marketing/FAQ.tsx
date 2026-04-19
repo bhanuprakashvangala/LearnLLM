@@ -81,12 +81,12 @@ export function FAQ() {
           className="mb-14 max-w-3xl mx-auto"
         >
           <div className="flex items-center gap-3 mb-5">
-            <span className="section-label">06 / FAQ</span>
+            <span className="section-label">FAQ</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            Questions,{" "}
-            <span className="text-primary">answered.</span>
+            Common questions,{" "}
+            <span className="text-primary">clear answers.</span>
           </h2>
         </motion.div>
 

@@ -133,16 +133,17 @@ export function AgenticShowcase() {
           className="mb-16"
         >
           <div className="flex items-center gap-3 mb-5">
-            <span className="section-label">02 / Agents</span>
+            <span className="section-label">Agents</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
-            The frameworks{" "}
-            <span className="text-primary">behind AI agents.</span>
+            Every agent framework your team will ever{" "}
+            <span className="text-primary">actually need.</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
-            Agents reason, plan, call tools, and take real action. You'll build with
-            every major framework — hands-on, with production code.
+            Agents reason, plan, call tools, and take real action. Production
+            coverage of every major framework — Google ADK, OpenAI Agents SDK,
+            CrewAI, AutoGen, and Claude Agents.
           </p>
         </motion.div>
 

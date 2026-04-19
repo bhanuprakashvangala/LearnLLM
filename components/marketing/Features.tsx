@@ -101,16 +101,16 @@ export function Features() {
           className="mb-16"
         >
           <div className="flex items-center gap-3 mb-5">
-            <span className="section-label">03 / Curriculum</span>
+            <span className="section-label">What's inside</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
-            Every skill you need,{" "}
-            <span className="text-primary">nothing you don't.</span>
+            Everything your engineers need to{" "}
+            <span className="text-primary">ship AI in production.</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
             Foundations to production. Updated constantly as new frameworks, models,
-            and standards ship — and they ship weekly.
+            and standards ship — because they ship weekly.
           </p>
         </motion.div>
 

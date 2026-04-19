@@ -85,16 +85,16 @@ export function CurriculumRoadmap() {
           className="mb-16 max-w-3xl mx-auto"
         >
           <div className="flex items-center gap-3 mb-5">
-            <span className="section-label">05 / Roadmap</span>
+            <span className="section-label">Curriculum</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            From zero to{" "}
-            <span className="text-primary">production AI.</span>
+            The full roadmap to{" "}
+            <span className="text-primary">shipping production AI.</span>
           </h2>
           <p className="text-lg text-muted-foreground mt-5 leading-relaxed">
-            110+ lessons across three structured levels. Hands-on projects in every module.
-            Go at your own pace — each level builds on the last.
+            110+ in-depth lessons across three structured levels, with hands-on
+            projects in every module. Self-paced, self-contained, current.
           </p>
         </motion.div>
 

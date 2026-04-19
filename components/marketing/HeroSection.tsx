@@ -217,42 +217,40 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Section label */}
-            <div className="flex items-center gap-3 mb-7">
-              <span className="section-label">00 / Learn LLM</span>
-              <span className="h-px flex-1 bg-border max-w-[120px]" />
-              <span className="text-[11px] font-mono text-muted-foreground">
-                updated <span className="text-foreground">2026</span>
+            {/* Product tag */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-7">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
+                Free for everyone · Updated weekly
               </span>
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold mb-6 leading-[1.08] tracking-tight">
-              Master{" "}
-              <span className="hero-gradient-text">LLMs</span>
-              {" "}&amp;{" "}
-              <span className="hero-gradient-text">Agentic AI</span>
+              The production-grade{" "}
+              <span className="hero-gradient-text">AI engineering</span>
               <br className="hidden sm:block" />
-              from NLP basics to production.
+              curriculum.
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground mb-9 max-w-xl leading-relaxed">
-              From NLP fundamentals to shipping multi-agent production systems. Deep,
-              up-to-date lessons on MCP connectors, workflows, reasoning models,
-              fine-tuning, RAG, and the frameworks that actually matter in 2026.
+              Built for engineers and teams shipping real AI systems. Deep, current
+              coverage of MCP connectors, agentic workflows, reasoning models,
+              fine-tuning, and the production stack — from first principles to
+              multi-agent pipelines in production.
             </p>
 
             {/* CTA */}
             <div className="flex flex-col sm:flex-row gap-3 mb-12">
               <Button size="lg" asChild className="text-base px-7 h-12 shadow-lg shadow-primary/25">
-                <Link href="/learn">
-                  Start from zero
+                <Link href="/signup">
+                  Get started — free
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild className="text-base px-7 h-12">
                 <Link href="#curriculum">
-                  See the curriculum
+                  Browse curriculum
                 </Link>
               </Button>
             </div>
@@ -260,9 +258,9 @@ export function HeroSection() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 max-w-md">
               {[
-                { value: "100+", label: "lessons" },
+                { value: "110+", label: "in-depth lessons" },
                 { value: "40+", label: "tools & frameworks" },
-                { value: "$0", label: "forever" },
+                { value: "$0", label: "forever, no paywall" },
               ].map((stat, i) => (
                 <motion.div
                   key={i}

@@ -120,16 +120,16 @@ export function ToolsEcosystem() {
           className="mb-16"
         >
           <div className="flex items-center gap-3 mb-5">
-            <span className="section-label">04 / Stack</span>
+            <span className="section-label">The stack</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
-            The complete{" "}
-            <span className="text-primary">2026 AI stack.</span>
+            The modern AI stack,{" "}
+            <span className="text-primary">organized by role.</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
-            Every provider, framework, database, and tool you need — organized by
-            where they fit in a real system.
+            Every provider, framework, database, and deployment tool — grouped by
+            where it fits in a real production system.
           </p>
         </motion.div>
 
