@@ -26,7 +26,14 @@ export function Quiz({ title = "Knowledge Check", questions = [] }: QuizProps) {
     new Array(questions.length).fill(false)
   );
 
+  // Defensive: render nothing if the MDX invocation forgot to pass a questions array
+  // (or passed an empty one). Prevents a client-side crash on "question.question".
+  if (!questions || questions.length === 0) {
+    return null;
+  }
+
   const question = questions[currentQuestion];
+  if (!question) return null;
   const isLastQuestion = currentQuestion === questions.length - 1;
   const isAnswered = answeredQuestions[currentQuestion];
 
