@@ -227,17 +227,14 @@ export function HeroSection() {
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold mb-6 leading-[1.08] tracking-tight">
-              The production-grade{" "}
-              <span className="hero-gradient-text">AI engineering</span>
-              <br className="hidden sm:block" />
-              curriculum.
+              Go from ChatGPT user to{" "}
+              <span className="hero-gradient-text">shipping AI in production</span>.
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground mb-9 max-w-xl leading-relaxed">
-              Built for engineers and teams shipping real AI systems. Deep, current
-              coverage of MCP connectors, agentic workflows, reasoning models,
-              fine-tuning, and the production stack — from first principles to
-              multi-agent pipelines in production.
+              The complete curriculum for engineers and teams building real AI
+              systems. NLP foundations to MCP connectors, agentic workflows to
+              fine-tuning — no fluff, no paywall, no outdated models.
             </p>
 
             {/* CTA */}

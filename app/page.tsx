@@ -7,6 +7,7 @@ import { Features } from "@/components/marketing/Features";
 import { ToolsEcosystem } from "@/components/marketing/ToolsEcosystem";
 import { CurriculumRoadmap } from "@/components/marketing/CurriculumRoadmap";
 import { FAQ } from "@/components/marketing/FAQ";
+import { FinalCTA } from "@/components/marketing/FinalCTA";
 
 export default function Home() {
   return (
@@ -19,6 +20,7 @@ export default function Home() {
       <ToolsEcosystem />
       <CurriculumRoadmap />
       <FAQ />
+      <FinalCTA />
       <Footer />
     </main>
   );

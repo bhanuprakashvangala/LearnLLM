@@ -18,57 +18,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const features = [
   {
     icon: BookOpen,
-    title: "Foundations first",
+    title: "Stop feeling lost",
     description:
-      "NLP, machine learning, deep learning, embeddings, transformers — explained in plain language before we touch a single line of code.",
+      "Walk in with zero ML background, leave able to explain how a transformer works. NLP, neural nets, embeddings — in plain language, before a single line of code.",
   },
   {
     icon: Target,
-    title: "Prompt engineering",
+    title: "Get real results from prompts",
     description:
-      "Chain-of-thought, few-shot, structured output, and the prompting patterns Claude 4.7, GPT-5, and Gemini 2.5 actually respond to.",
+      "Chain-of-thought, few-shot, structured output, reasoning-model prompts. Stop guessing — use the patterns that get Claude 4.7, GPT-5, and Gemini 2.5 to actually deliver.",
   },
   {
     icon: Brain,
-    title: "Agentic frameworks",
+    title: "Build agents, not chat loops",
     description:
-      "Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, and Claude Agents. Build autonomous systems, not chat loops.",
+      "Ship autonomous systems with Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, and Claude Agents. From first tool call to multi-agent orchestration.",
   },
   {
     icon: GitBranch,
-    title: "MCP connectors",
+    title: "Wire AI to your real systems",
     description:
-      "The open protocol that's replacing every one-off AI integration. Install, build, and chain connectors across GitHub, Slack, databases, and your own systems.",
+      "MCP connectors are replacing every one-off AI integration. Install them, build them, chain them across GitHub, Slack, databases, and internal tools.",
   },
   {
     icon: Code2,
-    title: "Workflows that ship",
+    title: "Workflows that survive production",
     description:
-      "LangGraph, LlamaIndex Workflows, Vercel AI SDK. Stateful multi-step pipelines with checkpoints, retries, and human-in-the-loop gates.",
+      "Stateful pipelines in LangGraph and LlamaIndex — with checkpoints, retries, and human-in-the-loop gates. The plumbing that turns a demo into a product.",
   },
   {
     icon: Database,
-    title: "RAG & vector search",
+    title: "RAG that holds up at scale",
     description:
-      "Production retrieval with Pinecone, ChromaDB, Weaviate, Qdrant. Chunking, hybrid search, re-ranking, long-context strategies.",
+      "Production retrieval with Pinecone, ChromaDB, Weaviate, Qdrant. Chunking, hybrid search, re-ranking, long-context — the full stack, not a toy demo.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Fine-tune & deploy",
+    title: "Fine-tune and deploy for real",
     description:
-      "LoRA, QLoRA, RLHF, DPO end-to-end. Then ship with vLLM, SGLang, quantization, and the eval stack that catches regressions.",
+      "LoRA, QLoRA, RLHF, DPO end-to-end. Then ship with vLLM, SGLang, quantization, and an eval stack that catches regressions before your users do.",
   },
   {
     icon: Terminal,
-    title: "Modern AI dev tools",
+    title: "Master the tools senior engineers use",
     description:
-      "Cursor, Claude Code, Windsurf, Bolt.new, v0, Vercel AI SDK. The tools senior engineers already use every day.",
+      "Cursor, Claude Code, Windsurf, Bolt.new, v0, Vercel AI SDK. The daily stack of engineers actually shipping AI — not last year's tutorials.",
   },
   {
     icon: Blocks,
-    title: "Real projects, not toys",
+    title: "Leave with portfolio projects",
     description:
-      "Multi-agent research systems. Production RAG. Full-stack AI apps. Triage bots with MCP + workflows. Everything is portfolio-ready.",
+      "Multi-agent research systems. Production RAG. Full-stack AI apps. MCP-powered triage bots. Every module ends with something real you can show hiring managers.",
   },
 ];
 
