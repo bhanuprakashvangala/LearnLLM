@@ -59,9 +59,9 @@ const faqs = [
       "We update constantly. When Google launched ADK, we added lessons. When OpenAI released their Agents SDK, we covered it. When MCP gained traction, we built a full module. The AI landscape moves fast, and we move with it.",
   },
   {
-    question: "What's the difference between Free and Pro?",
+    question: "Is LearnLLM.dev free?",
     answer:
-      "Free gives you access to all 110+ lessons — yes, really. Pro ($19/mo) adds the interactive AI playground, coding challenges with auto-grading, real-world projects, a certificate of completion, and priority support. Teams ($49/user/mo) adds a team dashboard, SSO, and a dedicated account manager.",
+      "Yes. All lessons, challenges, and the interactive playground are free while we're in this phase. Sign in with email or Google so we can save your progress across devices.",
   },
 ];
 

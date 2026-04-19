@@ -2,12 +2,11 @@
 
 import * as React from "react";
 import { useSession, signIn } from "next-auth/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Sparkles, ArrowRight, Chrome, Mail, User, X, Check } from "lucide-react";
+import { Lock, ArrowRight, Chrome, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { canAccessDifficulty, hasProAccess, type Difficulty } from "@/lib/access";
+import { canAccessDifficulty, type Difficulty } from "@/lib/access";
 
 interface ContentGateProps {
   difficulty: Difficulty;
@@ -16,7 +15,7 @@ interface ContentGateProps {
   slug?: string;
 }
 
-export function ContentGate({ difficulty, children, title, slug }: ContentGateProps) {
+export function ContentGate({ difficulty, children, slug }: ContentGateProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isSignUp, setIsSignUp] = React.useState(true);
@@ -52,8 +51,7 @@ export function ContentGate({ difficulty, children, title, slug }: ContentGatePr
     return <>{children}</>;
   }
 
-  // Determine if this is a PRO-only lock (advanced) or login-required lock
-  const needsLogin = !session;
+  // Paid tiers are off right now. The only gate is signing in.
 
   const handleGoogleAuth = () => {
     signIn("google", { callbackUrl: window.location.href });
@@ -114,11 +112,9 @@ export function ContentGate({ difficulty, children, title, slug }: ContentGatePr
         {children}
       </div>
 
-      {/* Modal Overlay */}
+      {/* Modal Overlay — only shows when the visitor isn't signed in */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
         <div className="bg-card border-2 border-border rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-md relative animate-in fade-in zoom-in-95 duration-200">
-
-          {needsLogin ? (
             <>
               {/* Header */}
               <div className="text-center mb-6">
@@ -256,59 +252,11 @@ export function ContentGate({ difficulty, children, title, slug }: ContentGatePr
               </p>
 
               <div className="mt-6 pt-4 border-t border-border">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
-                  <Check className="w-3 h-3 text-primary" />
-                  <span>Free access to beginner &amp; intermediate lessons</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* PRO upgrade prompt - Premium Design */}
-              <div className="text-center">
-                {/* Gradient icon background */}
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Sparkles className="w-10 h-10 text-white" />
-                </div>
-
-                <div className="inline-block px-3 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-semibold rounded-full mb-4">
-                  ADVANCED CONTENT
-                </div>
-
-                <h2 className="text-2xl font-bold mb-3">Unlock This Lesson</h2>
-
-                {title && (
-                  <p className="text-foreground font-medium mb-2">"{title}"</p>
-                )}
-
-                <p className="text-sm text-muted-foreground mb-6">
-                  Get access to all advanced lessons, fine-tuning tutorials, and production deployment guides.
-                </p>
-
-                {/* Features list */}
-                <div className="text-left bg-muted/50 rounded-xl p-4 mb-6 space-y-2">
-                  {["All 83 lessons unlocked", "Advanced fine-tuning guides", "Production deployment", "Priority support"].map((feature) => (
-                    <div key={feature} className="flex items-center gap-2 text-sm">
-                      <Check className="w-4 h-4 text-purple-500" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button asChild className="w-full h-12 font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 border-0">
-                  <Link href="/pricing">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Upgrade to Pro - $19/mo
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Link>
-                </Button>
-
-                <p className="text-xs text-muted-foreground mt-4">
-                  7-day money-back guarantee
+                <p className="text-xs text-muted-foreground text-center">
+                  Every lesson is free. We use your account to save your progress.
                 </p>
               </div>
             </>
-          )}
         </div>
       </div>
     </div>
