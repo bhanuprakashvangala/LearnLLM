@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { compileMDX } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 import { MDXComponents } from "./components";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "tutorials");
@@ -74,14 +75,15 @@ export async function getLessonBySlug(
     const fileContent = fs.readFileSync(filePath, "utf-8");
     const { content, data } = matter(fileContent);
 
-    // Compile MDX with custom components
+    // Compile MDX with custom components. remark-gfm enables GitHub-flavored
+    // markdown: tables, task lists, strikethrough, autolinked URLs.
     const { content: mdxContent } = await compileMDX<LessonMetadata>({
       source: content,
       components: MDXComponents,
       options: {
         parseFrontmatter: false, // We already parsed it with gray-matter
         mdxOptions: {
-          remarkPlugins: [],
+          remarkPlugins: [remarkGfm],
           rehypePlugins: [],
         },
       },
