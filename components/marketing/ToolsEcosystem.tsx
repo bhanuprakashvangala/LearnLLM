@@ -110,7 +110,7 @@ const item = {
 
 export function ToolsEcosystem() {
   return (
-    <section className="snap-section py-20 md:py-28 lg:py-32 relative overflow-hidden bg-muted/30">
+    <section className="snap-section snap-section-scroll py-20 md:py-28 lg:py-32 relative bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div

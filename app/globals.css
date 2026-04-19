@@ -200,24 +200,46 @@ html {
 }
 
 /* Page-by-page scroll-snap on the marketing landing (desktop only).
-   Applied via .snap-landing on the <main> wrapper so lesson pages and
-   app routes are unaffected. Sections with .snap-section get aligned
-   to the top of the viewport when scrolled near. `proximity` (not
-   `mandatory`) means long sections scroll naturally through their
-   content before snapping to the next section boundary. */
+   MANDATORY snap + "always" stop means one scroll gesture locks to
+   exactly the next section. Each section sizes to the viewport (minus
+   the 4rem nav) so nothing spills beyond one screen. */
 @media (min-width: 1024px) {
   .snap-landing {
-    scroll-snap-type: y proximity;
+    scroll-snap-type: y mandatory;
     scroll-padding-top: 4rem;
+    scroll-behavior: smooth;
   }
   .snap-section {
     scroll-snap-align: start;
-    scroll-snap-stop: normal;
-    min-height: 100vh;
+    scroll-snap-stop: always;
+    height: calc(100vh - 4rem);
+    min-height: calc(100vh - 4rem);
     display: flex;
     flex-direction: column;
     justify-content: center;
+    overflow: hidden;
   }
+  /* Sections with real content density (9-card feature grid, full tool
+     ecosystem, curriculum roadmap) should be allowed to scroll inside
+     their own pane rather than clip. */
+  .snap-section-scroll {
+    overflow-y: auto;
+    justify-content: flex-start;
+  }
+}
+
+/* Soft fade + rise entry used on elements inside snap sections so
+   each "page" animates in as you land on it. */
+.snap-fade-in {
+  animation: snap-fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.snap-fade-in-delay-1 { animation-delay: 0.1s; }
+.snap-fade-in-delay-2 { animation-delay: 0.22s; }
+.snap-fade-in-delay-3 { animation-delay: 0.34s; }
+
+@keyframes snap-fade-up {
+  0%   { opacity: 0; transform: translateY(28px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* Selection */
