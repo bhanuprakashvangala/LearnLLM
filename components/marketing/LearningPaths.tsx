@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BookOpen, Code, Rocket, ArrowRight, Check } from "lucide-react";
+import { BookOpen, Braces, Cpu, ArrowRight, Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ const learningPaths = [
     link: "/learn/beginner/what-is-llm",
   },
   {
-    icon: Code,
+    icon: Braces,
     title: "Creator & Builder",
     description: "Build real AI apps with modern agentic frameworks",
     gradient: "from-primary to-secondary",
@@ -41,7 +41,7 @@ const learningPaths = [
     popular: true,
   },
   {
-    icon: Rocket,
+    icon: Cpu,
     title: "Advanced Developer",
     description: "Production agentic systems & cutting-edge AI",
     gradient: "from-accent to-pink-600",

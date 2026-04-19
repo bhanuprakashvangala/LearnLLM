@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import { Menu, X, Sparkles, User, LogOut, Settings, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, ChevronDown, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
@@ -157,9 +157,9 @@ export function Navbar() {
                   <Link href="/login">Login</Link>
                 </Button>
                 <Button variant="default" size="sm" asChild>
-                  <Link href="/signup" className="gap-1">
-                    <Sparkles className="w-4 h-4" />
+                  <Link href="/signup" className="gap-1.5">
                     Get Started
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </Button>
               </>
@@ -277,8 +277,8 @@ export function Navbar() {
                   </Button>
                   <Button variant="default" size="sm" asChild className="w-full">
                     <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="gap-2">
-                      <Sparkles className="w-4 h-4" />
                       Get Started
+                      <ArrowRight className="w-4 h-4" />
                     </Link>
                   </Button>
                 </>

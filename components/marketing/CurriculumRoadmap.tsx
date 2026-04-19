@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   BookOpen,
-  Code,
-  Rocket,
+  Braces,
+  Cpu,
   Check,
   GraduationCap,
   ArrowRight,
@@ -35,7 +35,7 @@ const roadmapSteps = [
   {
     level: "Intermediate",
     subtitle: "Build real AI apps",
-    icon: Code,
+    icon: Braces,
     color: "blue",
     gradient: "from-blue-500 to-indigo-600",
     borderAccent: "border-l-blue-500",
@@ -54,7 +54,7 @@ const roadmapSteps = [
   {
     level: "Advanced",
     subtitle: "Production systems",
-    icon: Rocket,
+    icon: Cpu,
     color: "purple",
     gradient: "from-purple-500 to-pink-600",
     borderAccent: "border-l-purple-500",

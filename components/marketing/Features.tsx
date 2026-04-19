@@ -4,14 +4,14 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import {
   Code2,
-  Gamepad2,
-  MessagesSquare,
+  Blocks,
+  Terminal,
   BookOpen,
-  Trophy,
-  Zap,
+  SlidersHorizontal,
+  Database,
   Brain,
   Target,
-  Sparkles,
+  GitBranch,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -42,31 +42,31 @@ const features = [
     gradient: "from-purple-500 to-pink-500",
   },
   {
-    icon: Sparkles,
+    icon: GitBranch,
     title: "MCP Protocol",
     description: "Learn Anthropic's Model Context Protocol - the open standard connecting AI to tools and data. The USB-C of AI integration.",
     gradient: "from-indigo-500 to-purple-500",
   },
   {
-    icon: Zap,
+    icon: Database,
     title: "RAG & Vector Search",
     description: "Make AI work with YOUR documents and data. Build production RAG systems with Pinecone, ChromaDB, and Weaviate.",
     gradient: "from-yellow-500 to-orange-500",
   },
   {
-    icon: Trophy,
+    icon: SlidersHorizontal,
     title: "Fine-Tune & Deploy",
     description: "Customize models with LoRA/QLoRA, then deploy with vLLM. Go from fine-tuning to production-ready in one path.",
     gradient: "from-pink-500 to-rose-500",
   },
   {
-    icon: MessagesSquare,
+    icon: Terminal,
     title: "AI Dev Tools",
     description: "Master Cursor, Claude Code, Windsurf, and the Vercel AI SDK. Build full-stack AI apps with the modern development stack.",
     gradient: "from-teal-500 to-cyan-500",
   },
   {
-    icon: Gamepad2,
+    icon: Blocks,
     title: "Real Projects & Challenges",
     description: "Build multi-agent research systems, production RAG pipelines, full-stack AI apps, and more. Portfolio-ready from day one.",
     gradient: "from-violet-500 to-purple-500",
