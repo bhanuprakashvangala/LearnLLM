@@ -27,13 +27,13 @@ where ΔW = BA
 W: d × d (frozen)
 B: d × r (trainable)
 A: r × d (trainable)
-r << d (e.g., r=8, d=768)
+r ≪ d (e.g., r=8, d=768)
 ```
 
 <Callout type="info">
 **Why This Works:**
 
-During fine-tuning, weight updates ΔW often have low intrinsic rank - they can be well-approximated by a low-rank matrix. Instead of learning d × d parameters, we learn (d × r + r × d) parameters where r << d.
+During fine-tuning, weight updates ΔW often have low intrinsic rank - they can be well-approximated by a low-rank matrix. Instead of learning d × d parameters, we learn (d × r + r × d) parameters where r ≪ d.
 
 For a 768-dimensional layer with r=8:
 - Full update: 768 × 768 = 589,824 parameters
@@ -687,7 +687,7 @@ class LoRAInference:
 
 LoRA achieves remarkable parameter efficiency through low-rank decomposition:
 
-1. **Core idea:** Weight updates ΔW = BA where r << d
+1. **Core idea:** Weight updates ΔW = BA where r ≪ d
 2. **Benefits:** 10-100x parameter reduction, no inference overhead after merging
 3. **Application:** Attention layers (Q, V or Q, K, V, O)
 4. **Training:** Higher learning rates, faster convergence
@@ -706,7 +706,7 @@ LoRA has become the standard for LLM fine-tuning due to its simplicity and effec
         "Fine-tuning requires freezing most parameters"
       ],
       correctAnswer: 1,
-      explanation: "LoRA's key insight is that the weight update ΔW during fine-tuning has low intrinsic rank - it can be well-approximated by a product of two smaller matrices (ΔW = BA where B is d×r and A is r×d with r << d). This allows representing updates with far fewer parameters."
+      explanation: "LoRA's key insight is that the weight update ΔW during fine-tuning has low intrinsic rank - it can be well-approximated by a product of two smaller matrices (ΔW = BA where B is d×r and A is r×d with r ≪ d). This allows representing updates with far fewer parameters."
     },
     {
       question: "For a 768-dimensional linear layer, how many parameters are needed for LoRA with rank r=8 compared to full fine-tuning?",
