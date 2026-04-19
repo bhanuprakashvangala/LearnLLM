@@ -59,9 +59,9 @@ const faqs = [
       "We update constantly. When Google launched ADK, we added lessons. When OpenAI released their Agents SDK, we covered it. When MCP gained traction, we built a full module. The AI landscape moves fast, and we move with it.",
   },
   {
-    question: "Is LearnLLM.dev really 100% free?",
+    question: "Is LearnLLM.dev free to use?",
     answer:
-      "Yes — every lesson, challenge, project, and the interactive playground are completely free. No trials, no paywalls, no credit card required. Sign in with Google or email so we can save your progress, and that's it. If we ever add something paid in the future, everything that's free today will stay free forever.",
+      "Yes. All lessons, challenges, projects, and the interactive playground are available at no cost. We ask you to sign in so that we can save your progress across devices.",
   },
 ];
 
@@ -85,8 +85,7 @@ export function FAQ() {
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            Common questions,{" "}
-            <span className="text-primary">clear answers.</span>
+            Frequently asked questions.
           </h2>
         </motion.div>
 

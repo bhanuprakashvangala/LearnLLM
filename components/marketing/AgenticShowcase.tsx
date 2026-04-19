@@ -137,13 +137,12 @@ export function AgenticShowcase() {
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
-            Every agent framework your team will ever{" "}
-            <span className="text-primary">actually need.</span>
+            The major agent frameworks.
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
-            Agents reason, plan, call tools, and take real action. Production
-            coverage of every major framework — Google ADK, OpenAI Agents SDK,
-            CrewAI, AutoGen, and Claude Agents.
+            Agents plan, call tools, and take actions on behalf of the user.
+            The curriculum covers Google ADK, OpenAI Agents SDK, CrewAI,
+            AutoGen, and Claude Agents, with runnable examples for each.
           </p>
         </motion.div>
 

@@ -12,28 +12,28 @@ const learningPaths = [
   {
     icon: BookOpen,
     title: "Complete Beginner",
-    description: "Start from zero — no coding, no math, no NLP background",
+    description: "For anyone new to AI, ML, or coding.",
     features: [
-      "NLP, ML, deep-learning foundations in plain English",
-      "Embeddings, tokens, and how transformers really work",
-      "Claude 4.7, GPT-5, Gemini 2.5 — compared & used",
+      "NLP, machine learning, and deep-learning basics in plain language",
+      "How tokens, embeddings, and transformers work",
+      "Using Claude, GPT, and Gemini effectively",
       "NotebookLM, Cursor, Bolt.new, and the no-code stack",
     ],
-    duration: "3–4 weeks",
+    duration: "3 to 4 weeks",
     difficulty: "Beginner",
     link: "/learn/beginner/what-is-nlp",
   },
   {
     icon: Braces,
     title: "Creator & Builder",
-    description: "Ship real AI apps — agents, MCP connectors, stateful workflows",
+    description: "For engineers building their first real AI applications.",
     features: [
       "Google ADK, OpenAI Agents SDK, CrewAI",
-      "MCP connectors — build & consume them",
-      "LangGraph workflows with human-in-the-loop",
-      "Production RAG, reasoning models, Vercel AI SDK",
+      "Building and installing MCP connectors",
+      "Stateful workflows in LangGraph",
+      "Production RAG, reasoning models, and the Vercel AI SDK",
     ],
-    duration: "6–8 weeks",
+    duration: "6 to 8 weeks",
     difficulty: "Intermediate",
     link: "/learn/intermediate/langchain-basics",
     popular: true,
@@ -41,14 +41,14 @@ const learningPaths = [
   {
     icon: Cpu,
     title: "Advanced Developer",
-    description: "Fine-tune, deploy, evaluate — production-grade AI systems",
+    description: "For engineers shipping production AI systems.",
     features: [
-      "LoRA, QLoRA, RLHF, DPO end-to-end",
-      "Computer-use agents, multi-agent orchestration",
-      "Production MCP servers, observability, evals",
-      "vLLM, SGLang, quantization, cost optimization",
+      "LoRA, QLoRA, RLHF, and DPO fine-tuning",
+      "Computer-use agents and multi-agent orchestration",
+      "Production MCP servers, observability, and evaluation",
+      "vLLM, SGLang, quantization, and cost optimization",
     ],
-    duration: "9–11 weeks",
+    duration: "9 to 11 weeks",
     difficulty: "Advanced",
     link: "/learn/advanced/fine-tuning",
   },
@@ -87,13 +87,12 @@ export function LearningPaths() {
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-3xl leading-tight">
-            Built for every team member —{" "}
-            <span className="text-primary">from first hire to staff engineer.</span>
+            Three tracks, by level.
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
-            Three structured tracks, each self-contained. Onboard non-technical
-            colleagues, level up builders, and get your senior engineers to
-            production-ready on the modern AI stack.
+            Each track is self-contained. Start wherever you are: no ML
+            background, some ML background, or experienced and looking to
+            go deep on production systems.
           </p>
         </motion.div>
 

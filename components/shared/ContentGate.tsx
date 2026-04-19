@@ -249,12 +249,10 @@ export function ContentGate({ difficulty, children, slug }: ContentGateProps) {
                 )}
               </p>
 
-              {/* Benefits */}
               <div className="mt-6 pt-4 border-t border-border">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
-                  <Check className="w-3 h-3 text-primary" />
-                  <span>100% free — every lesson, forever</span>
-                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Every lesson is free. We use your account to save progress.
+                </p>
               </div>
             </>
         </div>

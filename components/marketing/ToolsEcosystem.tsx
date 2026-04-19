@@ -124,12 +124,11 @@ export function ToolsEcosystem() {
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
-            The modern AI stack,{" "}
-            <span className="text-primary">organized by role.</span>
+            The AI stack.
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
-            Every provider, framework, database, and deployment tool — grouped by
-            where it fits in a real production system.
+            Providers, frameworks, databases, and deployment tools, grouped
+            by where they fit in a real system.
           </p>
         </motion.div>
 

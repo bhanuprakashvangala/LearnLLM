@@ -18,57 +18,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 const features = [
   {
     icon: BookOpen,
-    title: "Stop feeling lost",
+    title: "Foundations",
     description:
-      "Walk in with zero ML background, leave able to explain how a transformer works. NLP, neural nets, embeddings — in plain language, before a single line of code.",
+      "NLP, machine learning, neural networks, and embeddings explained in plain language. Start here if you are new to the field.",
   },
   {
     icon: Target,
-    title: "Get real results from prompts",
+    title: "Prompt engineering",
     description:
-      "Chain-of-thought, few-shot, structured output, reasoning-model prompts. Stop guessing — use the patterns that get Claude 4.7, GPT-5, and Gemini 2.5 to actually deliver.",
+      "Chain-of-thought, few-shot, structured output, and reasoning-model prompting, with examples for Claude, GPT, and Gemini.",
   },
   {
     icon: Brain,
-    title: "Build agents, not chat loops",
+    title: "Agent frameworks",
     description:
-      "Ship autonomous systems with Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, and Claude Agents. From first tool call to multi-agent orchestration.",
+      "Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, and Claude Agents. Covers single-agent to multi-agent orchestration.",
   },
   {
     icon: GitBranch,
-    title: "Wire AI to your real systems",
+    title: "MCP connectors",
     description:
-      "MCP connectors are replacing every one-off AI integration. Install them, build them, chain them across GitHub, Slack, databases, and internal tools.",
+      "Install and build MCP connectors so an LLM can read and write to GitHub, Slack, databases, and your own internal tools.",
   },
   {
     icon: Code2,
-    title: "Workflows that survive production",
+    title: "Workflows",
     description:
-      "Stateful pipelines in LangGraph and LlamaIndex — with checkpoints, retries, and human-in-the-loop gates. The plumbing that turns a demo into a product.",
+      "LangGraph and LlamaIndex for stateful pipelines. Checkpointing, retries, and human-in-the-loop approval.",
   },
   {
     icon: Database,
-    title: "RAG that holds up at scale",
+    title: "RAG and vector search",
     description:
-      "Production retrieval with Pinecone, ChromaDB, Weaviate, Qdrant. Chunking, hybrid search, re-ranking, long-context — the full stack, not a toy demo.",
+      "Pinecone, ChromaDB, Weaviate, Qdrant. Chunking strategies, hybrid search, and re-ranking for production retrieval.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Fine-tune and deploy for real",
+    title: "Fine-tuning",
     description:
-      "LoRA, QLoRA, RLHF, DPO end-to-end. Then ship with vLLM, SGLang, quantization, and an eval stack that catches regressions before your users do.",
+      "LoRA, QLoRA, RLHF, and DPO. Then deployment with vLLM and SGLang, plus the evaluation and monitoring setup that goes with it.",
   },
   {
     icon: Terminal,
-    title: "Master the tools senior engineers use",
+    title: "AI developer tools",
     description:
-      "Cursor, Claude Code, Windsurf, Bolt.new, v0, Vercel AI SDK. The daily stack of engineers actually shipping AI — not last year's tutorials.",
+      "Cursor, Claude Code, Windsurf, Bolt.new, v0, and the Vercel AI SDK — the current daily stack for AI engineers.",
   },
   {
     icon: Blocks,
-    title: "Leave with portfolio projects",
+    title: "Hands-on projects",
     description:
-      "Multi-agent research systems. Production RAG. Full-stack AI apps. MCP-powered triage bots. Every module ends with something real you can show hiring managers.",
+      "Each module ends with a project: a multi-agent research system, a production RAG pipeline, an MCP-powered triage bot, and more.",
   },
 ];
 
@@ -105,12 +105,11 @@ export function Features() {
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
-            Everything your engineers need to{" "}
-            <span className="text-primary">ship AI in production.</span>
+            What the curriculum covers.
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
-            Foundations to production. Updated constantly as new frameworks, models,
-            and standards ship — because they ship weekly.
+            Foundations through production deployment. Lessons are reviewed
+            and updated as tooling changes.
           </p>
         </motion.div>
 

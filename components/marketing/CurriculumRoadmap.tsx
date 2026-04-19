@@ -89,12 +89,11 @@ export function CurriculumRoadmap() {
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            The full roadmap to{" "}
-            <span className="text-primary">shipping production AI.</span>
+            The full roadmap.
           </h2>
           <p className="text-lg text-muted-foreground mt-5 leading-relaxed">
-            110+ in-depth lessons across three structured levels, with hands-on
-            projects in every module. Self-paced, self-contained, current.
+            110 lessons across three levels. Each module ends with a
+            hands-on project. Self-paced, self-contained.
           </p>
         </motion.div>
 

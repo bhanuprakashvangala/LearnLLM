@@ -217,24 +217,17 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Product tag */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-7">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[11px] font-mono uppercase tracking-wider text-primary font-semibold">
-                Free for everyone · Updated weekly
-              </span>
-            </div>
-
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold mb-6 leading-[1.08] tracking-tight">
-              Go from ChatGPT user to{" "}
-              <span className="hero-gradient-text">shipping AI in production</span>.
+              Learn to build{" "}
+              <span className="hero-gradient-text">real AI systems</span>.
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground mb-9 max-w-xl leading-relaxed">
-              The complete curriculum for engineers and teams building real AI
-              systems. NLP foundations to MCP connectors, agentic workflows to
-              fine-tuning — no fluff, no paywall, no outdated models.
+              A full curriculum for engineers, from the fundamentals of NLP
+              and neural networks through modern LLMs, agents, MCP connectors,
+              workflows, RAG, and fine-tuning. Written and maintained by
+              practicing engineers.
             </p>
 
             {/* CTA */}
@@ -255,9 +248,9 @@ export function HeroSection() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 max-w-md">
               {[
-                { value: "110+", label: "in-depth lessons" },
-                { value: "40+", label: "tools & frameworks" },
-                { value: "$0", label: "forever, no paywall" },
+                { value: "110+", label: "lessons" },
+                { value: "40+", label: "tools covered" },
+                { value: "Free", label: "to use" },
               ].map((stat, i) => (
                 <motion.div
                   key={i}
