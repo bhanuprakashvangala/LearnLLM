@@ -64,6 +64,10 @@
 }
 
 @theme {
+  /* Named animations (Tailwind v4 exposes as .animate-<name>) */
+  --animate-aurora: aurora 60s linear infinite;
+  --animate-spotlight: spotlight 2s ease 0.75s 1 forwards;
+
   /* Colors */
   --color-background: rgb(var(--background));
   --color-foreground: rgb(var(--foreground));
@@ -121,6 +125,39 @@
 
   /* Shadows - Dark mode with green glow */
   --shadow-glow: 0 0 20px rgb(74 222 128 / 0.3);
+}
+
+/* Aurora / Spotlight animations */
+@keyframes aurora {
+  from {
+    background-position: 50% 50%, 50% 50%;
+  }
+  to {
+    background-position: 350% 50%, 350% 50%;
+  }
+}
+
+@keyframes spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-72%, -62%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -40%) scale(1);
+  }
+}
+
+/* Color tokens used by Aurora gradient + third-party components that expect flat color names */
+:root {
+  --white: #ffffff;
+  --black: #000000;
+  --transparent: transparent;
+  --emerald-500: #10b981;
+  --emerald-400: #34d399;
+  --emerald-300: #6ee7b7;
+  --teal-300: #5eead4;
+  --cyan-200: #a5f3fc;
 }
 
 /* Global Styles */

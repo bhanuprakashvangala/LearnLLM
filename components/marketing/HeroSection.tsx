@@ -4,6 +4,9 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Bot, Zap, Brain, Wrench, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Spotlight } from "@/components/ui/spotlight";
+import { SplineScene } from "@/components/ui/splite";
 import { useEffect, useState, useCallback } from "react";
 
 /* ────────────────────────────────────────────
@@ -270,14 +273,32 @@ export function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Right: Animated Terminal */}
+          {/* Right: Interactive 3D scene with Spotlight */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="hidden lg:block"
           >
-            <AnimatedTerminal />
+            <Card className="w-full h-[500px] bg-black/[0.96] relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10">
+              <Spotlight
+                className="-top-40 left-0 md:left-60 md:-top-20"
+                fill="rgba(16,185,129,0.55)"
+              />
+              <div className="absolute inset-0">
+                <SplineScene
+                  scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+                  className="w-full h-full"
+                />
+              </div>
+              {/* Overlay label */}
+              <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-mono uppercase tracking-wider text-white/80">
+                  interactive · drag to rotate
+                </span>
+              </div>
+            </Card>
           </motion.div>
         </div>
       </div>
