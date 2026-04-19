@@ -114,6 +114,37 @@ print(result["kind"])    # → "bug"
 print(result["output"])  # → "Steps to reproduce:\n1. ..."
 ```
 
+<Figure caption="The compiled LangGraph for the bug-report triage workflow. The conditional edge from `classify` dispatches to one of three specialized nodes.">
+  <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "640px", height: "auto" }} role="img" aria-label="LangGraph triage workflow">
+    {/* Entry */}
+    <circle cx="320" cy="30" r="8" fill="rgb(22 163 74)" />
+    <text x="320" y="22" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="currentColor">START</text>
+    <path d="M 320 38 L 320 60" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" />
+    {/* classify */}
+    <rect x="240" y="60" width="160" height="44" rx="8" fill="rgb(59 130 246)" fillOpacity="0.12" stroke="rgb(59 130 246)" strokeOpacity="0.5" strokeWidth="1.5" />
+    <text x="320" y="80" textAnchor="middle" fontSize="13" fontWeight="600" fill="currentColor">classify</text>
+    <text x="320" y="96" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">bug | feature | question</text>
+    {/* Edges out */}
+    <path d="M 280 104 Q 180 140 160 180" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.5" fill="none" />
+    <path d="M 320 104 L 320 180" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.5" fill="none" />
+    <path d="M 360 104 Q 460 140 480 180" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.5" fill="none" />
+    <text x="195" y="140" fontSize="10" fontFamily="monospace" fill="rgb(22 163 74)">bug</text>
+    <text x="325" y="140" fontSize="10" fontFamily="monospace" fill="rgb(22 163 74)">feature</text>
+    <text x="430" y="140" fontSize="10" fontFamily="monospace" fill="rgb(22 163 74)">question</text>
+    {/* Three handlers */}
+    {[[80, "handle_bug"], [240, "handle_feature"], [400, "handle_question"]].map(([x, label], i) => (
+      <g key={`h-${i}`}>
+        <rect x={x} y="180" width="160" height="44" rx="8" fill="rgb(22 163 74)" fillOpacity="0.1" stroke="rgb(22 163 74)" strokeOpacity="0.5" strokeWidth="1.5" />
+        <text x={Number(x) + 80} y="208" textAnchor="middle" fontSize="12" fill="currentColor">{label}</text>
+        <path d={`M ${Number(x) + 80} 224 Q ${Number(x) + 80} 250 320 270`} stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.5" fill="none" />
+      </g>
+    ))}
+    {/* END */}
+    <circle cx="320" cy="275" r="8" fill="rgb(107 114 128)" />
+    <text x="320" y="295" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="currentColor">END</text>
+  </svg>
+</Figure>
+
 That's it. You've built a routing workflow in under 60 lines. It's deterministic at the graph level (you know exactly which nodes run), but uses the LLM where judgment is required.
 
 ## Adding an agent as a sub-node

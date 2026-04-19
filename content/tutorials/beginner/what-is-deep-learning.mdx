@@ -15,6 +15,35 @@ Imagine you pour a messy input — a blurry photo, a sentence, a recording — t
 
 That's a neural network. A **stack of layers**, each one transforming the input a little more abstractly than the last.
 
+<Figure caption="A neural network as a stack of filters. Raw input goes in the bottom; each layer adds abstraction; a label falls out the top.">
+  <svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "500px", height: "auto" }} role="img" aria-label="Neural network layer stack">
+    {/* Input */}
+    <rect x="140" y="250" width="220" height="32" rx="6" fill="rgb(107 114 128)" fillOpacity="0.15" stroke="currentColor" strokeOpacity="0.3" />
+    <text x="250" y="270" textAnchor="middle" fontSize="12" fontFamily="monospace" fillOpacity="0.75" fill="currentColor">pixels · audio · text</text>
+    {/* Arrows */}
+    <path d="M250 248 L250 230" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" />
+    <path d="M246 234 L250 230 L254 234" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" fill="none" />
+    {/* Layer 1 */}
+    <rect x="120" y="200" width="260" height="28" rx="6" fill="rgb(22 163 74)" fillOpacity="0.08" stroke="rgb(22 163 74)" strokeOpacity="0.4" />
+    <text x="250" y="218" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">layer 1 — edges</text>
+    <path d="M250 198 L250 180" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" />
+    <path d="M246 184 L250 180 L254 184" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" fill="none" />
+    {/* Layer 2 */}
+    <rect x="120" y="150" width="260" height="28" rx="6" fill="rgb(22 163 74)" fillOpacity="0.15" stroke="rgb(22 163 74)" strokeOpacity="0.5" />
+    <text x="250" y="168" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">layer 2 — shapes</text>
+    <path d="M250 148 L250 130" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" />
+    <path d="M246 134 L250 130 L254 134" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" fill="none" />
+    {/* Layer 3 */}
+    <rect x="120" y="100" width="260" height="28" rx="6" fill="rgb(22 163 74)" fillOpacity="0.25" stroke="rgb(22 163 74)" strokeOpacity="0.7" />
+    <text x="250" y="118" textAnchor="middle" fontSize="11" fillOpacity="0.9" fill="currentColor">layer 3 — objects</text>
+    <path d="M250 98 L250 80" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" />
+    <path d="M246 84 L250 80 L254 84" stroke="currentColor" strokeOpacity="0.4" strokeWidth="1.5" fill="none" />
+    {/* Output */}
+    <rect x="170" y="40" width="160" height="36" rx="6" fill="rgb(22 163 74)" fillOpacity="0.9" />
+    <text x="250" y="62" textAnchor="middle" fontSize="13" fontWeight="700" fill="white">"golden retriever"</text>
+  </svg>
+</Figure>
+
 <Callout type="info">
 **Deep learning** just means: *use a lot of layers.* "Deep" literally refers to how many layers you stack. Modern LLMs have dozens to hundreds.
 </Callout>
@@ -51,9 +80,11 @@ Every AI system you care about today — LLMs, image generators, speech models, 
 
 Not all neural networks look the same. There are architectures tailored to different kinds of data:
 
-- **CNNs (Convolutional Neural Networks)** — good at images. They scan small patches and build up from there.
-- **RNNs (Recurrent Neural Networks)** — used to be good at sequences (language, time series). They read one token at a time, remembering a little. Mostly replaced by transformers now.
-- **Transformers** — the architecture that powers every modern LLM. They look at the whole input at once and figure out which parts relate to which other parts. You'll learn this one in detail soon.
+| Architecture         | Best at                           | Where you'll see it today                     |
+| -------------------- | --------------------------------- | --------------------------------------------- |
+| **CNN**              | Images, vision                    | Medical imaging, self-driving car perception  |
+| **RNN / LSTM**       | Sequences, time series (legacy)   | Older translation models, some speech systems |
+| **Transformer**      | Sequences *and* everything else   | Every modern LLM: GPT, Claude, Gemini, Llama  |
 
 ## Why LLMs are "just" deep learning
 

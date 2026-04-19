@@ -21,6 +21,57 @@ Before MCP, every single one of those was a custom integration. You'd write Clau
 
 It was chaos. N models × M tools = N·M integrations.
 
+<Figure caption="Before MCP, every model needed bespoke integrations for every tool (N × M). MCP reduces that to N + M: each model and each tool only needs to speak the protocol once.">
+  <svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "680px", height: "auto" }} role="img" aria-label="N times M vs N plus M integrations">
+    {/* Before */}
+    <text x="160" y="28" textAnchor="middle" fontSize="13" fontWeight="700" fill="rgb(234 88 12)">Before — N × M</text>
+    {["Claude", "GPT", "Gemini"].map((m, i) => (
+      <g key={`bm-${i}`}>
+        <rect x="30" y={60 + i * 45} width="70" height="30" rx="5" fill="rgb(234 88 12)" fillOpacity="0.15" stroke="rgb(234 88 12)" strokeOpacity="0.4" />
+        <text x="65" y={79 + i * 45} textAnchor="middle" fontSize="11" fill="currentColor">{m}</text>
+      </g>
+    ))}
+    {["GitHub", "Slack", "DB"].map((t, i) => (
+      <g key={`bt-${i}`}>
+        <rect x="220" y={60 + i * 45} width="70" height="30" rx="5" fill="rgb(107 114 128)" fillOpacity="0.15" stroke="currentColor" strokeOpacity="0.3" />
+        <text x="255" y={79 + i * 45} textAnchor="middle" fontSize="11" fill="currentColor">{t}</text>
+      </g>
+    ))}
+    {/* N x M lines */}
+    {[0, 1, 2].flatMap(i => [0, 1, 2].map(j => (
+      <line key={`l-${i}-${j}`} x1="100" y1={75 + i * 45} x2="220" y2={75 + j * 45} stroke="rgb(234 88 12)" strokeOpacity="0.3" strokeWidth="1" />
+    )))}
+    <text x="160" y="225" textAnchor="middle" fontSize="11" fontFamily="monospace" fill="rgb(234 88 12)">9 integrations</text>
+    {/* Divider */}
+    <line x1="340" y1="20" x2="340" y2="240" stroke="currentColor" strokeOpacity="0.15" strokeDasharray="4 4" />
+    {/* After */}
+    <text x="520" y="28" textAnchor="middle" fontSize="13" fontWeight="700" fill="rgb(22 163 74)">After MCP — N + M</text>
+    {["Claude", "GPT", "Gemini"].map((m, i) => (
+      <g key={`am-${i}`}>
+        <rect x="390" y={60 + i * 45} width="70" height="30" rx="5" fill="rgb(22 163 74)" fillOpacity="0.12" stroke="rgb(22 163 74)" strokeOpacity="0.4" />
+        <text x="425" y={79 + i * 45} textAnchor="middle" fontSize="11" fill="currentColor">{m}</text>
+      </g>
+    ))}
+    {/* MCP hub */}
+    <rect x="495" y="95" width="50" height="60" rx="8" fill="rgb(22 163 74)" fillOpacity="0.85" />
+    <text x="520" y="122" textAnchor="middle" fontSize="11" fontWeight="700" fill="white">MCP</text>
+    <text x="520" y="138" textAnchor="middle" fontSize="9" fontFamily="monospace" fill="white" fillOpacity="0.9">protocol</text>
+    {[0, 1, 2].map(i => (
+      <line key={`al-${i}`} x1="460" y1={75 + i * 45} x2="495" y2="125" stroke="rgb(22 163 74)" strokeOpacity="0.5" strokeWidth="1.5" />
+    ))}
+    {["GitHub", "Slack", "DB"].map((t, i) => (
+      <g key={`at-${i}`}>
+        <rect x="580" y={60 + i * 45} width="70" height="30" rx="5" fill="rgb(107 114 128)" fillOpacity="0.15" stroke="currentColor" strokeOpacity="0.3" />
+        <text x="615" y={79 + i * 45} textAnchor="middle" fontSize="11" fill="currentColor">{t}</text>
+      </g>
+    ))}
+    {[0, 1, 2].map(i => (
+      <line key={`ar-${i}`} x1="545" y1="125" x2="580" y2={75 + i * 45} stroke="rgb(22 163 74)" strokeOpacity="0.5" strokeWidth="1.5" />
+    ))}
+    <text x="520" y="225" textAnchor="middle" fontSize="11" fontFamily="monospace" fill="rgb(22 163 74)">6 integrations</text>
+  </svg>
+</Figure>
+
 ## What MCP actually is
 
 The **Model Context Protocol** is an open standard, introduced by Anthropic in November 2024 and now supported by every major model vendor. It defines one way for an AI client to talk to a tool server.

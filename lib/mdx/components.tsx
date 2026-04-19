@@ -106,6 +106,31 @@ export const Quiz = QuizComponent;
 export const ComparisonTable = ComparisonTableComponent;
 
 /**
+ * Figure Component
+ * Wraps an inline diagram (SVG, ASCII, table) with a caption.
+ * Use inside MDX: <Figure caption="...">{diagram}</Figure>
+ */
+interface FigureProps {
+  caption?: string;
+  children: React.ReactNode;
+}
+
+export function Figure({ caption, children }: FigureProps) {
+  return (
+    <figure className="my-8 rounded-xl border border-border bg-muted/30 overflow-hidden">
+      <div className="p-6 md:p-8 flex items-center justify-center overflow-x-auto">
+        {children}
+      </div>
+      {caption && (
+        <figcaption className="px-6 py-3 border-t border-border bg-muted/50 text-xs font-mono text-muted-foreground uppercase tracking-wider">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
+/**
  * Enhanced Code Block
  * Custom code block with syntax highlighting
  */
@@ -142,6 +167,7 @@ export const MDXComponents = {
   CodePlayground,
   Quiz,
   ComparisonTable,
+  Figure,
 
   // Enhanced HTML elements
   h1: ({ children }: { children: React.ReactNode }) => (

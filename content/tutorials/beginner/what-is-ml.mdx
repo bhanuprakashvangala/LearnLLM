@@ -32,6 +32,38 @@ You never wrote the rules. The machine *learned* them from examples.
 
 There are three main kinds of machine learning. You'll hear these names a lot:
 
+<Figure caption="The three ways a machine can learn. Every real system is usually one of these, sometimes two stacked together.">
+  <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "640px", height: "auto" }} role="img" aria-label="Supervised vs unsupervised vs reinforcement learning">
+    {/* Supervised */}
+    <g>
+      <rect x="20" y="30" width="180" height="140" rx="10" fill="rgb(22 163 74)" fillOpacity="0.08" stroke="rgb(22 163 74)" strokeOpacity="0.4" />
+      <text x="110" y="58" textAnchor="middle" fontSize="13" fontWeight="700" fill="rgb(22 163 74)">Supervised</text>
+      <text x="110" y="82" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">examples + answers</text>
+      <text x="110" y="115" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">photo → "cat"</text>
+      <text x="110" y="132" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">email → "spam"</text>
+      <text x="110" y="149" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">review → "pos"</text>
+    </g>
+    {/* Unsupervised */}
+    <g>
+      <rect x="230" y="30" width="180" height="140" rx="10" fill="rgb(59 130 246)" fillOpacity="0.08" stroke="rgb(59 130 246)" strokeOpacity="0.4" />
+      <text x="320" y="58" textAnchor="middle" fontSize="13" fontWeight="700" fill="rgb(59 130 246)">Unsupervised</text>
+      <text x="320" y="82" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">examples, no answers</text>
+      <text x="320" y="115" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">find clusters</text>
+      <text x="320" y="132" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">group similar items</text>
+      <text x="320" y="149" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">spot outliers</text>
+    </g>
+    {/* Reinforcement */}
+    <g>
+      <rect x="440" y="30" width="180" height="140" rx="10" fill="rgb(234 88 12)" fillOpacity="0.08" stroke="rgb(234 88 12)" strokeOpacity="0.4" />
+      <text x="530" y="58" textAnchor="middle" fontSize="13" fontWeight="700" fill="rgb(234 88 12)">Reinforcement</text>
+      <text x="530" y="82" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">trial and error</text>
+      <text x="530" y="115" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">try action</text>
+      <text x="530" y="132" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">get reward</text>
+      <text x="530" y="149" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">improve</text>
+    </g>
+  </svg>
+</Figure>
+
 ### 1. Supervised learning
 You give the machine **examples with correct answers** (labels). It learns the mapping from inputs to answers.
 
@@ -63,6 +95,27 @@ Two words you'll see constantly:
 - **Inference** — the fast, cheap step where the trained model actually does the work.
 
 Training GPT-5 took months and millions of dollars of compute. But when you type a question into ChatGPT, you're doing inference — and that takes a second.
+
+<Figure caption="The two halves of every ML system. Training is expensive and happens rarely; inference is cheap and happens constantly.">
+  <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "640px", height: "auto" }} role="img" aria-label="Training vs inference">
+    {/* Training side */}
+    <rect x="20" y="40" width="260" height="100" rx="10" fill="rgb(107 114 128)" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.3" />
+    <text x="150" y="64" textAnchor="middle" fontSize="12" fontWeight="700" fill="currentColor">TRAINING</text>
+    <text x="150" y="92" textAnchor="middle" fontSize="11" fillOpacity="0.75" fill="currentColor">billions of examples</text>
+    <text x="150" y="110" textAnchor="middle" fontSize="11" fillOpacity="0.75" fill="currentColor">weeks or months</text>
+    <text x="150" y="128" textAnchor="middle" fontSize="11" fillOpacity="0.75" fill="currentColor">$ millions of compute</text>
+    {/* Arrow */}
+    <path d="M290 90 L350 90" stroke="rgb(22 163 74)" strokeWidth="2" fill="none" />
+    <path d="M344 84 L354 90 L344 96" stroke="rgb(22 163 74)" strokeWidth="2" fill="none" />
+    <text x="320" y="80" textAnchor="middle" fontSize="10" fontFamily="monospace" fill="rgb(22 163 74)">model</text>
+    {/* Inference side */}
+    <rect x="360" y="40" width="260" height="100" rx="10" fill="rgb(22 163 74)" fillOpacity="0.08" stroke="rgb(22 163 74)" strokeOpacity="0.4" />
+    <text x="490" y="64" textAnchor="middle" fontSize="12" fontWeight="700" fill="rgb(22 163 74)">INFERENCE</text>
+    <text x="490" y="92" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">one prompt</text>
+    <text x="490" y="110" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">seconds</text>
+    <text x="490" y="128" textAnchor="middle" fontSize="11" fillOpacity="0.85" fill="currentColor">fractions of a cent</text>
+  </svg>
+</Figure>
 
 <Callout type="tip">
 **Useful mental model:** training is like writing a textbook. Inference is like flipping through a textbook you already have. The writing is slow, the flipping is fast.

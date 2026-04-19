@@ -20,6 +20,60 @@ A workflow that runs every morning and:
 
 By the end you'll have the production pattern you'll use for the next five years of your career: **workflow for structure, agent for the fuzzy step, MCP for real-world I/O, human-in-the-loop for anything destructive.**
 
+<Figure caption="The full triage pipeline. Deterministic graph (solid arrows) with a ReAct agent inside the research node, an MCP-style tool call at post time, and a human gate between drafting and posting.">
+  <svg viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "680px", height: "auto" }} role="img" aria-label="Triage pipeline architecture">
+    {/* GitHub source */}
+    <rect x="20" y="150" width="120" height="44" rx="6" fill="rgb(107 114 128)" fillOpacity="0.15" stroke="currentColor" strokeOpacity="0.4" />
+    <text x="80" y="170" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">GitHub</text>
+    <text x="80" y="186" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">open issues</text>
+    <path d="M 140 172 L 170 172" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#ar)" />
+    {/* classify */}
+    <rect x="170" y="150" width="120" height="44" rx="6" fill="rgb(59 130 246)" fillOpacity="0.12" stroke="rgb(59 130 246)" strokeOpacity="0.5" />
+    <text x="230" y="170" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">classify</text>
+    <text x="230" y="186" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">LLM step</text>
+    {/* spam branch */}
+    <path d="M 230 194 L 230 230" stroke="rgb(234 88 12)" strokeOpacity="0.6" strokeWidth="1.5" />
+    <text x="240" y="212" fontSize="10" fontFamily="monospace" fill="rgb(234 88 12)">spam → END</text>
+    {/* to research */}
+    <path d="M 290 172 L 320 172" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#ar)" />
+    {/* research — dashed to show it's agent */}
+    <rect x="320" y="150" width="140" height="44" rx="6" fill="rgb(139 92 246)" fillOpacity="0.12" stroke="rgb(139 92 246)" strokeOpacity="0.6" strokeDasharray="5 3" />
+    <text x="390" y="170" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">research</text>
+    <text x="390" y="186" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">ReAct agent</text>
+    {/* Agent uses tool — callout */}
+    <path d="M 390 150 L 390 100" stroke="rgb(139 92 246)" strokeOpacity="0.4" strokeDasharray="3 3" strokeWidth="1" />
+    <rect x="310" y="60" width="160" height="38" rx="6" fill="rgb(139 92 246)" fillOpacity="0.08" stroke="rgb(139 92 246)" strokeOpacity="0.4" />
+    <text x="390" y="78" textAnchor="middle" fontSize="11" fill="currentColor">search_closed_issues</text>
+    <text x="390" y="92" textAnchor="middle" fontSize="9" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">MCP tool call</text>
+    <path d="M 460 172 L 490 172" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#ar)" />
+    {/* draft */}
+    <rect x="490" y="150" width="120" height="44" rx="6" fill="rgb(59 130 246)" fillOpacity="0.12" stroke="rgb(59 130 246)" strokeOpacity="0.5" />
+    <text x="550" y="170" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">draft</text>
+    <text x="550" y="186" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">LLM step</text>
+    {/* Human gate */}
+    <path d="M 550 194 L 550 230" stroke="rgb(234 88 12)" strokeOpacity="0.7" strokeWidth="2" strokeDasharray="4 3" />
+    <rect x="480" y="230" width="140" height="42" rx="6" fill="rgb(234 88 12)" fillOpacity="0.12" stroke="rgb(234 88 12)" strokeOpacity="0.6" />
+    <text x="550" y="248" textAnchor="middle" fontSize="12" fontWeight="700" fill="rgb(234 88 12)">⏸  HUMAN</text>
+    <text x="550" y="264" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.75" fill="rgb(234 88 12)">approve · edit · skip</text>
+    {/* resume → post */}
+    <path d="M 480 251 Q 400 275 230 275" stroke="rgb(22 163 74)" strokeOpacity="0.5" strokeWidth="1.5" fill="none" markerEnd="url(#arg)" />
+    <text x="330" y="294" fontSize="10" fontFamily="monospace" fill="rgb(22 163 74)">resume</text>
+    {/* post */}
+    <rect x="170" y="270" width="120" height="44" rx="6" fill="rgb(22 163 74)" fillOpacity="0.15" stroke="rgb(22 163 74)" strokeOpacity="0.55" />
+    <text x="230" y="290" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">post_comment</text>
+    <text x="230" y="306" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">MCP tool call</text>
+    {/* Checkpoint note */}
+    <rect x="20" y="270" width="130" height="44" rx="6" fill="rgb(107 114 128)" fillOpacity="0.1" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="4 3" />
+    <text x="85" y="288" textAnchor="middle" fontSize="11" fill="currentColor">SQLite checkpoint</text>
+    <text x="85" y="304" textAnchor="middle" fontSize="9" fontFamily="monospace" fillOpacity="0.55" fill="currentColor">every state persisted</text>
+    <path d="M 150 292 L 170 292" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="2 2" />
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10" fill="currentColor" fillOpacity="0.6" /></marker>
+      <marker id="arg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10" fill="rgb(22 163 74)" /></marker>
+    </defs>
+  </svg>
+</Figure>
+
 <Callout type="info">
 **This is not a toy.** Strip the GitHub-specific parts out and you have the template for any business process — support ticket triage, sales-lead routing, content moderation queues. Same bones.
 </Callout>
