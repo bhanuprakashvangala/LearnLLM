@@ -40,9 +40,10 @@ export function isFreeLessonSlug(slug: string): boolean {
 }
 
 // Check if user can access specific difficulty level
-export function canAccessDifficulty(user: UserAccess | null, difficulty: Difficulty, slug?: string): boolean {
-  // The first beginner lesson is always free for everyone
-  if (slug && isFreeLessonSlug(slug)) {
+export function canAccessDifficulty(user: UserAccess | null, difficulty: Difficulty, _slug?: string): boolean {
+  // Beginner content is fully open — anyone can read without signing up.
+  // This is the top-of-funnel; we want people to see the quality before gating.
+  if (difficulty === "BEGINNER") {
     return true;
   }
 
@@ -51,7 +52,7 @@ export function canAccessDifficulty(user: UserAccess | null, difficulty: Difficu
     return hasProAccess(user);
   }
 
-  // Beginner and Intermediate require login (any plan)
+  // Intermediate requires a (free) login
   return isLoggedIn(user);
 }
 
