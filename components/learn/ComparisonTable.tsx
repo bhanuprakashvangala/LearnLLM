@@ -19,7 +19,7 @@ interface ComparisonTableProps {
   title?: string;
 }
 
-export function ComparisonTable({ columns, rows, title }: ComparisonTableProps) {
+export function ComparisonTable({ columns = [], rows = [], title }: ComparisonTableProps) {
   const renderValue = (value: string | boolean | "partial") => {
     if (typeof value === "boolean") {
       return value ? (

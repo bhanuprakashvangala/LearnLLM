@@ -17,7 +17,7 @@ interface QuizProps {
   questions: QuizQuestion[];
 }
 
-export function Quiz({ title = "Knowledge Check", questions }: QuizProps) {
+export function Quiz({ title = "Knowledge Check", questions = [] }: QuizProps) {
   const [currentQuestion, setCurrentQuestion] = React.useState(0);
   const [selectedAnswer, setSelectedAnswer] = React.useState<number | null>(null);
   const [showResult, setShowResult] = React.useState(false);
