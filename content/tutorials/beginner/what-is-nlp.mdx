@@ -1,0 +1,76 @@
+---
+title: "What is NLP? Teaching Computers to Read"
+description: "Before LLMs, tokens, or embeddings — the one problem that started it all: getting a computer to understand human language."
+difficulty: "beginner"
+duration: 10
+order: 1
+tags: ["NLP", "Foundations", "Beginner"]
+---
+
+## The problem nobody noticed for fifty years
+
+Computers are really good at numbers. Ask a computer to multiply 4,721,903 by 8,112 and you get an answer in a microsecond. Ask a computer to read a sentence like *"I can't believe it's not butter"* and tell you whether the speaker is surprised, disappointed, or making a joke — and for most of computing history, the answer was: **it can't.**
+
+Language is messy. It has sarcasm, context, ambiguity, metaphor, and a thousand other things that don't map cleanly onto rules. **Natural Language Processing** (NLP) is the field of computer science devoted to getting machines to handle that mess.
+
+<Callout type="info">
+**NLP in one sentence:** teaching computers to read, understand, and generate human language.
+</Callout>
+
+## Why it's hard
+
+Consider a single English sentence:
+
+> *"The bank is on the river."*
+
+A human reads that in a quarter of a second. A computer has to answer:
+
+- Is "bank" the financial institution or the side of a river?
+- Which "river" — there are thousands.
+- Is "is on" a location, a relationship, something else?
+- Is this a statement, a warning, a real-estate ad?
+
+Multiply that by every sentence in every book, website, and tweet ever written, and you see why NLP was stuck for decades.
+
+## The stuff NLP tries to do
+
+Before Large Language Models swallowed the field, NLP was a toolbox of individual tasks:
+
+- **Classification** — is this email spam? is this review positive?
+- **Translation** — English → Spanish, Spanish → Japanese
+- **Summarization** — boil down a 20-page article
+- **Named-entity recognition** — "Paris" is a city; "Paris Hilton" is a person
+- **Question answering** — given a document, answer a question about it
+- **Speech recognition** — turn audio into text
+- **Sentiment analysis** — is the author angry, happy, sarcastic?
+
+Every one of these used to be a separate research specialty with its own algorithms. Modern LLMs do all of them with the same model. That consolidation is the big story of the last five years.
+
+## Rules, statistics, and now neural networks
+
+NLP has gone through three big eras:
+
+**Rules (1950s–1990s).** Humans wrote down the rules of language and programmed them in. *"A sentence is a noun phrase followed by a verb phrase..."* This fell apart the moment real text showed up — nobody follows the rules.
+
+**Statistics (1990s–2010s).** Instead of writing rules, count things. If the word *"great"* appears near *"movie"* in a million positive reviews, it's probably a positive signal. This worked for simple tasks but couldn't handle meaning or context well.
+
+**Neural networks (2010s–now).** Let a machine figure out the patterns itself, from enough examples. This is where things exploded. Modern LLMs are the end result of this line of work.
+
+<Callout type="tip">
+**Why this matters for you:** every concept you'll learn later — tokens, embeddings, attention, transformers — is an answer to a problem NLP was stuck on. Knowing the problem first makes the solutions stop feeling like magic.
+</Callout>
+
+## Where NLP sits today
+
+In 2026, "NLP" as a separate field is blurring into "AI" more broadly. One model can read, write, translate, summarize, and reason. The distinctions between *"NLP model"* and *"LLM"* and *"AI assistant"* have mostly collapsed.
+
+But the name sticks around, and the problems are the same. Anytime someone writes "sentiment analysis," "document classification," "text summarization" — that's NLP. It's just that now the answer to almost all of them is: *ask an LLM.*
+
+## What to take away
+
+- NLP is about teaching computers to handle human language.
+- Human language is hard because it's ambiguous, contextual, and full of exceptions.
+- The field moved from hand-written rules → counting statistics → neural networks.
+- Modern LLMs are the latest, most general tool in NLP's toolbox.
+
+Next up: **What is Machine Learning?** — the idea that lets a computer learn patterns from examples instead of following explicit rules.

@@ -1,0 +1,220 @@
+---
+title: "Project: Multi-Step Workflow with MCP + Agents"
+description: "Build a GitHub issue triage bot that reads issues, classifies them, researches similar ones, drafts replies, and pauses for human approval. MCP + LangGraph + a ReAct agent in one system."
+difficulty: "intermediate"
+duration: 50
+order: 60
+tags: ["Project", "MCP", "LangGraph", "Agents", "Workflows"]
+---
+
+## What you'll build
+
+A workflow that runs every morning and:
+
+1. Pulls open GitHub issues via an MCP connector.
+2. For each issue, classifies it (`bug`, `feature`, `question`, `spam`).
+3. If it's a bug, uses a ReAct agent to search similar closed issues for context.
+4. Drafts a reply.
+5. **Pauses** for you to approve the draft.
+6. Posts the reply via MCP.
+
+By the end you'll have the production pattern you'll use for the next five years of your career: **workflow for structure, agent for the fuzzy step, MCP for real-world I/O, human-in-the-loop for anything destructive.**
+
+<Callout type="info">
+**This is not a toy.** Strip the GitHub-specific parts out and you have the template for any business process — support ticket triage, sales-lead routing, content moderation queues. Same bones.
+</Callout>
+
+## Prerequisites
+
+- Completed the previous three lessons (MCP Connectors, AI Workflows, LangGraph).
+- A GitHub personal access token with `repo` scope.
+- An Anthropic API key.
+
+```bash
+pip install langgraph langchain-anthropic "mcp[cli]" langgraph-checkpoint-sqlite
+```
+
+## Step 1 — The GitHub MCP connector
+
+Either install the official one:
+
+```bash
+pip install mcp-github
+```
+
+…or write a tiny one. For teaching, we'll use a thin in-process wrapper so you can see every call:
+
+```python
+# github_tools.py
+import os, httpx
+from langchain_core.tools import tool
+
+GH = "https://api.github.com"
+HEADERS = {"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}"}
+
+@tool
+def list_open_issues(repo: str) -> list[dict]:
+    """List open issues in `owner/repo` format. Returns dicts with number, title, body."""
+    r = httpx.get(f"{GH}/repos/{repo}/issues?state=open", headers=HEADERS)
+    return [{"number": i["number"], "title": i["title"], "body": i["body"]}
+            for i in r.json() if "pull_request" not in i]
+
+@tool
+def search_closed_issues(repo: str, query: str) -> list[dict]:
+    """Search closed issues in `owner/repo` for `query`. Useful for finding context on similar past bugs."""
+    q = f"repo:{repo} is:issue is:closed {query}"
+    r = httpx.get(f"{GH}/search/issues?q={q}&per_page=5", headers=HEADERS)
+    return [{"number": i["number"], "title": i["title"], "url": i["html_url"]}
+            for i in r.json().get("items", [])]
+
+@tool
+def post_comment(repo: str, issue_number: int, body: str) -> str:
+    """Post a comment on an issue. Returns the comment URL."""
+    r = httpx.post(
+        f"{GH}/repos/{repo}/issues/{issue_number}/comments",
+        headers=HEADERS, json={"body": body},
+    )
+    return r.json()["html_url"]
+```
+
+In a real system, these live behind an MCP server (see the MCP Connectors lesson). The protocol boundary is the same; the workflow below wouldn't change.
+
+## Step 2 — The workflow
+
+```python
+from typing import Literal, TypedDict
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langchain_anthropic import ChatAnthropic
+
+from github_tools import list_open_issues, search_closed_issues, post_comment
+
+REPO = "bhanuprakashvangala/LearnLLM"
+llm = ChatAnthropic(model="claude-opus-4-7", temperature=0)
+agent = create_react_agent(llm, [search_closed_issues])
+
+class IssueState(TypedDict):
+    issue: dict
+    kind: Literal["bug", "feature", "question", "spam", ""]
+    context: str
+    draft: str
+
+def classify(state: IssueState) -> IssueState:
+    i = state["issue"]
+    resp = llm.invoke(
+        f"Classify this GitHub issue as 'bug', 'feature', 'question', or 'spam'. "
+        f"Reply with one word only.\n\nTitle: {i['title']}\nBody: {i['body']}"
+    )
+    return {"kind": resp.content.strip().lower()}
+
+def research(state: IssueState) -> IssueState:
+    i = state["issue"]
+    resp = agent.invoke({"messages": [("user",
+        f"Find up to 3 closed issues in {REPO} similar to: {i['title']}. "
+        f"Return just their titles and URLs."
+    )]})
+    return {"context": resp["messages"][-1].content}
+
+def draft_reply(state: IssueState) -> IssueState:
+    i = state["issue"]
+    context = state.get("context", "(none)")
+    resp = llm.invoke(
+        f"Draft a helpful reply to this {state['kind']}. "
+        f"If context is provided, reference it naturally.\n\n"
+        f"Issue: {i['title']}\n{i['body']}\n\nContext: {context}"
+    )
+    return {"draft": resp.content}
+
+def post(state: IssueState) -> IssueState:
+    url = post_comment.invoke({
+        "repo": REPO,
+        "issue_number": state["issue"]["number"],
+        "body": state["draft"],
+    })
+    print(f"Posted: {url}")
+    return {}
+
+def route_after_classify(state: IssueState) -> str:
+    if state["kind"] == "spam":
+        return END
+    if state["kind"] == "bug":
+        return "research"
+    return "draft"
+```
+
+## Step 3 — Wire it up, with a human gate
+
+```python
+graph = StateGraph(IssueState)
+graph.add_node("classify", classify)
+graph.add_node("research", research)
+graph.add_node("draft", draft_reply)
+graph.add_node("post", post)
+
+graph.set_entry_point("classify")
+graph.add_conditional_edges("classify", route_after_classify, {
+    "research": "research", "draft": "draft", END: END,
+})
+graph.add_edge("research", "draft")
+graph.add_edge("draft", "post")
+graph.add_edge("post", END)
+
+checkpointer = SqliteSaver.from_conn_string("triage.sqlite")
+app = graph.compile(checkpointer=checkpointer, interrupt_before=["post"])
+```
+
+`interrupt_before=["post"]` is the critical line. The graph pauses *right before* `post` runs. You inspect `state["draft"]`, edit it if you want, then resume.
+
+## Step 4 — The loop
+
+```python
+for issue in list_open_issues.invoke({"repo": REPO}):
+    config = {"configurable": {"thread_id": f"issue-{issue['number']}"}}
+
+    # Run until interrupt
+    app.invoke({"issue": issue, "kind": "", "context": "", "draft": ""}, config)
+
+    state = app.get_state(config)
+    if state.next == ():  # graph finished (spam, etc.)
+        continue
+
+    print(f"\n#{issue['number']} — {issue['title']}")
+    print(f"Kind: {state.values['kind']}")
+    print(f"\nDraft reply:\n{state.values['draft']}\n")
+
+    action = input("(p)ost / (e)dit / (s)kip? ").strip().lower()
+    if action == "s":
+        continue
+    if action == "e":
+        new = input("New draft: ")
+        app.update_state(config, {"draft": new})
+
+    # Resume — runs `post`
+    app.invoke(None, config)
+```
+
+Run it. You'll see each issue fly through the graph, pause for your decision, and resume.
+
+## What makes this production-ready
+
+Everything you're used to in infra:
+
+- **Idempotent** — the SQLite checkpoint means resuming from a crash picks up at the right node.
+- **Observable** — every node's input/output is in the checkpoint DB.
+- **Cheap** — classify uses 100 tokens; only bugs trigger the agent.
+- **Safe** — the human gate catches bad drafts before anything is posted publicly.
+
+## Extensions (do at least one)
+
+1. Add a second agent node that searches the codebase (via MCP filesystem connector) to ground bug replies.
+2. Swap SQLite for Postgres so multiple workers can triage in parallel.
+3. Slack: post a `@ me` message with the draft instead of a blocking CLI prompt, and resume the graph when you click approve. That turns this into an always-on service.
+
+## What you just built
+
+- A real workflow that blends deterministic control flow + an agent + MCP-style tool calls + human approval.
+- The checkpointing pattern that makes pauseable, resumable pipelines possible.
+- The same skeleton you'll use for every production workflow going forward.
+
+Scale up: you now know enough to ship the stuff that actually runs in 2026. The rest of the curriculum is depth — MoE, fine-tuning, production deployment, evaluation — on top of this foundation.

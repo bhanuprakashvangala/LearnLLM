@@ -1,0 +1,98 @@
+---
+title: "How Computers Turn Words Into Numbers (Embeddings)"
+description: "Neural networks can only eat numbers. So how does text get in? The answer — embeddings — is one of the most beautiful ideas in all of AI."
+difficulty: "beginner"
+duration: 12
+order: 4
+tags: ["Embeddings", "Vectors", "Foundations", "Beginner"]
+---
+
+## The awkward problem
+
+Neural networks do math on numbers. Language is words. Words aren't numbers.
+
+So if you want a neural network to read *"the cat sat on the mat,"* you have to turn that sentence into numbers first. The question is: **which numbers?**
+
+## The naive idea, and why it breaks
+
+The first thing you might try: give every word an ID.
+
+```
+"cat" → 1
+"dog" → 2
+"house" → 3
+"mat" → 4
+"the" → 5
+...
+```
+
+It works, kind of. But it has a huge problem: the numbers don't mean anything. `cat = 1` and `dog = 2` look close; `cat = 1` and `mat = 4` look far. But in reality, *cat* and *dog* are similar (both pets) while *cat* and *mat* are unrelated.
+
+The network has no way to know that. All it sees is arbitrary IDs.
+
+<Callout type="info">
+What we actually want: numbers where **"close in number" means "close in meaning."**
+</Callout>
+
+## Enter the embedding
+
+An **embedding** is a clever way to turn every word into a list of numbers — usually a few hundred to a few thousand of them — so that *similar words land near each other.*
+
+Picture a huge 3D map where:
+- "cat" sits somewhere.
+- "dog" sits nearby, because they're both pets.
+- "kitten" sits right next to "cat."
+- "refrigerator" sits miles away.
+
+Now picture that, but with 768 dimensions instead of 3. (Humans can't visualize 768 dimensions, which is fine — the computer can.)
+
+That list of 768 numbers is the **embedding** of the word. It's a point in a very high-dimensional space, and its location encodes meaning.
+
+<Callout type="tip">
+Every modern AI model — LLMs, search engines, recommendation systems — runs on embeddings under the hood. This is the idea that makes it all work.
+</Callout>
+
+## Where do the numbers come from?
+
+Nobody writes them down by hand. The model **learns** them during training, using the machine-learning trick from the last lesson:
+
+1. Start with random numbers for every word.
+2. Show the model a lot of text.
+3. Every time two words appear near each other, nudge their embeddings a little closer.
+4. Every time they don't, push them a little apart.
+5. Repeat a trillion times.
+
+By the end, the geometry of the embedding space quietly captures an enormous amount of language. Famously:
+
+```
+embedding("king") - embedding("man") + embedding("woman") ≈ embedding("queen")
+```
+
+You can do arithmetic on meaning. Nobody explicitly taught it this. It fell out of seeing enough text.
+
+## Beyond single words
+
+Modern LLMs embed more than just words — they embed **tokens** (you'll learn those next lesson — think "word fragments"), and they build **embeddings for whole sentences, paragraphs, images, and audio** too.
+
+When you ask an LLM to find *"documents similar to this one,"* or a search engine to find *"images that look like this,"* or a music app to recommend *"songs with this vibe,"* it's comparing embeddings. The math is always the same: how close are these two points in high-dimensional space?
+
+## Why this is the key that unlocks LLMs
+
+Once you can turn any piece of language into an embedding:
+
+- Neural networks can process it, because they eat numbers.
+- You can compare meanings by measuring distances.
+- You can store embeddings in a database and do semantic search.
+- You can cluster similar content, recommend related things, detect duplicates, translate.
+
+Every pipeline you'll build later — RAG systems, semantic search, chatbots with memory — rests on this one trick.
+
+## What to take away
+
+- Neural networks need numbers; language is words; embeddings bridge the gap.
+- An embedding is a list of numbers (a vector) representing a word, sentence, or document.
+- Embeddings are learned so that **similar meaning ≈ nearby vectors**.
+- Arithmetic in embedding space can capture relationships like king − man + woman ≈ queen.
+- Everything downstream — search, RAG, recommendations, LLMs themselves — runs on embeddings.
+
+Next: **From RNNs to Transformers** — the architectural leap that made LLMs possible.

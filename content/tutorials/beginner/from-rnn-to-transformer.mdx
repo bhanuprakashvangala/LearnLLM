@@ -1,0 +1,100 @@
+---
+title: "From RNNs to Transformers: The Big Idea"
+description: "One change in 2017 turned AI from clumsy translators into ChatGPT, Claude, and every LLM you've used. Here's what actually changed, without the math."
+difficulty: "beginner"
+duration: 15
+order: 5
+tags: ["Transformers", "Attention", "RNN", "Foundations", "Beginner"]
+---
+
+## How AI used to read
+
+Before 2017, the best way to read a sentence with a neural network was to go **word by word**, left to right, like a person slowly reading aloud.
+
+The architecture that did this was called an **RNN** (Recurrent Neural Network). Each time it read a word, it updated a small "memory" and passed that memory along to the next step. By the end of the sentence, the memory theoretically contained the whole meaning.
+
+This worked — sort of — but it had two fatal flaws:
+
+1. **Forgetting.** By the time the RNN got to word 50, it had already half-forgotten word 1. Long sentences were rough. Whole paragraphs were hopeless.
+2. **Slow.** Because you had to finish word 1 before you could start word 2, there was no way to parallelize. GPUs were wasted.
+
+Translation models using RNNs were decent but plateaued. Everyone knew something had to change.
+
+## The 2017 paper
+
+In June 2017, eight researchers at Google published a paper with a famously cheeky title:
+
+> *"Attention Is All You Need."*
+
+It introduced a new architecture called the **Transformer**. It had one big insight: *stop reading word by word. Look at the whole sentence at once, and let the model figure out which words matter for which.*
+
+That "figuring out which words matter" is the operation called **attention**, and it is the beating heart of every LLM today.
+
+<Callout type="info">
+**"Attention"** means: for each word, calculate how much every other word in the sentence matters for understanding this one.
+</Callout>
+
+## A worked example
+
+Take the sentence:
+
+> *"The cat sat on the mat because **it** was soft."*
+
+What does *"it"* refer to? A human reads the sentence and instantly knows: the mat. (A cat being soft isn't what the sentence is about.)
+
+An RNN, reading left to right, has to guess based on what it remembers of earlier words — and might get it wrong.
+
+A transformer, when it processes the word *"it,"* simultaneously looks at *every* other word in the sentence and computes a score: *how much does each word matter for understanding "it"?* It discovers that *"mat"* and *"soft"* score high. Problem solved.
+
+This happens for every word at once, not sequentially. Which brings us to the second win:
+
+## Parallelism changes everything
+
+Because the transformer looks at the whole input at once, it can be processed in parallel on a GPU. Suddenly you could train vastly larger models in the same amount of time. And when you trained vastly larger models on vastly more data, they got vastly better.
+
+That's the real story of the last eight years. The transformer didn't just work *better* — it scaled better. Throw more data and more compute at an RNN, and it plateaus. Throw more data and more compute at a transformer, and it keeps getting smarter.
+
+Hence GPT-5, Claude 4.7, Gemini 2.5 — all transformers, all scaled up enormously.
+
+## What's inside (at a 10,000-foot view)
+
+A transformer is built from two basic pieces stacked in layers:
+
+1. **Attention** — the mechanism we just described: every token looks at every other token and decides what's relevant.
+2. **Feed-forward** — a short neural network that processes each token's result independently.
+
+Stack a dozen of these. Train on trillions of tokens. You get an LLM.
+
+<Callout type="tip">
+**If you remember one thing from this lesson:** *attention lets every word look at every other word, in parallel.* Everything else is engineering.
+</Callout>
+
+## Encoders, decoders, and what-now
+
+You'll bump into three transformer flavors. Don't panic — the names describe which half of the original architecture they keep:
+
+- **Encoder-only** (BERT, RoBERTa) — reads and understands text. Used for classification, search, embeddings.
+- **Decoder-only** (GPT, Claude, Llama) — generates text one token at a time. This is what ChatGPT and friends are.
+- **Encoder-decoder** (T5, original translation models) — reads one thing, writes another. Used for translation and summarization.
+
+The decoder-only flavor — the one that generates — turned out to be the winner for general-purpose AI. That's why every modern LLM you use is decoder-only at heart.
+
+## Why this lesson is the hinge
+
+Everything else in this curriculum — prompt engineering, RAG, agents, fine-tuning, MCP — sits on top of the transformer. You will never have to implement one. But you should know that:
+
+- Every token is a point in embedding space (last lesson).
+- Transformers decide how tokens relate to each other via attention.
+- Stacking many layers of attention + feed-forward = a modern LLM.
+
+When someone says *"the model attended to that part of the prompt,"* or *"context window,"* or *"quadratic attention cost,"* they are referring to this architecture. Now you know what they mean.
+
+## What to take away
+
+- RNNs read sequentially and forgot things. Transformers read everything at once.
+- **Attention** is the mechanism: each token looks at every other token and weights their relevance.
+- Parallelism lets transformers scale in ways RNNs never could.
+- Three flavors: encoder (understand), decoder (generate), encoder-decoder (translate).
+- Every modern LLM is a decoder-only transformer, just very large and very well trained.
+
+Foundations module complete. From here on, every concept — tokens, context windows, attention heads, scaling laws — builds on what you now know.

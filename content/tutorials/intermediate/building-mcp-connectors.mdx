@@ -1,0 +1,173 @@
+---
+title: "Building Your First MCP Connector"
+description: "From nothing to a working MCP server in under 80 lines. You'll build a notes connector Claude Desktop can use, and understand exactly what happens at each step."
+difficulty: "intermediate"
+duration: 30
+order: 57
+tags: ["MCP", "Connectors", "Python", "Hands-on"]
+---
+
+## What we're building
+
+A **Personal Notes** MCP connector. Claude (or any MCP-speaking client) will be able to:
+
+- **List** all your notes
+- **Read** a specific note
+- **Create** a new note
+- **Search** across all notes
+
+Notes live as `.md` files in a folder on disk. Nothing fancy. The whole server is roughly 80 lines of Python.
+
+<Callout type="info">
+**Why this example?** It's the smallest thing that shows off all three MCP surface types (tools, resources, prompts) and actually feels useful. You'll use this as a template.
+</Callout>
+
+## Prerequisites
+
+```bash
+pip install "mcp[cli]>=1.0"
+```
+
+You also need a client that speaks MCP. The fastest path is **Claude Desktop** (free) — it has a config file that tells it which connectors to load on startup.
+
+## The code
+
+Create `notes_server.py`:
+
+```python
+from pathlib import Path
+from mcp.server.fastmcp import FastMCP
+
+NOTES_DIR = Path.home() / "notes"
+NOTES_DIR.mkdir(exist_ok=True)
+
+mcp = FastMCP("notes")
+
+@mcp.tool()
+def list_notes() -> list[str]:
+    """List all note filenames."""
+    return [p.name for p in NOTES_DIR.glob("*.md")]
+
+@mcp.tool()
+def read_note(name: str) -> str:
+    """Read the contents of a note by filename."""
+    path = NOTES_DIR / name
+    if not path.exists():
+        return f"Note '{name}' not found."
+    return path.read_text()
+
+@mcp.tool()
+def create_note(name: str, content: str) -> str:
+    """Create a new note. `name` should end with .md."""
+    if not name.endswith(".md"):
+        name += ".md"
+    path = NOTES_DIR / name
+    path.write_text(content)
+    return f"Created {name}"
+
+@mcp.tool()
+def search_notes(query: str) -> list[dict]:
+    """Search across all notes. Returns matching filenames and snippets."""
+    results = []
+    q = query.lower()
+    for path in NOTES_DIR.glob("*.md"):
+        text = path.read_text()
+        if q in text.lower():
+            idx = text.lower().index(q)
+            snippet = text[max(0, idx - 40):idx + 80]
+            results.append({"name": path.name, "snippet": snippet})
+    return results
+
+@mcp.prompt()
+def summarize_week() -> str:
+    """Prompt template: summarize this week's notes."""
+    return "Read all my notes from the past 7 days and write a concise weekly summary."
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+That's the whole server. Four tools, one prompt template. Let's go through what's happening.
+
+## What each piece does
+
+**`FastMCP("notes")`** — creates an MCP server named `notes`. Clients will see this name.
+
+**`@mcp.tool()`** — decorator that exposes a function as an MCP tool. The function's docstring becomes the tool description the LLM reads to decide whether to call it. Function parameters become the tool's input schema.
+
+**`@mcp.prompt()`** — exposes a reusable prompt template. Users can pick it from a menu in the client.
+
+**`mcp.run()`** — starts the server. By default it uses stdio transport — it reads JSON-RPC requests from stdin and writes responses to stdout.
+
+<Callout type="tip">
+**This is why MCP is so small to implement.** The FastMCP helper turns your Python functions into a spec-compliant server with about one line per tool.
+</Callout>
+
+## Wiring it into Claude Desktop
+
+Open Claude Desktop's config file:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add your server:
+
+```json
+{
+  "mcpServers": {
+    "notes": {
+      "command": "python",
+      "args": ["/absolute/path/to/notes_server.py"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. You should see a **🔌** icon in the chat input — click it and your `notes` connector should show up with its four tools.
+
+Now try:
+
+> *"What notes do I have?"*
+
+Claude will call `list_notes()`, see the result, and tell you.
+
+> *"Create a note called 'meeting-prep.md' with the following…"*
+
+Claude will call `create_note(name, content)` with the right arguments. You just watch.
+
+## How to debug
+
+Two tools you'll use constantly:
+
+1. **`mcp dev notes_server.py`** — opens the MCP Inspector in your browser. You can manually call every tool and see what the LLM would see. Essential when something doesn't work.
+2. **Claude Desktop logs** — stored at the standard Claude log path; every tool call and error shows up there.
+
+## Going beyond stdio
+
+The stdio transport is great for local connectors. For remote or shared ones (e.g., a company-wide GitHub connector), use the **HTTP + SSE** transport:
+
+```python
+if __name__ == "__main__":
+    mcp.run(transport="sse", host="0.0.0.0", port=8000)
+```
+
+Clients authenticate via OAuth or API keys. Same protocol, different wire.
+
+## Design tips that matter
+
+A few hard-won patterns:
+
+- **Good docstrings = good tool calls.** The LLM only sees the docstring to decide when to call a tool. Be specific. Mention constraints ("`name` must be an existing note").
+- **Return structured data.** Dicts and lists, not prose. The LLM can read structure; long paragraphs get lost.
+- **Keep tools narrow.** `create_note` is better than `manage_note(action, ...)`. The LLM chooses tools by name and description — narrow names win.
+- **Never do destructive things silently.** If a tool deletes data, make the LLM confirm explicitly.
+
+## What you just learned
+
+- An MCP connector is a small program that exposes tools, resources, and prompts over a standard protocol.
+- `FastMCP` reduces server scaffolding to a decorator per tool.
+- Any MCP-speaking client (Claude Desktop, Cursor, Claude Code, custom agents) can use your server without modification.
+- Debug with the MCP Inspector; ship with stdio for local use, HTTP+SSE for remote.
+- Tool design quality — docstrings, return types, scope — is what separates a connector your LLM uses well from one it ignores.
+
+Next: **AI Workflows** — how to string LLM calls (and MCP tool calls) into reliable multi-step processes.

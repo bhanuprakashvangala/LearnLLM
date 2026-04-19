@@ -1,0 +1,74 @@
+---
+title: "Deep Learning & Neural Networks, No Math"
+description: "Neural networks are less mysterious than they sound. Here's the idea in plain language — the one explanation you need before anything LLM-related makes sense."
+difficulty: "beginner"
+duration: 15
+order: 3
+tags: ["Deep Learning", "Neural Networks", "Foundations", "Beginner"]
+---
+
+## A neural network is a stack of filters
+
+Forget the brain analogy for a minute. Neural networks are *not* how the brain works. A better way to picture them:
+
+Imagine you pour a messy input — a blurry photo, a sentence, a recording — through a stack of filters. Each filter pulls out some pattern. The first filter might notice edges. The next filter combines edges into shapes. The next combines shapes into objects. By the end of the stack, the computer has gone from *"pile of pixels"* to *"this is a golden retriever."*
+
+That's a neural network. A **stack of layers**, each one transforming the input a little more abstractly than the last.
+
+<Callout type="info">
+**Deep learning** just means: *use a lot of layers.* "Deep" literally refers to how many layers you stack. Modern LLMs have dozens to hundreds.
+</Callout>
+
+## The one idea behind it
+
+Each layer is made of **neurons** — and a neuron is surprisingly dumb. It takes some numbers in, multiplies them by some weights, adds them up, and spits out one number. That's all.
+
+What makes it work: there are *millions* of these tiny, dumb neurons. Their weights (the numbers they multiply by) start out random. Then, during training:
+
+1. Feed the network an example.
+2. Compare its guess to the right answer.
+3. Slightly nudge every weight in the direction that would have made the guess better.
+4. Repeat billions of times.
+
+That's it. That's the algorithm. It's called **backpropagation + gradient descent**, and it's been powering the entire AI revolution.
+
+<Callout type="tip">
+You don't need to understand the math. You need to understand the shape: *random network → feed it examples → nudge weights → eventually it's good.*
+</Callout>
+
+## Why "deep" matters
+
+For decades, neural networks were small — a few layers — and they didn't work that well. Two things changed in the 2010s:
+
+1. **Data** — the internet gave us billions of labeled examples for free.
+2. **Hardware** — GPUs made it possible to train massive networks in reasonable time.
+
+Suddenly, people could stack dozens of layers and train them on huge datasets. Performance on image recognition, speech, and translation jumped past what any hand-written program could do. That was the **deep learning** breakthrough, roughly 2012.
+
+Every AI system you care about today — LLMs, image generators, speech models, self-driving — is deep learning.
+
+## Different shapes for different jobs
+
+Not all neural networks look the same. There are architectures tailored to different kinds of data:
+
+- **CNNs (Convolutional Neural Networks)** — good at images. They scan small patches and build up from there.
+- **RNNs (Recurrent Neural Networks)** — used to be good at sequences (language, time series). They read one token at a time, remembering a little. Mostly replaced by transformers now.
+- **Transformers** — the architecture that powers every modern LLM. They look at the whole input at once and figure out which parts relate to which other parts. You'll learn this one in detail soon.
+
+## Why LLMs are "just" deep learning
+
+Here's the reveal: **an LLM is a deep neural network.** A really, really big one, trained on an enormous amount of text. That's not a metaphor — that's literally the whole thing.
+
+GPT-5, Claude 4.7, Gemini 2.5 — all neural networks built on the transformer architecture, trained by nudging billions of weights based on trillions of examples from the internet.
+
+Everything else — fine-tuning, RLHF, agents, RAG, prompting — is built on top of that one idea.
+
+## What to take away
+
+- A neural network is a stack of layers that transforms input step by step.
+- "Deep" means "lots of layers." That's it.
+- Training = show examples, nudge the weights, repeat billions of times.
+- Different architectures (CNN, RNN, transformer) are tuned to different kinds of data.
+- LLMs are deep neural networks — just very big ones, built on transformers.
+
+Next: **How Computers Turn Words Into Numbers** — the bridge that lets text flow through these networks in the first place.

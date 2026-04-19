@@ -1,0 +1,175 @@
+---
+title: "LangGraph: Stateful AI Workflows"
+description: "LangGraph is a graph of nodes (code or LLMs) connected by edges, with a shared state object. Sounds bookish; here's how it actually looks in code."
+difficulty: "intermediate"
+duration: 25
+order: 59
+tags: ["LangGraph", "LangChain", "Workflows", "Python"]
+---
+
+## The mental model
+
+LangGraph is three things:
+
+1. **A typed state** — a dict (or Pydantic model) that every node can read and write.
+2. **Nodes** — Python functions. Some call LLMs, some don't. Each returns a partial update to the state.
+3. **Edges** — the wiring. Which node runs next? Can be hardcoded, or decided by a function looking at the state.
+
+Put another way: you're defining a directed graph where nodes modify a shared blob of state.
+
+<Callout type="info">
+**Why this is powerful:** the graph is explicit — you can visualize it, test each node in isolation, and reason about control flow. The LLM is just a fancy node. No mystery.
+</Callout>
+
+## Install
+
+```bash
+pip install langgraph langchain-anthropic
+export ANTHROPIC_API_KEY=...
+```
+
+## A minimal example: bug-report triage
+
+We want a workflow that takes a raw bug report and:
+
+1. Classifies it (`bug`, `feature-request`, or `question`).
+2. If it's a bug, extracts a minimal reproduction.
+3. If it's a feature request, rewrites it as a user story.
+4. If it's a question, drafts a reply.
+
+Perfect candidate for **routing**.
+
+```python
+from typing import Literal, TypedDict
+from langgraph.graph import StateGraph, END
+from langchain_anthropic import ChatAnthropic
+
+llm = ChatAnthropic(model="claude-opus-4-7", temperature=0)
+
+class State(TypedDict):
+    text: str
+    kind: Literal["bug", "feature", "question", ""]
+    output: str
+
+def classify(state: State) -> State:
+    resp = llm.invoke(
+        f"Classify this message as 'bug', 'feature', or 'question'. "
+        f"Reply with one word only.\n\n{state['text']}"
+    )
+    return {"kind": resp.content.strip().lower()}
+
+def handle_bug(state: State) -> State:
+    resp = llm.invoke(
+        f"Extract a minimal reproduction from this bug report:\n\n{state['text']}"
+    )
+    return {"output": resp.content}
+
+def handle_feature(state: State) -> State:
+    resp = llm.invoke(
+        f"Rewrite this as a user story ('As a X, I want Y so that Z'):\n\n{state['text']}"
+    )
+    return {"output": resp.content}
+
+def handle_question(state: State) -> State:
+    resp = llm.invoke(f"Draft a helpful reply to:\n\n{state['text']}")
+    return {"output": resp.content}
+
+def route(state: State) -> str:
+    return {"bug": "bug", "feature": "feature", "question": "question"}.get(
+        state["kind"], "question"
+    )
+```
+
+## Wiring the graph
+
+```python
+graph = StateGraph(State)
+graph.add_node("classify", classify)
+graph.add_node("bug", handle_bug)
+graph.add_node("feature", handle_feature)
+graph.add_node("question", handle_question)
+
+graph.set_entry_point("classify")
+graph.add_conditional_edges("classify", route, {
+    "bug": "bug",
+    "feature": "feature",
+    "question": "question",
+})
+graph.add_edge("bug", END)
+graph.add_edge("feature", END)
+graph.add_edge("question", END)
+
+app = graph.compile()
+```
+
+## Running it
+
+```python
+result = app.invoke({
+    "text": "The export button is gray and doesn't do anything when clicked.",
+    "kind": "",
+    "output": "",
+})
+print(result["kind"])    # → "bug"
+print(result["output"])  # → "Steps to reproduce:\n1. ..."
+```
+
+That's it. You've built a routing workflow in under 60 lines. It's deterministic at the graph level (you know exactly which nodes run), but uses the LLM where judgment is required.
+
+## Adding an agent as a sub-node
+
+Here's where LangGraph earns its keep. You can drop an entire ReAct agent *into a single node*, then have the rest of your graph handle the deterministic parts.
+
+```python
+from langgraph.prebuilt import create_react_agent
+
+tools = [...]  # MCP tools, web search, whatever
+agent = create_react_agent(llm, tools)
+
+def research_node(state: State) -> State:
+    resp = agent.invoke({"messages": [("user", state["text"])]})
+    return {"output": resp["messages"][-1].content}
+```
+
+Plug `research_node` into your graph like any other node. The agent handles the open-ended research sub-task; the rest of your workflow stays predictable.
+
+<Callout type="tip">
+**This is the pattern that wins in production:** workflow for structure, agent for the one fuzzy step that needs improvisation.
+</Callout>
+
+## Streaming, checkpoints, human-in-the-loop
+
+LangGraph supports three things that turn toys into products:
+
+**Streaming.** `app.stream(inputs)` yields partial results as each node finishes. You can display progress.
+
+**Checkpointing.** Pass a `SqliteSaver` or `PostgresSaver` when compiling, and every state transition is persisted. You can pause a workflow mid-run and resume later.
+
+**Human-in-the-loop.** Mark a node as interruptable. The graph pauses there; a human approves or edits the state; the graph resumes. Critical for destructive actions.
+
+```python
+app = graph.compile(
+    checkpointer=PostgresSaver(...),
+    interrupt_before=["send_email"],
+)
+```
+
+You're now running a workflow that can be paused for a human approval before sending an email, and resumed days later without losing state. That's a real product.
+
+## When LangGraph is wrong for you
+
+- **Stateless one-shot prompts.** Just call the LLM. Don't build a graph.
+- **RAG with no orchestration.** LlamaIndex or plain retrieval code is simpler.
+- **Tiny scripts.** LangGraph adds ceremony; sometimes a script is enough.
+
+Use it when you have ≥3 steps, branching logic, or need persistence. Don't use it to impress yourself.
+
+## What to take away
+
+- LangGraph = typed state + nodes + edges. A Python-native workflow framework.
+- Nodes are plain functions; LLM calls are just one flavor of node.
+- Conditional edges handle routing; `END` finishes the graph.
+- Agents fit inside workflow nodes when you need dynamic decision-making.
+- Checkpoints + interrupts turn a demo into a pauseable, resumable product.
+
+Next: the project — **Multi-Step Workflow with MCP + Agents**. Putting all of this together.

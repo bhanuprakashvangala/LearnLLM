@@ -1,0 +1,141 @@
+---
+title: "AI Workflows: Beyond Simple Chat"
+description: "Agents are flashy; workflows are what actually run in production. Learn the difference, the three workflow patterns you'll use constantly, and when to pick which."
+difficulty: "intermediate"
+duration: 20
+order: 58
+tags: ["Workflows", "Agents", "Orchestration", "Patterns"]
+---
+
+## Agent vs workflow — the distinction that saves your production system
+
+In late 2024, Anthropic published an internal note that got widely quoted: *"Don't build an agent when a workflow will do."* It's still the single best advice in this field.
+
+Here's the distinction:
+
+- A **workflow** is a predetermined pipeline. The LLM runs at specific steps; the control flow is code. Predictable, debuggable, cheap.
+- An **agent** is open-ended. The LLM decides what to do next, which tool to call, when to stop. Flexible, creative, expensive, occasionally wildly wrong.
+
+<Callout type="info">
+**Rule of thumb:** if you can describe the task as a flowchart, build a workflow. If the task requires dynamic planning that you can't flowchart in advance, build an agent.
+</Callout>
+
+Almost every production LLM system is a workflow. Agents are the exception, not the default.
+
+## The three workflow patterns you'll actually use
+
+Once you start building, you'll notice the same three shapes show up over and over. Learn them and you've got 80% of real-world LLM pipelines covered.
+
+### 1. Prompt chaining
+
+Split a big task into a sequence of small, reliable LLM calls. Each step's output feeds the next.
+
+```
+extract facts → structure them → write summary → polish tone
+```
+
+Cheaper and more reliable than asking one giant prompt to do everything. Easier to debug because you can inspect each intermediate step.
+
+### 2. Routing
+
+A first LLM call classifies the input, then routes it to a specialized second prompt.
+
+```
+user message ──→ classifier ──→ { "technical"  → engineer prompt
+                                  "billing"    → billing prompt
+                                  "complaint"  → empathy prompt }
+```
+
+Huge for customer support, help desks, email triage. You get specialized handling without juggling one monster prompt.
+
+### 3. Parallelization
+
+Fan out, aggregate.
+
+```
+             ┌── LLM (safety check)
+input ──┬────┤── LLM (factuality check)   ──→ merge ──→ output
+        └────└── LLM (tone check)
+```
+
+Or: ask the same question 5 times, vote. Huge quality boost for anything where consistency matters — classification, evaluation, extraction.
+
+<Callout type="tip">
+Three LLM calls at 1000 tokens each usually beats one LLM call at 3000 tokens. The model is better at small focused jobs than one sprawling one.
+</Callout>
+
+## A fourth pattern you'll outgrow fast: naive loops
+
+Sometimes people write:
+
+```python
+while not done:
+    response = llm(prompt + history)
+    done = check_if_done(response)
+```
+
+This is a dumb-but-sometimes-useful pattern. It shades into "agent" the moment the LLM itself decides whether `done` is true. Expect it to occasionally loop forever or give up too early.
+
+If you find yourself writing one, ask: *can I replace this with a workflow where the control flow is code, not LLM output?* Usually yes.
+
+## Where workflows meet MCP
+
+Here's why you just learned MCP first: **workflow steps are often MCP tool calls.**
+
+A realistic production pipeline:
+
+1. User uploads a PDF (code step).
+2. LLM extracts entities from the PDF (prompt step).
+3. MCP `postgres.query` — look up the entities in your database (tool step).
+4. MCP `slack.send` — notify the account manager (tool step).
+5. LLM drafts a response email (prompt step).
+6. MCP `gmail.create_draft` — save the draft (tool step).
+7. Return success to the user (code step).
+
+Steps 1, 7 are code. Steps 2, 5 are LLM prompts. Steps 3, 4, 6 are MCP tool calls. That *is* a workflow — a predefined sequence stitching together code + prompts + MCP calls.
+
+## What workflows are not
+
+A few common mistakes to avoid:
+
+- **Not chains of thought.** "Chain of thought" is a prompting technique inside a single LLM call. A workflow is multiple LLM calls.
+- **Not agents.** Agents decide the control flow at runtime. Workflows have their control flow hardcoded.
+- **Not state machines in disguise.** If your workflow has 40 states with complex transitions, you actually built a state machine. That's fine, but know what you have.
+
+## How to pick a framework
+
+For Python, the main options in 2026:
+
+- **LangGraph** — state machines plus LLM nodes, built by the LangChain folks. Great for workflows that include agents as sub-steps. You'll use this in the next lesson.
+- **LlamaIndex Workflows** — event-driven workflows with a very clean API. Good for RAG-heavy pipelines.
+- **Pydantic AI** — lightweight, typed, less orchestration-heavy.
+- **DSPy** — research-flavored, optimizes prompts programmatically. Advanced.
+
+For TypeScript: **Vercel AI SDK** has decent workflow-ish primitives; most teams roll their own or use **Inngest** for long-running jobs.
+
+<Callout type="info">
+**If you're just starting:** pick LangGraph. It's the most flexible, has the biggest ecosystem, and you'll recognize its patterns in every other framework anyway.
+</Callout>
+
+## Reliability checklist
+
+Whatever framework you use, a production workflow needs:
+
+- **Retries with backoff** — LLM APIs fail; tool APIs fail more.
+- **Timeouts** — don't let a stuck call hang forever.
+- **Fallbacks** — cheap model first, expensive model on failure.
+- **Observability** — log every step's input/output; you'll need it.
+- **Idempotency** — so retries don't double-send emails or double-charge cards.
+- **Human-in-the-loop gates** — for anything destructive or high-stakes.
+
+None of these are optional. The difference between a demo and a product is these six lines of plumbing.
+
+## What to take away
+
+- Workflows = predefined pipelines; agents = dynamic control flow. Prefer workflows.
+- Three workflow patterns cover most real systems: chaining, routing, parallelization.
+- Workflows glue together code, prompts, and MCP tool calls.
+- LangGraph is the default Python framework right now.
+- Reliability is plumbing, not cleverness — retries, timeouts, observability.
+
+Next: **LangGraph: Stateful AI Workflows** — pick up the framework and build one.

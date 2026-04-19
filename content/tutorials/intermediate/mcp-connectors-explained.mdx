@@ -1,0 +1,103 @@
+---
+title: "MCP Connectors: The USB-C of AI Integration"
+description: "Before MCP, every AI tool integration was a one-off snowflake. Now there's a single protocol for giving any LLM access to any system — and it's already eating the ecosystem."
+difficulty: "intermediate"
+duration: 18
+order: 56
+tags: ["MCP", "Connectors", "Anthropic", "Integration", "Tools"]
+---
+
+## The problem MCP solves
+
+Say you're building an AI assistant that needs to:
+
+- Read files from your laptop
+- Pull issues from GitHub
+- Query a Postgres database
+- Post messages to Slack
+- Fetch calendar events
+
+Before MCP, every single one of those was a custom integration. You'd write Claude-specific tool wrappers, OpenAI-specific ones, Gemini-specific ones — and every time a new model launched, you'd redo the plumbing. Every time a new tool launched, every AI vendor had to build a new integration.
+
+It was chaos. N models × M tools = N·M integrations.
+
+## What MCP actually is
+
+The **Model Context Protocol** is an open standard, introduced by Anthropic in November 2024 and now supported by every major model vendor. It defines one way for an AI client to talk to a tool server.
+
+<Callout type="info">
+**The analogy everyone uses:** MCP is USB-C for AI. One standard plug, everything speaks it.
+</Callout>
+
+The protocol has exactly three things a server can expose:
+
+- **Tools** — functions the AI can call (e.g., `create_issue`, `send_email`)
+- **Resources** — data the AI can read (e.g., files, database records)
+- **Prompts** — reusable prompt templates with parameters
+
+That's the whole protocol surface. Simple enough to implement in an afternoon, powerful enough to wire Claude into your entire company's systems.
+
+## Connectors vs servers — the 2026 terminology shift
+
+Originally MCP talked about "MCP servers." In 2026 the term **"MCP connector"** has taken over for user-facing use, because it captures what they actually do: they *connect* an AI to an existing system.
+
+- **MCP server** — the technical name for the running process that implements the protocol.
+- **MCP connector** — the product-level concept: "a connector for GitHub," "a connector for Notion."
+
+In practice, people use them interchangeably. We'll say *connector* when we mean *"the thing you install to give your AI access to X."*
+
+## The connector explosion
+
+Because the protocol is open, anyone can ship one. By early 2026 there are connectors for:
+
+- **File systems** — local files, Google Drive, Dropbox, OneDrive
+- **Dev tools** — GitHub, GitLab, Linear, Jira, Sentry
+- **Databases** — Postgres, MySQL, SQLite, MongoDB
+- **Communication** — Slack, Discord, Gmail, Outlook
+- **Productivity** — Notion, Obsidian, Google Docs, Asana
+- **Cloud & infra** — AWS, GCP, Cloudflare, Kubernetes
+- **Web** — browser automation, Brave Search, Perplexity
+
+…and hundreds more. Claude Desktop, Cursor, Claude Code, and most agent frameworks now ship with connector marketplaces. You install a connector; your AI instantly gets new powers.
+
+<Callout type="tip">
+**Mental model:** think of connectors as browser extensions, but for AI. Small, installable, scoped to one job, composable with each other.
+</Callout>
+
+## A day in the life of an MCP-powered agent
+
+Picture an engineering agent sitting in your terminal. The user types:
+
+> *"Look at the failing tests in the last 24 hours, figure out what's wrong, and open a PR with the fix."*
+
+With three connectors installed — `github`, `filesystem`, `ci-logs` — the agent does:
+
+1. `ci-logs.list_failures(since: "24h")` — finds the failures
+2. `github.get_commit(sha)` — reads the suspicious commits
+3. `filesystem.read_file(path)` — reads the source
+4. The LLM reasons, figures out the bug
+5. `filesystem.write_file(path, fixed_source)` — applies the fix
+6. `github.create_pull_request(...)` — opens the PR
+
+Each step is one tool call through MCP. The agent doesn't know *how* GitHub's API works or *how* the filesystem works — it just calls standard MCP tools. The connector handles the translation.
+
+## Why this matters for what you're about to build
+
+In the next few lessons you'll:
+
+1. Build your own MCP connector from scratch (it's shockingly small — a few dozen lines).
+2. Learn AI workflows — how to string LLM steps into reliable pipelines.
+3. Use LangGraph to build stateful workflows that connectors plug into.
+4. Ship a real multi-step project that combines MCP, agents, and workflows.
+
+If you understood this lesson, you understand the piece that's changing fastest in AI right now. **The winners of 2026 are the teams that figure out which connectors to build, install, and chain together.**
+
+## What to take away
+
+- MCP is an open protocol for giving any LLM access to any external system.
+- It defines three surface types: tools, resources, prompts.
+- "Connector" is the product-level term; "server" is the technical term — same thing.
+- The ecosystem is exploding: hundreds of connectors already exist for every major tool.
+- If you want AI that actually *does things in the world*, you're using MCP, whether you know it or not.
+
+Next: **Building Your First MCP Connector** — hands-on, under 80 lines of code.

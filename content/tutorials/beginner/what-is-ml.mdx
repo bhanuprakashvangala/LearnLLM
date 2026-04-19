@@ -1,0 +1,96 @@
+---
+title: "What is Machine Learning? (Plain English)"
+description: "Forget the hype. Machine learning is one simple idea: instead of programming rules, show the computer examples and let it figure out the pattern."
+difficulty: "beginner"
+duration: 12
+order: 2
+tags: ["Machine Learning", "ML", "Foundations", "Beginner"]
+---
+
+## The idea is smaller than it sounds
+
+**Machine learning is just this:** instead of writing down the rules, show the computer lots of examples and let it figure out the rules on its own.
+
+That's it. Everything else — neural networks, deep learning, LLMs, transformers — is a variation on that one idea.
+
+<Callout type="info">
+Traditional programming: *you write rules, the computer follows them.*
+Machine learning: *you show examples, the computer finds the rules.*
+</Callout>
+
+## A concrete example
+
+Suppose you want to build a spam filter.
+
+**Traditional programming:** sit down and write every rule you can think of. *"If the email contains 'Nigerian prince', mark as spam."* *"If the email has 10+ exclamation marks, mark as spam."* You'll end up with thousands of rules, and spammers will invent new tricks faster than you can write new rules.
+
+**Machine learning:** collect 100,000 emails that humans have already labeled `spam` or `not spam`. Feed them to a learning algorithm. The algorithm figures out, on its own, which words and patterns tend to show up in spam. When a new email arrives, the trained model guesses.
+
+You never wrote the rules. The machine *learned* them from examples.
+
+## The three flavors
+
+There are three main kinds of machine learning. You'll hear these names a lot:
+
+### 1. Supervised learning
+You give the machine **examples with correct answers** (labels). It learns the mapping from inputs to answers.
+
+- Email → `spam` or `not spam`
+- Photo → `cat` or `dog`
+- Movie review → `positive` or `negative`
+
+Almost all the AI you've used is supervised at heart.
+
+### 2. Unsupervised learning
+You give the machine **examples with no answers**, and it finds structure on its own — usually clusters or patterns.
+
+- Here are 10,000 customer purchases; group customers who behave similarly.
+- Here are a million articles; group the ones that are about the same topic.
+
+### 3. Reinforcement learning
+The machine **learns by trial and error**. It tries things, gets a reward or a penalty, and slowly figures out the best strategy.
+
+- Teach a program to play chess by letting it play millions of games against itself.
+- Teach a robot to walk by rewarding it when it doesn't fall.
+
+LLMs use a flavor of this called **RLHF** — reinforcement learning from human feedback — to become more helpful and less harmful. More on that much later.
+
+## Training and inference
+
+Two words you'll see constantly:
+
+- **Training** — the slow, expensive step where the model learns from examples.
+- **Inference** — the fast, cheap step where the trained model actually does the work.
+
+Training GPT-5 took months and millions of dollars of compute. But when you type a question into ChatGPT, you're doing inference — and that takes a second.
+
+<Callout type="tip">
+**Useful mental model:** training is like writing a textbook. Inference is like flipping through a textbook you already have. The writing is slow, the flipping is fast.
+</Callout>
+
+## "Model" — what does that even mean?
+
+A **model** is the thing that comes out of training. Concretely it's a giant blob of numbers — often billions of them — that encode the patterns the algorithm found.
+
+When you "use Claude" or "call GPT-5," you're sending your prompt into one of these number-blobs and getting a response out.
+
+You don't need to know the numbers. You don't need to know the math. You just need to know: model in, answer out.
+
+## What makes machine learning *machine* learning
+
+The thing that feels like magic is that **nobody told the model the rules**. It figured them out itself by looking at examples. That means:
+
+- If your examples are good, the model will be good.
+- If your examples are biased, the model will be biased.
+- If a situation wasn't in the examples, the model will guess — sometimes badly.
+
+This is why "AI is only as good as its training data" is a real thing, not a cliché.
+
+## What to take away
+
+- Machine learning = learning rules from examples instead of writing them by hand.
+- Three flavors: supervised (examples with answers), unsupervised (find structure), reinforcement (trial and error).
+- Training is slow; inference is fast.
+- A "model" is the pile of learned numbers that lives on after training.
+
+Next: **Deep Learning & Neural Networks** — the specific kind of machine learning that powers everything modern.
