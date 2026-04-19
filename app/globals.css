@@ -89,7 +89,6 @@
   /* Fonts */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-display: var(--font-display), "Instrument Serif", Georgia, serif;
 
   /* Spacing Scale (adding custom values) */
   --spacing-18: 4.5rem;
@@ -340,22 +339,6 @@ a:not(button a, [role="button"] a, .nav-link, header a):hover {
   .container-md-up {
     padding: 2rem;
   }
-}
-
-/* Editorial display typography */
-.display-serif {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 1.02;
-}
-
-.display-serif-italic {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: -0.02em;
-  line-height: 1.02;
 }
 
 /* Section label — small caps monospaced number */

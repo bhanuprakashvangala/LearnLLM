@@ -84,9 +84,9 @@ export function FAQ() {
             <span className="section-label">06 / FAQ</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
-          <h2 className="display-serif text-5xl sm:text-6xl leading-[0.95]">
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
             Questions,{" "}
-            <span className="display-serif-italic text-primary">answered.</span>
+            <span className="text-primary">answered.</span>
           </h2>
         </motion.div>
 

@@ -226,15 +226,14 @@ export function HeroSection() {
               </span>
             </div>
 
-            {/* Headline — editorial serif */}
-            <h1 className="display-serif text-[3rem] sm:text-[3.75rem] lg:text-[4.25rem] xl:text-[5rem] mb-7">
-              <span className="text-foreground">The definitive way</span>
-              <br />
-              <span className="text-foreground">to master </span>
-              <span className="display-serif-italic hero-gradient-text">LLMs</span>
-              <span className="text-foreground"> &amp; </span>
-              <span className="display-serif-italic hero-gradient-text">agents</span>
-              <span className="text-foreground">.</span>
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold mb-6 leading-[1.08] tracking-tight">
+              Master{" "}
+              <span className="hero-gradient-text">LLMs</span>
+              {" "}&amp;{" "}
+              <span className="hero-gradient-text">Agentic AI</span>
+              <br className="hidden sm:block" />
+              from NLP basics to production.
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground mb-9 max-w-xl leading-relaxed">
@@ -272,7 +271,7 @@ export function HeroSection() {
                   transition={{ delay: 0.4 + i * 0.1, duration: 0.5 }}
                   className="border-l-2 border-primary/60 pl-4"
                 >
-                  <div className="display-serif text-3xl text-foreground">
+                  <div className="text-2xl font-extrabold tracking-tight text-foreground">
                     {stat.value}
                   </div>
                   <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-0.5">

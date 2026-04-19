@@ -86,11 +86,11 @@ export function LearningPaths() {
             <span className="section-label">01 / Paths</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
-          <h2 className="display-serif text-5xl sm:text-6xl lg:text-[4.5rem] max-w-3xl leading-[0.95]">
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-3xl leading-tight">
             Three paths.{" "}
-            <span className="display-serif-italic text-primary">One destination.</span>
+            <span className="text-primary">One destination.</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mt-6 leading-relaxed">
+          <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
             Pick the one that matches where you are today. You can switch tracks
             anytime — lessons in each path are self-contained.
           </p>
@@ -126,7 +126,7 @@ export function LearningPaths() {
                     </span>
                   </div>
 
-                  <CardTitle className="display-serif text-3xl mb-2 leading-tight">
+                  <CardTitle className="text-2xl font-bold mb-2 leading-tight">
                     {path.title}
                   </CardTitle>
                   <CardDescription className="text-[15px] leading-relaxed">

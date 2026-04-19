@@ -88,11 +88,11 @@ export function CurriculumRoadmap() {
             <span className="section-label">05 / Roadmap</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
-          <h2 className="display-serif text-5xl sm:text-6xl leading-[0.95]">
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
             From zero to{" "}
-            <span className="display-serif-italic text-primary">production AI.</span>
+            <span className="text-primary">production AI.</span>
           </h2>
-          <p className="text-lg text-muted-foreground mt-6 leading-relaxed">
+          <p className="text-lg text-muted-foreground mt-5 leading-relaxed">
             110+ lessons across three structured levels. Hands-on projects in every module.
             Go at your own pace — each level builds on the last.
           </p>

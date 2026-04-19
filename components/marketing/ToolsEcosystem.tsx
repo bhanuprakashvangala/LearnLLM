@@ -123,11 +123,11 @@ export function ToolsEcosystem() {
             <span className="section-label">04 / Stack</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
-          <h2 className="display-serif text-5xl sm:text-6xl lg:text-[4.5rem] max-w-4xl leading-[0.95]">
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
             The complete{" "}
-            <span className="display-serif-italic text-primary">2026 AI stack.</span>
+            <span className="text-primary">2026 AI stack.</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mt-6 leading-relaxed">
+          <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
             Every provider, framework, database, and tool you need — organized by
             where they fit in a real system.
           </p>

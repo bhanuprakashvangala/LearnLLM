@@ -104,11 +104,11 @@ export function Features() {
             <span className="section-label">03 / Curriculum</span>
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
-          <h2 className="display-serif text-5xl sm:text-6xl lg:text-[4.5rem] max-w-4xl leading-[0.95]">
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-4xl leading-tight">
             Every skill you need,{" "}
-            <span className="display-serif-italic text-primary">nothing you don't.</span>
+            <span className="text-primary">nothing you don't.</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mt-6 leading-relaxed">
+          <p className="text-lg text-muted-foreground max-w-2xl mt-5 leading-relaxed">
             Foundations to production. Updated constantly as new frameworks, models,
             and standards ship — and they ship weekly.
           </p>
@@ -134,7 +134,7 @@ export function Features() {
                       {String(index + 1).padStart(2, "0")}
                     </span>
                   </div>
-                  <CardTitle className="display-serif text-2xl mb-1 leading-tight">
+                  <CardTitle className="text-xl font-bold mb-1 leading-tight">
                     {feature.title}
                   </CardTitle>
                 </CardHeader>
@@ -164,7 +164,7 @@ export function Features() {
               { value: "0", label: "prior knowledge needed" },
             ].map((stat, i) => (
               <div key={i} className="text-center md:text-left md:pl-6 md:border-l md:border-border">
-                <div className="display-serif text-5xl md:text-6xl text-foreground mb-2">
+                <div className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-2">
                   {stat.value}
                 </div>
                 <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
