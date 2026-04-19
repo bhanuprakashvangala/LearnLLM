@@ -6,11 +6,9 @@ import { ArrowRight, Bot, Zap, Brain, Wrench, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spotlight } from "@/components/ui/spotlight";
-import { NeuralSphere } from "@/components/ui/neural-sphere";
+import { RobotMascot } from "@/components/ui/robot-mascot";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Particles } from "@/components/ui/particles";
-
-const NUM_POINTS_LABEL = "260";
 import { useEffect, useState, useCallback } from "react";
 
 /* ────────────────────────────────────────────
@@ -290,24 +288,27 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="hidden lg:block"
           >
-            <Card className="w-full aspect-[4/5] max-h-[620px] min-h-[440px] bg-black/[0.96] relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10">
+            <Card className="w-full aspect-[4/5] max-h-[620px] min-h-[440px] bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10">
               <Spotlight
                 className="-top-40 left-0 md:left-60 md:-top-20"
-                fill="rgba(16,185,129,0.55)"
+                fill="rgba(16,185,129,0.5)"
               />
-              <NeuralSphere className="absolute inset-0" />
-              {/* Corner metadata labels — feel like a scientific instrument */}
-              <div className="absolute top-4 left-4 z-10 text-[10px] font-mono uppercase tracking-wider text-white/40">
-                neural.sphere
+              {/* Faint grid behind the mascot for depth */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
+
+              <RobotMascot className="absolute inset-0 p-6 md:p-8 flex items-center justify-center" />
+
+              {/* Corner labels */}
+              <div className="absolute top-4 left-4 z-10 text-[10px] font-mono uppercase tracking-wider text-white/50">
+                learnllm
               </div>
-              <div className="absolute top-4 right-4 z-10 text-[10px] font-mono uppercase tracking-wider text-white/40">
-                {NUM_POINTS_LABEL} nodes
-              </div>
-              <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10">
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-emerald-400/80">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-mono uppercase tracking-wider text-white/80">
-                  drag to rotate
-                </span>
+                online
+              </div>
+              <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-white/40">
+                <span>ready to learn</span>
+                <span>v2026.04</span>
               </div>
             </Card>
           </motion.div>
