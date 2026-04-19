@@ -60,17 +60,53 @@ RAG is a technique that augments LLM prompts with relevant information retrieved
 
 Here's how RAG works in 4 steps:
 
-```
-1. User Query: "What were our Q4 sales figures?"
-             ↓
-2. Retrieval: Search knowledge base for relevant documents
-             ↓ (finds: "Q4_2024_Sales_Report.pdf")
-3. Augmentation: Add retrieved context to prompt
-             ↓
-4. Generation: LLM generates answer using the context
-             ↓
-   Answer: "According to the Q4 2024 report, sales were $2.5M..."
-```
+<Figure caption="The RAG pipeline. The LLM never sees your whole knowledge base — it sees the user's question plus just the passages most relevant to it, retrieved on the fly.">
+  <svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "680px", height: "auto" }} role="img" aria-label="RAG pipeline diagram">
+    {/* Query */}
+    <rect x="20" y="110" width="120" height="44" rx="6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.3" />
+    <text x="80" y="130" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">User query</text>
+    <text x="80" y="146" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">"Q4 sales?"</text>
+    {/* Embed */}
+    <path d="M 145 132 L 180 132" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#aR)" />
+    <rect x="185" y="110" width="100" height="44" rx="6" fill="rgb(59 130 246)" fillOpacity="0.1" stroke="rgb(59 130 246)" strokeOpacity="0.45" />
+    <text x="235" y="130" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">Embed</text>
+    <text x="235" y="146" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="rgb(59 130 246)">→ vector</text>
+    {/* Retrieve from vector DB */}
+    <path d="M 290 132 L 325 132" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#aR)" />
+    <rect x="330" y="110" width="120" height="44" rx="6" fill="rgb(139 92 246)" fillOpacity="0.1" stroke="rgb(139 92 246)" strokeOpacity="0.45" />
+    <text x="390" y="130" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">Vector DB</text>
+    <text x="390" y="146" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="rgb(139 92 246)">similarity search</text>
+    {/* DB icon (documents) above vector DB */}
+    <g transform="translate(355 40)">
+      <rect x="0" y="0" width="50" height="40" rx="4" fill="currentColor" fillOpacity="0.08" stroke="currentColor" strokeOpacity="0.3" />
+      <rect x="6" y="8" width="38" height="3" fill="currentColor" fillOpacity="0.3" />
+      <rect x="6" y="16" width="38" height="3" fill="currentColor" fillOpacity="0.3" />
+      <rect x="6" y="24" width="28" height="3" fill="currentColor" fillOpacity="0.3" />
+      <rect x="6" y="32" width="34" height="3" fill="currentColor" fillOpacity="0.3" />
+    </g>
+    <text x="390" y="100" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.55" fill="currentColor">your documents</text>
+    <path d="M 390 80 L 390 110" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="3 3" />
+    {/* Augment */}
+    <path d="M 455 132 L 490 132" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#aR)" />
+    <rect x="495" y="110" width="100" height="44" rx="6" fill="rgb(234 88 12)" fillOpacity="0.1" stroke="rgb(234 88 12)" strokeOpacity="0.45" />
+    <text x="545" y="130" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">Augment</text>
+    <text x="545" y="146" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="rgb(234 88 12)">prompt + chunks</text>
+    {/* Generate */}
+    <path d="M 600 132 L 635 132" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" />
+    <path d="M 635 132 L 635 200 L 100 200 L 100 180" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" strokeDasharray="4 3" fill="none" markerEnd="url(#aR)" />
+    <rect x="40" y="180" width="120" height="44" rx="6" fill="rgb(22 163 74)" fillOpacity="0.12" stroke="rgb(22 163 74)" strokeOpacity="0.5" />
+    <text x="100" y="200" textAnchor="middle" fontSize="12" fontWeight="700" fill="currentColor">LLM</text>
+    <text x="100" y="216" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="rgb(22 163 74)">grounded answer</text>
+    <defs>
+      <marker id="aR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10" fill="currentColor" fillOpacity="0.5" /></marker>
+    </defs>
+  </svg>
+</Figure>
+
+1. **User Query:** "What were our Q4 sales figures?"
+2. **Retrieval:** Embed the query, search the vector DB for the most similar chunks.
+3. **Augmentation:** Paste the retrieved passages into the prompt as context.
+4. **Generation:** LLM answers using both its training and the fresh context.
 
 ### Simple RAG Example
 

@@ -45,6 +45,32 @@ Here's what happens during training:
 4. **Adjust internal settings**: Make similar predictions more likely
 5. **Repeat billions of times**: With different examples
 
+<Figure caption="The training loop. Billions of repetitions of this cycle slowly shape the model's weights so its guesses match reality.">
+  <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", maxWidth: "640px", height: "auto" }} role="img" aria-label="Training loop diagram">
+    <rect x="20" y="90" width="110" height="44" rx="6" fill="currentColor" fillOpacity="0.06" stroke="currentColor" strokeOpacity="0.3" />
+    <text x="75" y="110" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">Show data</text>
+    <text x="75" y="125" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.6" fill="currentColor">"cat sat on ___"</text>
+    <path d="M 135 112 L 175 112" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#aT)" />
+    <rect x="180" y="90" width="110" height="44" rx="6" fill="rgb(22 163 74)" fillOpacity="0.1" stroke="rgb(22 163 74)" strokeOpacity="0.45" />
+    <text x="235" y="110" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">Model guesses</text>
+    <text x="235" y="125" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="rgb(22 163 74)">"rug"</text>
+    <path d="M 295 112 L 335 112" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#aT)" />
+    <rect x="340" y="90" width="110" height="44" rx="6" fill="rgb(234 88 12)" fillOpacity="0.1" stroke="rgb(234 88 12)" strokeOpacity="0.45" />
+    <text x="395" y="110" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">Compare</text>
+    <text x="395" y="125" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="rgb(234 88 12)">should be "mat"</text>
+    <path d="M 455 112 L 495 112" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.5" markerEnd="url(#aT)" />
+    <rect x="500" y="90" width="120" height="44" rx="6" fill="rgb(59 130 246)" fillOpacity="0.1" stroke="rgb(59 130 246)" strokeOpacity="0.45" />
+    <text x="560" y="110" textAnchor="middle" fontSize="12" fontWeight="600" fill="currentColor">Nudge weights</text>
+    <text x="560" y="125" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.7" fill="rgb(59 130 246)">backprop</text>
+    {/* Loop back arrow */}
+    <path d="M 560 134 Q 560 180 320 180 Q 75 180 75 134" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" fill="none" strokeDasharray="4 3" markerEnd="url(#aT)" />
+    <text x="320" y="200" textAnchor="middle" fontSize="10" fontFamily="monospace" fillOpacity="0.55" fill="currentColor">repeat billions of times</text>
+    <defs>
+      <marker id="aT" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10" fill="currentColor" fillOpacity="0.5" /></marker>
+    </defs>
+  </svg>
+</Figure>
+
 After seeing enough examples, the model learns:
 - Grammar rules (without being told explicitly)
 - Common phrases and idioms

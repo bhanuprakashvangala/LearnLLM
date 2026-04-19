@@ -222,18 +222,31 @@ export const MDXComponents = {
     </a>
   ),
   table: ({ children }: { children: React.ReactNode }) => (
-    <div className="my-6 overflow-x-auto">
-      <table className="w-full border-collapse border border-border">
+    <div className="not-prose my-8 w-full overflow-x-auto rounded-xl border border-border">
+      <table className="w-full border-collapse text-sm">
         {children}
       </table>
     </div>
   ),
+  thead: ({ children }: { children: React.ReactNode }) => (
+    <thead className="border-b border-border bg-muted/60">{children}</thead>
+  ),
+  tbody: ({ children }: { children: React.ReactNode }) => (
+    <tbody className="[&_tr:last-child]:border-0">{children}</tbody>
+  ),
+  tr: ({ children }: { children: React.ReactNode }) => (
+    <tr className="border-b border-border/70 transition-colors hover:bg-muted/30">
+      {children}
+    </tr>
+  ),
   th: ({ children }: { children: React.ReactNode }) => (
-    <th className="border border-border bg-muted px-4 py-2 text-left font-bold">
+    <th className="px-4 py-3 text-left font-mono text-[11px] uppercase tracking-wider text-foreground/70 font-semibold">
       {children}
     </th>
   ),
   td: ({ children }: { children: React.ReactNode }) => (
-    <td className="border border-border px-4 py-2">{children}</td>
+    <td className="px-4 py-3 align-top leading-relaxed text-foreground/85 [&>code]:text-[0.875em] [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:bg-muted">
+      {children}
+    </td>
   ),
 };
