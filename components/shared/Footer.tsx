@@ -6,7 +6,7 @@ import { Logo, LogoText } from "./Logo";
 const footerLinks = [
   { label: "Learn", href: "/learn" },
   { label: "Challenges", href: "/challenges" },
-  { label: "Pricing", href: "/pricing" },
+  { label: "Playground", href: "/playground" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];

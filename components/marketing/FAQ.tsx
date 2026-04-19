@@ -59,9 +59,9 @@ const faqs = [
       "We update constantly. When Google launched ADK, we added lessons. When OpenAI released their Agents SDK, we covered it. When MCP gained traction, we built a full module. The AI landscape moves fast, and we move with it.",
   },
   {
-    question: "What's the difference between Free and Premium?",
+    question: "Is LearnLLM.dev really 100% free?",
     answer:
-      "Free gives you access to all 100+ lessons - yes, really. Premium ($19/mo) adds the interactive AI playground, 30+ coding challenges, real-world projects with code, certificates, and priority support. Teams ($49/user/mo) adds analytics, SSO, and a dedicated account manager.",
+      "Yes — every lesson, challenge, project, and the interactive playground are completely free. No trials, no paywalls, no credit card required. Sign in with Google or email so we can save your progress, and that's it. If we ever add something paid in the future, everything that's free today will stay free forever.",
   },
 ];
 

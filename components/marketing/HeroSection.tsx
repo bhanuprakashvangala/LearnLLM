@@ -257,7 +257,7 @@ export function HeroSection() {
               {[
                 { value: "100+", label: "Lessons" },
                 { value: "36+", label: "Tools Covered" },
-                { value: "Free", label: "To Start" },
+                { value: "Free", label: "Forever" },
               ].map((stat, i) => (
                 <motion.div
                   key={i}

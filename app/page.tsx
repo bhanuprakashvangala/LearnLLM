@@ -6,7 +6,6 @@ import { AgenticShowcase } from "@/components/marketing/AgenticShowcase";
 import { Features } from "@/components/marketing/Features";
 import { ToolsEcosystem } from "@/components/marketing/ToolsEcosystem";
 import { CurriculumRoadmap } from "@/components/marketing/CurriculumRoadmap";
-import { Pricing } from "@/components/marketing/Pricing";
 import { FAQ } from "@/components/marketing/FAQ";
 
 export default function Home() {
@@ -19,7 +18,6 @@ export default function Home() {
       <Features />
       <ToolsEcosystem />
       <CurriculumRoadmap />
-      <Pricing />
       <FAQ />
       <Footer />
     </main>
