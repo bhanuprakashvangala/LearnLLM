@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
+import { PostHogProvider } from "@/components/shared/PostHogProvider";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProgressProvider } from "@/contexts/ProgressContext";
@@ -40,12 +41,14 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ThemeProvider>
-          <AuthProvider>
-            <ProgressProvider>
-              {children}
-              <Toaster />
-            </ProgressProvider>
-          </AuthProvider>
+          <PostHogProvider>
+            <AuthProvider>
+              <ProgressProvider>
+                {children}
+                <Toaster />
+              </ProgressProvider>
+            </AuthProvider>
+          </PostHogProvider>
         </ThemeProvider>
       </body>
     </html>
