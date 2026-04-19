@@ -1,10 +1,14 @@
 // Prisma Schema for LearnLLM Authentication & User Data
 // This is the database schema for storing user information
 
-// 1. Choose your database provider (uncomment one):
+// DATABASE_URL: Supabase transaction pooler (port 6543) — used for all runtime queries.
+// DIRECT_URL:   Supabase direct connection via the pooler host (port 5432) — used by
+//               Prisma for migrations only. Required because pgBouncer in transaction mode
+//               can't run the prepared statements Prisma migrations emit.
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -59,9 +63,12 @@ model User {
   playgrounds    PlaygroundSave[]
 
   // Plan and subscription
-  plan           Plan      @default(FREE)
-  role           Role      @default(USER)
-  stripeCustomerId String? @unique
+  plan                 Plan     @default(FREE)
+  role                 Role     @default(USER)
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
 }
 
 model VerificationToken {
