@@ -39,14 +39,9 @@ export function isFreeLessonSlug(slug: string): boolean {
   return slug === FREE_LESSON_SLUG;
 }
 
-// Check if user can access specific difficulty level.
-// Paid tiers are disabled right now (growth mode — no monetization until we
-// have users). When we turn paid plans back on, restore the ADVANCED branch
-// with hasProAccess(user).
-export function canAccessDifficulty(user: UserAccess | null, difficulty: Difficulty, _slug?: string): boolean {
-  // Beginner is open to anonymous visitors (top-of-funnel).
-  if (difficulty === "BEGINNER") return true;
-  // Intermediate and advanced require a free account — just for progress tracking.
+// Every lesson requires a free account — mandatory sign-up for all visitors.
+// When paid tiers come back, restore the ADVANCED → hasProAccess(user) branch.
+export function canAccessDifficulty(user: UserAccess | null, _difficulty: Difficulty, _slug?: string): boolean {
   return isLoggedIn(user);
 }
 
