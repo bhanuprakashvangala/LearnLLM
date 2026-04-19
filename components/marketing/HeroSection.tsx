@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spotlight } from "@/components/ui/spotlight";
 import { NeuralSphere } from "@/components/ui/neural-sphere";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { Particles } from "@/components/ui/particles";
 
 const NUM_POINTS_LABEL = "260";
 import { useEffect, useState, useCallback } from "react";
@@ -209,6 +211,8 @@ export function HeroSection() {
       <div className="absolute inset-0 -z-10">
         {/* Grid with vignette mask */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
+        {/* Drifting particles */}
+        <Particles quantity={70} />
         {/* Gradient orbs */}
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/[0.08] dark:bg-emerald-500/[0.05] rounded-full blur-[110px]" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/[0.06] dark:bg-cyan-500/[0.04] rounded-full blur-[90px]" />
@@ -253,9 +257,9 @@ export function HeroSection() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 max-w-md">
               {[
-                { value: "110+", label: "lessons" },
-                { value: "40+", label: "tools covered" },
-                { value: "Free", label: "to start" },
+                { numeric: 110, suffix: "+", label: "lessons", delay: 0.1 },
+                { numeric: 40, suffix: "+", label: "tools covered", delay: 0.2 },
+                { numeric: null, value: "Free", label: "to start", delay: 0.3 },
               ].map((stat, i) => (
                 <motion.div
                   key={i}
@@ -265,7 +269,11 @@ export function HeroSection() {
                   className="border-l-2 border-primary/60 pl-4"
                 >
                   <div className="text-2xl font-extrabold tracking-tight text-foreground">
-                    {stat.value}
+                    {stat.numeric !== null ? (
+                      <NumberTicker value={stat.numeric} suffix={stat.suffix} delay={stat.delay} />
+                    ) : (
+                      stat.value
+                    )}
                   </div>
                   <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-0.5">
                     {stat.label}

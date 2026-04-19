@@ -16,6 +16,7 @@ import {
   Wrench,
   Zap,
 } from "lucide-react";
+import { Marquee } from "@/components/ui/marquee";
 
 const toolCategories = [
   {
@@ -131,6 +132,24 @@ export function ToolsEcosystem() {
             by where they fit in a real system.
           </p>
         </motion.div>
+
+        {/* Marquee of all tool names — scrolls across the page */}
+        <div className="relative mb-16 -mx-4 sm:-mx-6 lg:-mx-8 before:absolute before:left-0 before:top-0 before:h-full before:w-20 before:z-10 before:bg-gradient-to-r before:from-muted/30 before:to-transparent after:absolute after:right-0 after:top-0 after:h-full after:w-20 after:z-10 after:bg-gradient-to-l after:from-muted/30 after:to-transparent">
+          <Marquee pauseOnHover className="[--duration:60s] [--gap:2rem] py-3">
+            {toolCategories.flatMap((cat) => cat.tools).map((tool, i) => (
+              <span
+                key={`m1-${i}`}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card text-sm font-medium whitespace-nowrap"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                {tool.name}
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                  {tool.type}
+                </span>
+              </span>
+            ))}
+          </Marquee>
+        </div>
 
         {/* Tools Grid */}
         <motion.div

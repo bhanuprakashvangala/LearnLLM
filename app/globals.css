@@ -67,6 +67,8 @@
   /* Named animations (Tailwind v4 exposes as .animate-<name>) */
   --animate-aurora: aurora 60s linear infinite;
   --animate-spotlight: spotlight 2s ease 0.75s 1 forwards;
+  --animate-marquee: marquee var(--duration, 40s) linear infinite;
+  --animate-marquee-vertical: marquee-vertical var(--duration, 40s) linear infinite;
 
   /* Colors */
   --color-background: rgb(var(--background));
@@ -146,6 +148,16 @@
     opacity: 1;
     transform: translate(-50%, -40%) scale(1);
   }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gap, 1rem))); }
+}
+
+@keyframes marquee-vertical {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(-100% - var(--gap, 1rem))); }
 }
 
 /* Color tokens used by Aurora gradient + third-party components that expect flat color names */

@@ -14,10 +14,10 @@ import {
   Brain,
   Wrench,
   Search,
-  ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AnimatedBeam } from "@/components/ui/animated-beam";
 
 const frameworks = [
   {
@@ -114,6 +114,76 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
+const flowSteps = [
+  { icon: MessageSquare, label: "Request", sub: "User asks a question", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
+  { icon: Brain, label: "Reason", sub: "Agent plans approach", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
+  { icon: Wrench, label: "Act", sub: "Calls tools & APIs", color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" },
+  { icon: Workflow, label: "Orchestrate", sub: "Multi-agent collab", color: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20" },
+  { icon: Zap, label: "Deliver", sub: "Returns result", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
+];
+
+function AgentFlow() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const stepRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: 0.1 }}
+      className="mb-20"
+    >
+      <div className="bg-card rounded-2xl border border-border p-8 md:p-12 max-w-4xl mx-auto overflow-hidden relative">
+        {/* Subtle grid bg */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:20px_20px]" />
+
+        <div className="relative">
+          <h3 className="text-xl font-bold mb-2 text-center">How Agentic AI Works</h3>
+          <p className="text-sm text-muted-foreground text-center mb-10">
+            From user request to autonomous action — this is what you'll learn to build
+          </p>
+
+          {/* Flow */}
+          <div ref={containerRef} className="relative flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0">
+            {flowSteps.map((step, i) => (
+              <motion.div
+                key={i}
+                ref={(el) => { stepRefs.current[i] = el; }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 + i * 0.1, duration: 0.4 }}
+                className="flex flex-col items-center text-center z-10"
+              >
+                <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center mb-2 ${step.color} bg-card`}>
+                  <step.icon className="w-6 h-6" />
+                </div>
+                <div className="font-semibold text-sm">{step.label}</div>
+                <div className="text-[11px] text-muted-foreground max-w-[100px]">{step.sub}</div>
+              </motion.div>
+            ))}
+
+            {/* Animated beams between each pair of steps (desktop only) */}
+            {flowSteps.slice(0, -1).map((_, i) => (
+              <div key={`beam-${i}`} className="hidden md:block">
+                <AnimatedBeam
+                  containerRef={containerRef}
+                  fromRef={{ current: stepRefs.current[i] }}
+                  toRef={{ current: stepRefs.current[i + 1] }}
+                  duration={4}
+                  delay={i * 0.6}
+                  curvature={0}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function AgenticShowcase() {
   return (
     <section className="py-20 md:py-28 lg:py-32 relative overflow-hidden bg-[#fafbfc] dark:bg-[#050505]">
@@ -169,56 +239,8 @@ export function AgenticShowcase() {
           ))}
         </motion.div>
 
-        {/* Agent Flow Visualization */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-20"
-        >
-          <div className="bg-card rounded-2xl border border-border p-8 md:p-12 max-w-4xl mx-auto overflow-hidden relative">
-            {/* Subtle grid bg */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:20px_20px]" />
-
-            <div className="relative">
-              <h3 className="text-xl font-bold mb-2 text-center">How Agentic AI Works</h3>
-              <p className="text-sm text-muted-foreground text-center mb-10">
-                From user request to autonomous action -- this is what you'll learn to build
-              </p>
-
-              {/* Flow */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-0">
-                {[
-                  { icon: MessageSquare, label: "Request", sub: "User asks a question", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
-                  { icon: Brain, label: "Reason", sub: "Agent plans approach", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
-                  { icon: Wrench, label: "Act", sub: "Calls tools & APIs", color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" },
-                  { icon: Workflow, label: "Orchestrate", sub: "Multi-agent collab", color: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20" },
-                  { icon: Zap, label: "Deliver", sub: "Returns result", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
-                ].map((step, i) => (
-                  <React.Fragment key={i}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.1 + i * 0.1, duration: 0.4 }}
-                      className="flex flex-col items-center text-center"
-                    >
-                      <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center mb-2 ${step.color}`}>
-                        <step.icon className="w-6 h-6" />
-                      </div>
-                      <div className="font-semibold text-sm">{step.label}</div>
-                      <div className="text-[11px] text-muted-foreground max-w-[100px]">{step.sub}</div>
-                    </motion.div>
-                    {i < 4 && (
-                      <ChevronRight className="w-4 h-4 text-border hidden md:block flex-shrink-0" />
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        {/* Agent Flow Visualization with animated beams */}
+        <AgentFlow />
 
         {/* Frameworks Grid */}
         <motion.div
