@@ -4,7 +4,7 @@ import * as React from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { User, Palette } from "lucide-react";
+import { User, Mail, Shield, Bell, Palette, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -92,6 +92,30 @@ export default function SettingsPage() {
                   Email cannot be changed
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Subscription Section */}
+          <div className="bg-card border-2 border-border rounded-xl p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              Subscription
+            </h2>
+
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold">Free Plan</span>
+                  <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded">Current</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Access to beginner lessons and limited features
+                </p>
+              </div>
+              <Button variant="default">
+                Upgrade to Pro
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
           </div>
 

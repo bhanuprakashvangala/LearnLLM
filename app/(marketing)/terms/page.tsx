@@ -63,12 +63,10 @@ export default function TermsPage() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-semibold mb-4">6. No Charges, No Paid Plans</h2>
+              <h2 className="text-2xl font-semibold mb-4">6. Payment and Refunds</h2>
               <p className="text-muted-foreground">
-                LearnLLM.dev is free to use. We do not charge for lessons, challenges,
-                projects, or the interactive playground, and we never ask for payment
-                information. If paid features are ever introduced, they will be clearly
-                marked as optional and all currently-free content will remain free.
+                Premium subscriptions are billed according to the plan you select. We offer a 30-day
+                money-back guarantee for premium plans. Refund requests should be sent to our support team.
               </p>
             </section>
 
