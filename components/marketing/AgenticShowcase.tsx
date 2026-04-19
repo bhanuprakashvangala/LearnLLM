@@ -130,15 +130,19 @@ export function AgenticShowcase() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-5 tracking-tight">
-            The Frameworks{" "}
-            <span className="hero-gradient-text">Behind AI Agents</span>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="section-label">02 / Agents</span>
+            <span className="h-px flex-1 bg-border max-w-[200px]" />
+          </div>
+          <h2 className="display-serif text-5xl sm:text-6xl lg:text-[4.5rem] max-w-4xl leading-[0.95]">
+            The frameworks{" "}
+            <span className="display-serif-italic text-primary">behind AI agents.</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-muted-foreground max-w-2xl mt-6 leading-relaxed">
             Agents reason, plan, call tools, and take real action. You'll build with
-            every major framework -- hands-on, with production code.
+            every major framework — hands-on, with production code.
           </p>
         </motion.div>
 

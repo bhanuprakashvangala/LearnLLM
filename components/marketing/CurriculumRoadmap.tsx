@@ -75,22 +75,26 @@ const roadmapSteps = [
 export function CurriculumRoadmap() {
   return (
     <section className="py-24 md:py-32 relative overflow-hidden bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div id="curriculum" className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="mb-16 max-w-3xl mx-auto"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-5 tracking-tight">
-            From Zero to{" "}
-            <span className="hero-gradient-text">Production AI</span>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="section-label">05 / Roadmap</span>
+            <span className="h-px flex-1 bg-border max-w-[200px]" />
+          </div>
+          <h2 className="display-serif text-5xl sm:text-6xl leading-[0.95]">
+            From zero to{" "}
+            <span className="display-serif-italic text-primary">production AI.</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            100+ lessons across three structured levels. Hands-on projects in every module.
-            Go at your own pace -- each level builds on the last.
+          <p className="text-lg text-muted-foreground mt-6 leading-relaxed">
+            110+ lessons across three structured levels. Hands-on projects in every module.
+            Go at your own pace — each level builds on the last.
           </p>
         </motion.div>
 

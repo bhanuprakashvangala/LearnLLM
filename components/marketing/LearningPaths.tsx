@@ -12,30 +12,28 @@ const learningPaths = [
   {
     icon: BookOpen,
     title: "Complete Beginner",
-    description: "Zero coding required - perfect for everyone!",
-    gradient: "from-green-500 to-emerald-600",
+    description: "Start from zero — no coding, no math, no NLP background",
     features: [
-      "No coding needed - start today!",
-      "Master ChatGPT, Claude & prompt engineering",
-      "Explore NotebookLM, Bolt.new & Cursor",
-      "Understand agentic AI & the AI landscape",
+      "NLP, ML, deep-learning foundations in plain English",
+      "Embeddings, tokens, and how transformers really work",
+      "Claude 4.7, GPT-5, Gemini 2.5 — compared & used",
+      "NotebookLM, Cursor, Bolt.new, and the no-code stack",
     ],
-    duration: "2-3 weeks",
+    duration: "3–4 weeks",
     difficulty: "Beginner",
-    link: "/learn/beginner/what-is-llm",
+    link: "/learn/beginner/what-is-nlp",
   },
   {
     icon: Braces,
     title: "Creator & Builder",
-    description: "Build real AI apps with modern agentic frameworks",
-    gradient: "from-primary to-secondary",
+    description: "Ship real AI apps — agents, MCP connectors, stateful workflows",
     features: [
-      "Google ADK, OpenAI Agents SDK & CrewAI",
-      "MCP Protocol & LlamaIndex",
-      "RAG systems & vector databases",
-      "Full-stack AI apps with Vercel AI SDK",
+      "Google ADK, OpenAI Agents SDK, CrewAI",
+      "MCP connectors — build & consume them",
+      "LangGraph workflows with human-in-the-loop",
+      "Production RAG, reasoning models, Vercel AI SDK",
     ],
-    duration: "5-7 weeks",
+    duration: "6–8 weeks",
     difficulty: "Intermediate",
     link: "/learn/intermediate/langchain-basics",
     popular: true,
@@ -43,15 +41,14 @@ const learningPaths = [
   {
     icon: Cpu,
     title: "Advanced Developer",
-    description: "Production agentic systems & cutting-edge AI",
-    gradient: "from-accent to-pink-600",
+    description: "Fine-tune, deploy, evaluate — production-grade AI systems",
     features: [
-      "AutoGen & agent orchestration patterns",
-      "Production MCP servers & evaluation",
-      "Fine-tune with LoRA/QLoRA & deploy",
-      "Multi-agent pipelines at scale",
+      "LoRA, QLoRA, RLHF, DPO end-to-end",
+      "Computer-use agents, multi-agent orchestration",
+      "Production MCP servers, observability, evals",
+      "vLLM, SGLang, quantization, cost optimization",
     ],
-    duration: "8-10 weeks",
+    duration: "9–11 weeks",
     difficulty: "Advanced",
     link: "/learn/advanced/fine-tuning",
   },
@@ -83,13 +80,19 @@ export function LearningPaths() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            Choose Your <span className="gradient-text">Learning Path</span>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="section-label">01 / Paths</span>
+            <span className="h-px flex-1 bg-border max-w-[200px]" />
+          </div>
+          <h2 className="display-serif text-5xl sm:text-6xl lg:text-[4.5rem] max-w-3xl leading-[0.95]">
+            Three paths.{" "}
+            <span className="display-serif-italic text-primary">One destination.</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            We meet you where you are. Pick the path that matches your experience level.
+          <p className="text-lg text-muted-foreground max-w-2xl mt-6 leading-relaxed">
+            Pick the one that matches where you are today. You can switch tracks
+            anytime — lessons in each path are self-contained.
           </p>
         </motion.div>
 
@@ -105,67 +108,63 @@ export function LearningPaths() {
             <motion.div key={index} variants={item}>
               <Card
                 className={cn(
-                  "relative h-full group cursor-pointer",
-                  path.popular && "ring-2 ring-primary shadow-2xl scale-105"
+                  "relative h-full group overflow-hidden transition-all duration-300",
+                  "border bg-card hover:border-primary/40",
+                  path.popular && "border-primary/60 shadow-xl shadow-primary/10"
                 )}
               >
-                {path.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <div className="bg-primary text-white px-4 py-1 rounded-full text-sm font-medium shadow-md">
-                      Most Popular
-                    </div>
-                  </div>
-                )}
+                {/* Top number stripe */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                <CardHeader>
-                  {/* Icon */}
-                  <div className="mb-4">
-                    <div className="inline-flex p-3 rounded-xl bg-primary/10 border border-primary/20">
-                      <path.icon className="w-6 h-6 text-primary" />
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="inline-flex p-2.5 rounded-lg bg-primary/8 border border-primary/15">
+                      <path.icon className="w-5 h-5 text-primary" strokeWidth={1.75} />
                     </div>
+                    <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
                   </div>
 
-                  <CardTitle className="text-2xl mb-2">{path.title}</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="display-serif text-3xl mb-2 leading-tight">
+                    {path.title}
+                  </CardTitle>
+                  <CardDescription className="text-[15px] leading-relaxed">
                     {path.description}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent>
-                  {/* Features */}
-                  <ul className="space-y-3 mb-6">
+                <CardContent className="pb-4">
+                  <ul className="space-y-2.5 mb-6">
                     {path.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Check className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-muted-foreground">{feature}</span>
+                      <li key={i} className="flex items-start gap-2.5 text-sm">
+                        <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" strokeWidth={2.25} />
+                        <span className="text-foreground/75 leading-snug">{feature}</span>
                       </li>
                     ))}
                   </ul>
 
-                  {/* Meta Info */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        path.difficulty === "Beginner" && "bg-green-500",
-                        path.difficulty === "Intermediate" && "bg-primary",
-                        path.difficulty === "Advanced" && "bg-accent"
-                      )} />
-                      <span>{path.difficulty}</span>
-                    </div>
-                    <span>•</span>
+                  <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-wider text-muted-foreground pt-4 border-t border-border/60">
+                    <span>{path.difficulty}</span>
+                    <span className="text-border">·</span>
                     <span>{path.duration}</span>
+                    {path.popular && (
+                      <>
+                        <span className="text-border">·</span>
+                        <span className="text-primary">recommended</span>
+                      </>
+                    )}
                   </div>
                 </CardContent>
 
                 <CardFooter>
                   <Button
                     variant={path.popular ? "default" : "outline"}
-                    className="w-full group/btn"
+                    className="w-full group/btn h-11"
                     asChild
                   >
                     <Link href={path.link}>
-                      Start Learning
+                      Start this path
                       <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                     </Link>
                   </Button>

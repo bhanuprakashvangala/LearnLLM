@@ -202,73 +202,82 @@ export function HeroSection() {
     <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-[#fafbfc] dark:bg-[#050505]">
       {/* Atmospheric background */}
       <div className="absolute inset-0 -z-10">
-        {/* Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
+        {/* Grid with vignette mask */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
         {/* Gradient orbs */}
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/[0.07] dark:bg-emerald-500/[0.04] rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/[0.05] dark:bg-cyan-500/[0.03] rounded-full blur-[100px]" />
-        <div className="absolute top-[40%] left-[30%] w-[300px] h-[300px] bg-emerald-600/[0.04] dark:bg-emerald-400/[0.02] rounded-full blur-[80px]" />
+        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/[0.08] dark:bg-emerald-500/[0.05] rounded-full blur-[110px]" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/[0.06] dark:bg-cyan-500/[0.04] rounded-full blur-[90px]" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 items-center">
           {/* Left: Copy */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold mb-6 leading-[1.08] tracking-tight">
-              Master{" "}
-              <span className="hero-gradient-text">
-                LLMs
-              </span>{" "}
-              &{" "}
-              <span className="hero-gradient-text">
-                Agentic AI
+            {/* Section label */}
+            <div className="flex items-center gap-3 mb-7">
+              <span className="section-label">00 / Learn LLM</span>
+              <span className="h-px flex-1 bg-border max-w-[120px]" />
+              <span className="text-[11px] font-mono text-muted-foreground">
+                updated <span className="text-foreground">2026</span>
               </span>
-              <br className="hidden sm:block" />
-              from Zero to Production
+            </div>
+
+            {/* Headline — editorial serif */}
+            <h1 className="display-serif text-[3rem] sm:text-[3.75rem] lg:text-[4.25rem] xl:text-[5rem] mb-7">
+              <span className="text-foreground">The definitive way</span>
+              <br />
+              <span className="text-foreground">to master </span>
+              <span className="display-serif-italic hero-gradient-text">LLMs</span>
+              <span className="text-foreground"> &amp; </span>
+              <span className="display-serif-italic hero-gradient-text">agents</span>
+              <span className="text-foreground">.</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-xl leading-relaxed">
-              Go from your first prompt to shipping production multi-agent systems.
-              Hands-on lessons covering Google ADK, CrewAI, MCP, LangChain, RAG,
-              fine-tuning, and the full modern AI stack.
+            <p className="text-base sm:text-lg text-muted-foreground mb-9 max-w-xl leading-relaxed">
+              From NLP fundamentals to shipping multi-agent production systems. Deep,
+              up-to-date lessons on MCP connectors, workflows, reasoning models,
+              fine-tuning, RAG, and the frameworks that actually matter in 2026.
             </p>
 
             {/* CTA */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-10">
-              <Button size="lg" asChild className="text-base px-8 h-12 shadow-lg shadow-primary/25">
+            <div className="flex flex-col sm:flex-row gap-3 mb-12">
+              <Button size="lg" asChild className="text-base px-7 h-12 shadow-lg shadow-primary/25">
                 <Link href="/learn">
-                  Start Learning Free
+                  Start from zero
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" asChild className="text-base px-8 h-12">
-                <Link href="/challenges">
-                  Try a Challenge
+              <Button variant="outline" size="lg" asChild className="text-base px-7 h-12">
+                <Link href="#curriculum">
+                  See the curriculum
                 </Link>
               </Button>
             </div>
 
             {/* Stats */}
-            <div className="flex gap-10">
+            <div className="grid grid-cols-3 gap-8 max-w-md">
               {[
-                { value: "100+", label: "Lessons" },
-                { value: "36+", label: "Tools Covered" },
-                { value: "Free", label: "Forever" },
+                { value: "100+", label: "lessons" },
+                { value: "40+", label: "tools & frameworks" },
+                { value: "$0", label: "forever" },
               ].map((stat, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 + i * 0.1, duration: 0.5 }}
+                  className="border-l-2 border-primary/60 pl-4"
                 >
-                  <div className="text-2xl font-extrabold text-foreground tracking-tight">
+                  <div className="display-serif text-3xl text-foreground">
                     {stat.value}
                   </div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-0.5">
+                    {stat.label}
+                  </div>
                 </motion.div>
               ))}
             </div>

@@ -89,6 +89,7 @@
   /* Fonts */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-display), "Instrument Serif", Georgia, serif;
 
   /* Spacing Scale (adding custom values) */
   --spacing-18: 4.5rem;
@@ -339,4 +340,48 @@ a:not(button a, [role="button"] a, .nav-link, header a):hover {
   .container-md-up {
     padding: 2rem;
   }
+}
+
+/* Editorial display typography */
+.display-serif {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+}
+
+.display-serif-italic {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+}
+
+/* Section label — small caps monospaced number */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(var(--primary));
+  font-weight: 500;
+}
+
+/* Subtle grain/noise texture for atmospheric backgrounds */
+.grain-texture {
+  position: relative;
+}
+.grain-texture::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.6;
+  mix-blend-mode: multiply;
+}
+.dark .grain-texture::after {
+  opacity: 0.4;
+  mix-blend-mode: screen;
 }

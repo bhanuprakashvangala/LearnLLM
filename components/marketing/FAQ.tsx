@@ -78,14 +78,16 @@ export function FAQ() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="mb-14 max-w-3xl mx-auto"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            Frequently Asked <span className="gradient-text">Questions</span>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="section-label">06 / FAQ</span>
+            <span className="h-px flex-1 bg-border max-w-[200px]" />
+          </div>
+          <h2 className="display-serif text-5xl sm:text-6xl leading-[0.95]">
+            Questions,{" "}
+            <span className="display-serif-italic text-primary">answered.</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to know about LearnLLM.dev
-          </p>
         </motion.div>
 
         {/* FAQ Accordion */}

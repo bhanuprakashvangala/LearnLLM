@@ -117,14 +117,19 @@ export function ToolsEcosystem() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            The Complete <span className="gradient-text">AI Stack</span>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="section-label">04 / Stack</span>
+            <span className="h-px flex-1 bg-border max-w-[200px]" />
+          </div>
+          <h2 className="display-serif text-5xl sm:text-6xl lg:text-[4.5rem] max-w-4xl leading-[0.95]">
+            The complete{" "}
+            <span className="display-serif-italic text-primary">2026 AI stack.</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            LLM providers, agent frameworks, vector databases, code editors, and deployment tools.
-            The entire modern AI development ecosystem in one place.
+          <p className="text-lg text-muted-foreground max-w-2xl mt-6 leading-relaxed">
+            Every provider, framework, database, and tool you need — organized by
+            where they fit in a real system.
           </p>
         </motion.div>
 

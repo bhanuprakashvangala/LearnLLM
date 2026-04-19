@@ -14,62 +14,61 @@ import {
   GitBranch,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 const features = [
   {
     icon: BookOpen,
-    title: "Start with No Code",
-    description: "Begin your AI journey with zero coding. Learn ChatGPT, prompt engineering, NotebookLM, and Bolt.new - perfect for everyone!",
-    gradient: "from-green-500 to-emerald-500",
+    title: "Foundations first",
+    description:
+      "NLP, machine learning, deep learning, embeddings, transformers — explained in plain language before we touch a single line of code.",
   },
   {
     icon: Target,
-    title: "Prompt Engineering",
-    description: "Get 10x better results from ChatGPT and Claude. Master Chain of Thought, Few-Shot prompting, and techniques the pros use.",
-    gradient: "from-orange-500 to-red-500",
+    title: "Prompt engineering",
+    description:
+      "Chain-of-thought, few-shot, structured output, and the prompting patterns Claude 4.7, GPT-5, and Gemini 2.5 actually respond to.",
   },
   {
     icon: Brain,
-    title: "Agentic AI Frameworks",
-    description: "Build autonomous agents with Google ADK, OpenAI Agents SDK, CrewAI, and AutoGen. The hottest skill in AI right now.",
-    gradient: "from-blue-500 to-cyan-500",
-  },
-  {
-    icon: Code2,
-    title: "LangChain & LlamaIndex",
-    description: "Master the two most popular AI frameworks. Build chains, agents, and data-connected AI apps from scratch.",
-    gradient: "from-purple-500 to-pink-500",
+    title: "Agentic frameworks",
+    description:
+      "Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, and Claude Agents. Build autonomous systems, not chat loops.",
   },
   {
     icon: GitBranch,
-    title: "MCP Protocol",
-    description: "Learn Anthropic's Model Context Protocol - the open standard connecting AI to tools and data. The USB-C of AI integration.",
-    gradient: "from-indigo-500 to-purple-500",
+    title: "MCP connectors",
+    description:
+      "The open protocol that's replacing every one-off AI integration. Install, build, and chain connectors across GitHub, Slack, databases, and your own systems.",
+  },
+  {
+    icon: Code2,
+    title: "Workflows that ship",
+    description:
+      "LangGraph, LlamaIndex Workflows, Vercel AI SDK. Stateful multi-step pipelines with checkpoints, retries, and human-in-the-loop gates.",
   },
   {
     icon: Database,
-    title: "RAG & Vector Search",
-    description: "Make AI work with YOUR documents and data. Build production RAG systems with Pinecone, ChromaDB, and Weaviate.",
-    gradient: "from-yellow-500 to-orange-500",
+    title: "RAG & vector search",
+    description:
+      "Production retrieval with Pinecone, ChromaDB, Weaviate, Qdrant. Chunking, hybrid search, re-ranking, long-context strategies.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Fine-Tune & Deploy",
-    description: "Customize models with LoRA/QLoRA, then deploy with vLLM. Go from fine-tuning to production-ready in one path.",
-    gradient: "from-pink-500 to-rose-500",
+    title: "Fine-tune & deploy",
+    description:
+      "LoRA, QLoRA, RLHF, DPO end-to-end. Then ship with vLLM, SGLang, quantization, and the eval stack that catches regressions.",
   },
   {
     icon: Terminal,
-    title: "AI Dev Tools",
-    description: "Master Cursor, Claude Code, Windsurf, and the Vercel AI SDK. Build full-stack AI apps with the modern development stack.",
-    gradient: "from-teal-500 to-cyan-500",
+    title: "Modern AI dev tools",
+    description:
+      "Cursor, Claude Code, Windsurf, Bolt.new, v0, Vercel AI SDK. The tools senior engineers already use every day.",
   },
   {
     icon: Blocks,
-    title: "Real Projects & Challenges",
-    description: "Build multi-agent research systems, production RAG pipelines, full-stack AI apps, and more. Portfolio-ready from day one.",
-    gradient: "from-violet-500 to-purple-500",
+    title: "Real projects, not toys",
+    description:
+      "Multi-agent research systems. Production RAG. Full-stack AI apps. Triage bots with MCP + workflows. Everything is portfolio-ready.",
   },
 ];
 
@@ -99,14 +98,19 @@ export function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            What You'll <span className="gradient-text">Learn</span>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="section-label">03 / Curriculum</span>
+            <span className="h-px flex-1 bg-border max-w-[200px]" />
+          </div>
+          <h2 className="display-serif text-5xl sm:text-6xl lg:text-[4.5rem] max-w-4xl leading-[0.95]">
+            Every skill you need,{" "}
+            <span className="display-serif-italic text-primary">nothing you don't.</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            From prompt engineering to production agentic systems. Every major framework,
-            every essential tool, every skill that matters.
+          <p className="text-lg text-muted-foreground max-w-2xl mt-6 leading-relaxed">
+            Foundations to production. Updated constantly as new frameworks, models,
+            and standards ship — and they ship weekly.
           </p>
         </motion.div>
 
@@ -116,21 +120,26 @@ export function Features() {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-7xl mx-auto"
         >
           {features.map((feature, index) => (
             <motion.div key={index} variants={item}>
-              <Card className="h-full group hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50 bg-card">
-                <CardHeader>
-                  <div className="mb-4">
-                    <div className="inline-flex p-3 rounded-lg bg-primary/10 border border-primary/20">
-                      <feature.icon className="w-6 h-6 text-primary" />
+              <Card className="h-full group hover:border-primary/40 transition-all duration-300 border bg-card relative overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="inline-flex p-2.5 rounded-lg bg-primary/8 border border-primary/15">
+                      <feature.icon className="w-4 h-4 text-primary" strokeWidth={1.75} />
                     </div>
+                    <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
                   </div>
-                  <CardTitle className="text-xl font-bold mb-2">{feature.title}</CardTitle>
+                  <CardTitle className="display-serif text-2xl mb-1 leading-tight">
+                    {feature.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-base leading-relaxed">
+                  <CardDescription className="text-[14px] leading-relaxed text-foreground/65">
                     {feature.description}
                   </CardDescription>
                 </CardContent>
@@ -145,24 +154,24 @@ export function Features() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-12 md:mt-16"
+          className="mt-20 md:mt-24 max-w-6xl mx-auto"
         >
-          <div className="bg-card rounded-2xl p-10 md:p-16 shadow-xl border-2 border-border">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-              {[
-                { value: "100+", label: "Hands-On Lessons", color: "from-primary to-secondary" },
-                { value: "0", label: "Coding Required to Start", color: "from-secondary to-accent" },
-                { value: "20+", label: "Agentic AI Lessons", color: "from-accent to-primary" },
-                { value: "100%", label: "Hands-On & Practical", color: "from-primary via-secondary to-accent" },
-              ].map((stat, i) => (
-                <div key={i} className="group">
-                  <div className={cn("text-5xl md:text-6xl font-extrabold bg-gradient-to-r bg-clip-text text-transparent mb-3", stat.color)}>
-                    {stat.value}
-                  </div>
-                  <div className="text-sm md:text-base font-medium text-foreground/70 group-hover:text-foreground transition-colors">{stat.label}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 py-10 md:py-14 border-y border-border">
+            {[
+              { value: "110+", label: "lessons" },
+              { value: "25+", label: "agentic lessons" },
+              { value: "10", label: "mcp + workflow lessons" },
+              { value: "0", label: "prior knowledge needed" },
+            ].map((stat, i) => (
+              <div key={i} className="text-center md:text-left md:pl-6 md:border-l md:border-border">
+                <div className="display-serif text-5xl md:text-6xl text-foreground mb-2">
+                  {stat.value}
                 </div>
-              ))}
-            </div>
+                <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
       </div>
