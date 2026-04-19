@@ -133,28 +133,31 @@ export function ContentGate({ difficulty, children, title, slug }: ContentGatePr
                 </p>
               </div>
 
-              {/* Google Sign In */}
-              <Button
-                variant="outline"
-                className="w-full h-11 font-medium mb-4"
-                onClick={handleGoogleAuth}
-                disabled={isLoading}
-              >
-                <Chrome className="w-5 h-5 mr-2" />
-                Continue with Google
-              </Button>
+              {/* Google Sign In — only when configured */}
+              {process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED === "true" && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 font-medium mb-4"
+                    onClick={handleGoogleAuth}
+                    disabled={isLoading}
+                  >
+                    <Chrome className="w-5 h-5 mr-2" />
+                    Continue with Google
+                  </Button>
 
-              {/* Divider */}
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-3 bg-card text-muted-foreground">
-                    Or with email
-                  </span>
-                </div>
-              </div>
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="px-3 bg-card text-muted-foreground">
+                        Or with email
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Email Form */}
               <form onSubmit={handleEmailAuth} className="space-y-3">

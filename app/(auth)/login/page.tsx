@@ -97,30 +97,33 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Social Login Buttons */}
-          <div className="space-y-3 mb-6">
-            <Button
-              variant="outline"
-              className="w-full h-11 font-medium transition-all"
-              onClick={() => handleSocialLogin("google")}
-              disabled={isLoading}
-            >
-              <Chrome className="w-5 h-5 mr-2" />
-              Continue with Google
-            </Button>
-          </div>
+          {/* Social Login Buttons — only shown when Google OAuth is configured */}
+          {process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED === "true" && (
+            <>
+              <div className="space-y-3 mb-6">
+                <Button
+                  variant="outline"
+                  className="w-full h-11 font-medium transition-all"
+                  onClick={() => handleSocialLogin("google")}
+                  disabled={isLoading}
+                >
+                  <Chrome className="w-5 h-5 mr-2" />
+                  Continue with Google
+                </Button>
+              </div>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-card text-muted-foreground">
-                Or continue with email
-              </span>
-            </div>
-          </div>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-card text-muted-foreground">
+                    Or continue with email
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Email Login Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
