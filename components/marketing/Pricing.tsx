@@ -16,7 +16,7 @@ const pricingPlans = [
     period: "forever",
     icon: Zap,
     features: [
-      "Access to all 83 lessons",
+      "Access to all 100+ lessons",
       "Complete beginner track",
       "Code examples & snippets",
       "Community forum access",
@@ -95,14 +95,8 @@ export function Pricing() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <div className="inline-block mb-4">
-            <div className="glass rounded-full px-4 py-1.5 inline-flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium">Simple, Transparent Pricing</span>
-            </div>
-          </div>
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            Start Free,  <span className="gradient-text">Level Up When Ready</span>
+            Start Free, <span className="gradient-text">Level Up When Ready</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Everyone starts free with no-code basics. Upgrade anytime to build real AI projects. Cancel whenever you want.

@@ -1,0 +1,121 @@
+---
+title: "Project: Create an AI-Powered Workflow"
+description: "Build your first real AI automation - connect AI to your daily tools and watch it work for you"
+difficulty: "beginner"
+duration: 30
+order: 15
+tags: ["Project", "Workflow", "Automation", "Zapier", "No-Code"]
+---
+
+## Let's Build Something That Works While You Sleep
+
+You've explored AI tools, learned what they can do, and played around with prompts. Now it's time to put it all together and build something real -- an automation that runs on its own, saving you time every single day.
+
+No code. No terminal. No technical background required. Just you, a few free tools, and about 30 minutes.
+
+<Callout type="tip">
+**What We're Building:** An "AI Email Digest" workflow. Every time you receive an email, AI will automatically read it, summarize it in two sentences, flag whether it needs a reply, and send that summary to you in Slack or as a separate email. You'll go from an overflowing inbox to a clean, prioritized digest -- without lifting a finger.
+</Callout>
+
+## What You'll Need
+
+Before we start, make sure you have these ready (all free):
+
+- **A Zapier account** -- [zapier.com](https://zapier.com) (the free tier gives you 100 tasks/month, which is plenty)
+- **A Gmail or Outlook account** -- whichever you use for email
+- **ChatGPT integration** -- Zapier connects to OpenAI's ChatGPT directly (no API key needed for the built-in integration)
+- **Slack or a second email address** -- where your summaries will land
+
+That's it. Four things, all free, zero code.
+
+## Step-by-Step: Building Your AI Email Digest
+
+### Step 1: Sign Up for Zapier
+
+Head to [zapier.com](https://zapier.com) and create a free account. Once you're in, you'll see your dashboard. Click the big **"Create"** button and select **"New Zap"**. A "Zap" is Zapier's word for an automated workflow -- a trigger that kicks off one or more actions.
+
+### Step 2: Set Your Trigger -- "New Email in Gmail"
+
+In the trigger step, search for **Gmail** (or Outlook, if that's what you use). Select the event **"New Email"**. Zapier will ask you to connect your email account -- follow the prompts to sign in and grant permission.
+
+Once connected, you can add filters. For example, you might only want to summarize emails that land in your Primary inbox, or skip newsletters. Set this however you like, or leave it wide open to catch everything.
+
+<Callout type="info">
+**What's a Trigger?** A trigger is the event that starts your automation. Think of it like a domino -- when this one thing happens (new email arrives), it knocks over everything else in the chain. No trigger, no workflow.
+</Callout>
+
+### Step 3: Add an Action -- "Send to ChatGPT"
+
+Click the **"+"** button to add your first action. Search for **"ChatGPT"** (or "OpenAI") and select the action **"Conversation"**. This is where the magic happens.
+
+In the **Message** field, write a prompt like this:
+
+```
+Summarize the following email in exactly 2 sentences.
+Then on a new line, write "Reply needed: Yes" or "Reply needed: No".
+
+Subject: {{subject}}
+From: {{from}}
+Body: {{body}}
+```
+
+The `{{subject}}`, `{{from}}`, and `{{body}}` parts are dynamic -- Zapier will pull the actual email content and plug it in automatically. You'll select these from a dropdown when setting up the field.
+
+<Callout type="tip">
+**Pro Tip:** Be specific in your prompt. "Summarize this email" is okay, but "Summarize in exactly 2 sentences and flag if a reply is needed" gives you consistent, useful results every time. The techniques from prompt engineering apply here too!
+</Callout>
+
+### Step 4: Add a Second Action -- "Send the Summary"
+
+Click **"+"** again to add another action. Now choose where you want your summary delivered:
+
+- **Slack** -- search for Slack, pick "Send Channel Message", choose your channel, and map the ChatGPT output into the message body.
+- **Email** -- search for Gmail, pick "Send Email", set yourself as the recipient, and paste the summary into the body.
+
+Either way, your summary arrives clean and ready to scan.
+
+### Step 5: Test and Activate
+
+Hit **"Test"** on each step to make sure everything connects. Zapier will pull a real recent email, run it through ChatGPT, and send you the summary. Check that the output looks right. If something seems off, tweak your prompt and test again.
+
+When you're happy, click **"Publish"** and turn your Zap on. That's it -- your AI email digest is live.
+
+<Callout type="info">
+**Free Tier Limits:** Zapier's free plan gives you 100 tasks per month and single-step Zaps (one trigger + one action). For a multi-step Zap like ours (trigger + ChatGPT + Slack), you'll need the Starter plan or the free trial. The free trial gives you 14 days of full access, which is plenty of time to test this workflow and decide if it's worth keeping.
+</Callout>
+
+## Alternative: Build It in Make.com
+
+Not a fan of Zapier? **Make.com** (formerly Integrobot) offers a similar experience with a more visual, drag-and-drop interface. The free tier is actually more generous -- 1,000 operations per month.
+
+The steps are nearly identical: create a new Scenario, add a Gmail module as the trigger, add an OpenAI module to process the email with the same prompt, and add a Slack or email module to deliver the summary. Make.com shows the flow as connected bubbles on a canvas, which some people find easier to understand.
+
+## Bonus Idea: AI Meeting Notes Workflow
+
+Once you've built your email digest, try this next-level workflow:
+
+1. **Record** your meeting using Otter.ai or Fireflies.ai (both have free tiers)
+2. **Transcribe** -- these tools automatically turn speech into text
+3. **Summarize** -- send the transcript to ChatGPT via Zapier with a prompt like: "Extract the key decisions, action items with owners, and any deadlines from these meeting notes"
+4. **Share** -- automatically post the summary to a Slack channel or email it to all attendees
+
+This turns a 60-minute meeting into a 30-second read. Your team will thank you.
+
+## What You Learned
+
+Take a moment to appreciate what you just did:
+
+- You connected multiple tools into an automated pipeline -- without writing a single line of code
+- You used prompt engineering inside a real-world workflow, not just a chat window
+- You built something that runs 24/7, saving you time every day
+- You experienced the core idea behind AI automation: **trigger, process, deliver**
+
+<Callout type="tip">
+**You're an AI Automator Now!** Most people talk about AI. You just built something with it. This same pattern -- trigger, AI processing, output -- is the foundation of every AI workflow, from simple email summaries to complex business automations. You now know the blueprint.
+</Callout>
+
+## What's Next?
+
+You've completed the No-Code AI Tools module. You've compared AI assistants, created content with AI, boosted your productivity, thought about ethics, and now built a real automation.
+
+From here, you have options: dive deeper into automation platforms, explore AI app builders like Bolt.new and Lovable, or start learning how AI works under the hood. Whatever path you choose, you're no longer just a user of AI -- you're someone who builds with it.

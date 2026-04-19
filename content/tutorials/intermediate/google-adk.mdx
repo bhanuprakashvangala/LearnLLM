@@ -1,0 +1,478 @@
+---
+title: "Google ADK: Agent Development Kit"
+description: "Build production AI agents with Google's official Agent Development Kit"
+difficulty: "intermediate"
+duration: 25
+order: 42
+tags: ["Google ADK", "AI Agents", "Google", "Gemini"]
+---
+
+# Google ADK: Agent Development Kit
+
+Google's Agent Development Kit (ADK) is an open-source framework for building, deploying, and orchestrating AI agents. Released in 2025, ADK is Google's answer to the growing demand for production-grade agentic frameworks -- built to work seamlessly with Gemini models while remaining flexible enough to support other LLMs.
+
+<Callout type="info">
+**Google ADK Definition:** An open-source, code-first Python framework from Google for building single and multi-agent systems. ADK provides built-in support for tool use, session management, memory, and orchestration, designed to scale from prototypes to production deployments on Vertex AI or any cloud.
+</Callout>
+
+## Why Google Built ADK
+
+The AI agent landscape was fragmented. LangChain offered flexibility but required significant boilerplate. OpenAI's tools were locked to their models. CrewAI focused on multi-agent but lacked production infrastructure.
+
+Google built ADK to provide:
+
+1. **A code-first approach** -- agents defined in Python, not YAML or JSON
+2. **Native Gemini integration** -- first-class support for Gemini 2.0+ features
+3. **Multi-agent orchestration** -- built-in patterns for agent delegation and coordination
+4. **Production readiness** -- session management, memory, evaluation, and deployment to Vertex AI
+5. **Model flexibility** -- works with Gemini, but also supports other LLMs via LiteLLM
+
+## Core Concepts
+
+ADK is built around a few key primitives. Let's walk through each one.
+
+### The Agent Class
+
+Every ADK agent starts with the `Agent` class. You define what the agent does, which model it uses, and which tools it has access to.
+
+```python
+from google.adk.agents import Agent
+
+# Create a simple agent
+weather_agent = Agent(
+    name="weather_agent",
+    model="gemini-2.0-flash",
+    description="Provides weather information for any location",
+    instruction="""You are a helpful weather assistant.
+    When asked about weather, use the get_weather tool to fetch current conditions.
+    Always include temperature, conditions, and a brief recommendation.""",
+    tools=[get_weather]
+)
+```
+
+<Callout type="tip">
+The `instruction` field is your agent's system prompt. Be specific about behavior, tone, and when to use which tools. Good instructions are the biggest lever for agent quality.
+</Callout>
+
+### Tools
+
+Tools are Python functions that agents can call. ADK uses type hints and docstrings to automatically generate tool descriptions for the LLM.
+
+```python
+def get_weather(city: str) -> dict:
+    """Fetches the current weather for a given city.
+
+    Args:
+        city: The name of the city (e.g., "San Francisco", "London").
+
+    Returns:
+        A dictionary with temperature, conditions, and humidity.
+    """
+    # In production, call a real weather API
+    weather_data = {
+        "San Francisco": {"temp": 62, "conditions": "Foggy", "humidity": 78},
+        "London": {"temp": 55, "conditions": "Rainy", "humidity": 85},
+        "Tokyo": {"temp": 72, "conditions": "Clear", "humidity": 60},
+    }
+    if city in weather_data:
+        return weather_data[city]
+    return {"error": f"Weather data not available for {city}"}
+
+
+def get_forecast(city: str, days: int) -> dict:
+    """Fetches the weather forecast for upcoming days.
+
+    Args:
+        city: The name of the city.
+        days: Number of days to forecast (1-7).
+
+    Returns:
+        A dictionary with daily forecasts.
+    """
+    return {
+        "city": city,
+        "forecast": [
+            {"day": i + 1, "temp": 65 + i, "conditions": "Partly Cloudy"}
+            for i in range(min(days, 7))
+        ]
+    }
+```
+
+### Sessions and Runners
+
+To actually run an agent, ADK uses a `Runner` that manages the execution loop. Sessions track the state of each conversation.
+
+```python
+from google.adk.agents import Agent
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.genai import types
+
+# Set up session management
+session_service = InMemorySessionService()
+
+# Create the agent
+agent = Agent(
+    name="weather_agent",
+    model="gemini-2.0-flash",
+    instruction="You are a weather assistant. Use tools to answer weather questions.",
+    tools=[get_weather, get_forecast]
+)
+
+# Create a runner
+runner = Runner(
+    agent=agent,
+    app_name="weather_app",
+    session_service=session_service
+)
+
+# Create a session for this user
+session = session_service.create_session(
+    app_name="weather_app",
+    user_id="user_123"
+)
+
+# Send a message
+user_message = types.Content(
+    role="user",
+    parts=[types.Part(text="What's the weather like in Tokyo?")]
+)
+
+# Run the agent and collect responses
+for event in runner.run(
+    user_id="user_123",
+    session_id=session.id,
+    new_message=user_message
+):
+    if event.is_final_response():
+        print(f"Agent: {event.content.parts[0].text}")
+```
+
+## Multi-Agent Orchestration
+
+ADK's real power shows in multi-agent systems. You can compose agents hierarchically, with a parent agent delegating tasks to specialized sub-agents.
+
+```python
+from google.adk.agents import Agent
+
+# Specialist agents
+researcher = Agent(
+    name="researcher",
+    model="gemini-2.0-flash",
+    description="Searches for and gathers information on any topic",
+    instruction="""You are a research specialist. When given a topic:
+    1. Use search tools to find relevant information
+    2. Summarize key findings clearly
+    3. Cite your sources""",
+    tools=[web_search, read_url]
+)
+
+writer = Agent(
+    name="writer",
+    model="gemini-2.0-flash",
+    description="Writes polished content based on research and briefs",
+    instruction="""You are a professional writer. When given research notes:
+    1. Organize the information logically
+    2. Write clear, engaging prose
+    3. Use appropriate headings and structure""",
+    tools=[]
+)
+
+# Orchestrator agent that delegates to specialists
+coordinator = Agent(
+    name="coordinator",
+    model="gemini-2.0-flash",
+    description="Coordinates research and writing tasks",
+    instruction="""You are a project coordinator. For content creation tasks:
+    1. First delegate research to the researcher agent
+    2. Review the research findings
+    3. Then delegate writing to the writer agent
+    4. Review and deliver the final content""",
+    sub_agents=[researcher, writer]
+)
+```
+
+<Callout type="info">
+When you list agents as `sub_agents`, ADK automatically makes them available as "tools" to the parent agent. The parent can delegate tasks by calling the sub-agent by name, and ADK handles the message passing between agents.
+</Callout>
+
+### Agent Transfer Patterns
+
+ADK supports several orchestration strategies:
+
+```python
+# Sequential: Agents run one after another
+from google.adk.agents import SequentialAgent
+
+pipeline = SequentialAgent(
+    name="content_pipeline",
+    sub_agents=[researcher, writer, editor]
+)
+
+# Loop: Agents run in a cycle until a condition is met
+from google.adk.agents import LoopAgent
+
+review_loop = LoopAgent(
+    name="review_loop",
+    sub_agents=[writer, critic],  # Writer writes, critic reviews, repeat
+    max_iterations=3
+)
+```
+
+## Memory and State
+
+ADK provides built-in memory through session state and long-term storage.
+
+```python
+from google.adk.agents import Agent
+from google.adk.sessions import InMemorySessionService
+
+# Session state persists within a conversation
+def save_user_preference(preference_key: str, preference_value: str) -> str:
+    """Saves a user preference for future reference.
+
+    Args:
+        preference_key: The name of the preference (e.g., "units", "city").
+        preference_value: The value to save.
+
+    Returns:
+        Confirmation message.
+    """
+    # ADK provides state through the tool context
+    return f"Saved preference: {preference_key} = {preference_value}"
+
+
+def get_user_preference(preference_key: str) -> str:
+    """Retrieves a previously saved user preference.
+
+    Args:
+        preference_key: The name of the preference to retrieve.
+
+    Returns:
+        The saved preference value or a not-found message.
+    """
+    return f"Looking up preference: {preference_key}"
+
+
+agent = Agent(
+    name="personalized_assistant",
+    model="gemini-2.0-flash",
+    instruction="""You are a personalized assistant.
+    Save user preferences when they mention them.
+    Recall preferences to personalize your responses.""",
+    tools=[get_weather, save_user_preference, get_user_preference]
+)
+```
+
+## ADK vs LangChain Agents
+
+| Feature | Google ADK | LangChain Agents |
+|---------|-----------|-----------------|
+| **Approach** | Code-first, opinionated | Flexible, composable |
+| **Multi-agent** | Built-in (sub_agents, SequentialAgent, LoopAgent) | Requires LangGraph for complex flows |
+| **Model support** | Gemini-first, others via LiteLLM | Broad multi-provider support |
+| **Memory** | Built-in session and state management | Multiple memory types, more configuration |
+| **Deployment** | Vertex AI Agent Engine, Cloud Run | DIY or LangServe |
+| **Evaluation** | Built-in eval framework | LangSmith (separate product) |
+| **Learning curve** | Lower (opinionated design) | Higher (many abstractions to learn) |
+| **Community** | Growing (newer) | Large, mature ecosystem |
+
+<Callout type="warning">
+Google ADK is optimized for Gemini models. While it supports other LLMs, you'll get the best experience (including native function calling and grounding) when using Gemini 2.0 Flash or Pro. If you need to use multiple model providers equally, LangChain may be a better fit.
+</Callout>
+
+## When to Use ADK
+
+**Choose ADK when you:**
+- Are building on Google Cloud or already use Gemini
+- Need multi-agent orchestration out of the box
+- Want built-in session management and evaluation
+- Prefer an opinionated, batteries-included framework
+- Need to deploy to Vertex AI Agent Engine
+
+**Consider alternatives when you:**
+- Need deep integration with non-Google models
+- Want maximum flexibility in agent architecture
+- Have an existing LangChain codebase
+- Need a very lightweight solution (ADK has some overhead)
+
+## A Complete ADK Example
+
+Let's build a travel planning agent with multiple tools:
+
+```python
+from google.adk.agents import Agent
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
+from google.genai import types
+
+
+def search_flights(origin: str, destination: str, date: str) -> dict:
+    """Searches for available flights between two cities.
+
+    Args:
+        origin: Departure city.
+        destination: Arrival city.
+        date: Travel date in YYYY-MM-DD format.
+
+    Returns:
+        A dictionary with available flights and prices.
+    """
+    return {
+        "flights": [
+            {"airline": "SkyAir", "price": 450, "duration": "5h 30m", "stops": 0},
+            {"airline": "CloudJet", "price": 380, "duration": "7h 15m", "stops": 1},
+        ]
+    }
+
+
+def search_hotels(city: str, checkin: str, checkout: str) -> dict:
+    """Searches for hotels in a city for given dates.
+
+    Args:
+        city: City to search for hotels.
+        checkin: Check-in date in YYYY-MM-DD format.
+        checkout: Check-out date in YYYY-MM-DD format.
+
+    Returns:
+        A dictionary with available hotels and rates.
+    """
+    return {
+        "hotels": [
+            {"name": "Grand Hotel", "price_per_night": 150, "rating": 4.5},
+            {"name": "Budget Inn", "price_per_night": 75, "rating": 3.8},
+        ]
+    }
+
+
+def get_attractions(city: str) -> dict:
+    """Gets top tourist attractions for a city.
+
+    Args:
+        city: City to search for attractions.
+
+    Returns:
+        A list of top attractions with descriptions.
+    """
+    return {
+        "attractions": [
+            {"name": "Central Museum", "type": "Museum", "rating": 4.7},
+            {"name": "Old Town Square", "type": "Historic Site", "rating": 4.5},
+            {"name": "Botanical Gardens", "type": "Park", "rating": 4.3},
+        ]
+    }
+
+
+# Create the travel agent
+travel_agent = Agent(
+    name="travel_planner",
+    model="gemini-2.0-flash",
+    description="A comprehensive travel planning assistant",
+    instruction="""You are an expert travel planner. Help users plan trips by:
+    1. Searching for flights to their destination
+    2. Finding suitable hotels within their budget
+    3. Recommending attractions and activities
+    4. Creating a day-by-day itinerary
+
+    Always ask for dates and budget if not provided.
+    Present options clearly with prices and ratings.
+    Offer both budget and premium options when available.""",
+    tools=[search_flights, search_hotels, get_attractions]
+)
+
+# Set up and run
+session_service = InMemorySessionService()
+runner = Runner(
+    agent=travel_agent,
+    app_name="travel_app",
+    session_service=session_service
+)
+
+session = session_service.create_session(
+    app_name="travel_app",
+    user_id="traveler_1"
+)
+
+# Simulate a conversation
+message = types.Content(
+    role="user",
+    parts=[types.Part(text="I want to plan a 3-day trip to Prague from New York, departing March 20th. Budget is $1500.")]
+)
+
+for event in runner.run(
+    user_id="traveler_1",
+    session_id=session.id,
+    new_message=message
+):
+    if event.is_final_response():
+        print(event.content.parts[0].text)
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You've Learned:**
+1. Google ADK is a code-first framework for building AI agents with Gemini
+2. Agents are defined with a name, model, instruction, and tools
+3. Tools are plain Python functions -- ADK reads type hints and docstrings automatically
+4. Multi-agent orchestration is built in via sub_agents, SequentialAgent, and LoopAgent
+5. Sessions and runners manage state and execution
+6. ADK is strongest in Google Cloud environments with Gemini models
+</Callout>
+
+## Next Steps
+
+Next, we'll explore OpenAI's Agents SDK -- a different approach to building agents that emphasizes handoffs, guardrails, and tracing. Understanding both frameworks will help you pick the right tool for your use case.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What is the primary advantage of Google ADK's approach to defining tools?",
+      options: [
+        "Tools must be defined in a YAML configuration file",
+        "ADK automatically reads Python type hints and docstrings to create tool descriptions",
+        "Tools can only be written in Go or Java",
+        "ADK requires you to manually write JSON schemas for each tool"
+      ],
+      correctAnswer: 1,
+      explanation: "Google ADK uses Python type hints and docstrings to automatically generate the tool descriptions that the LLM needs to understand and use the tools. This keeps tool definitions clean and Pythonic."
+    },
+    {
+      question: "How does ADK handle multi-agent orchestration?",
+      options: [
+        "All agents run in parallel and race to finish first",
+        "Parent agents can delegate to sub_agents, and ADK provides SequentialAgent and LoopAgent patterns",
+        "Only two agents can communicate at a time",
+        "Multi-agent is not supported -- you need LangChain for that"
+      ],
+      correctAnswer: 1,
+      explanation: "ADK supports multi-agent orchestration natively. You can set sub_agents on a parent agent for delegation, use SequentialAgent for pipelines, and LoopAgent for iterative workflows."
+    },
+    {
+      question: "When is Google ADK the strongest choice?",
+      options: [
+        "When you need to use only open-source models like LLaMA",
+        "When building on Google Cloud with Gemini models and need production deployment",
+        "When you want the largest community and most third-party integrations",
+        "When you need a no-code agent builder"
+      ],
+      correctAnswer: 1,
+      explanation: "ADK is strongest when you're building on Google Cloud, using Gemini models, and need production features like session management, evaluation, and deployment to Vertex AI Agent Engine."
+    },
+    {
+      question: "What role does the Runner class play in ADK?",
+      options: [
+        "It trains the model on new data",
+        "It manages the agent execution loop, handling messages, tool calls, and responses",
+        "It deploys the agent to production automatically",
+        "It runs unit tests on the agent's tools"
+      ],
+      correctAnswer: 1,
+      explanation: "The Runner manages the execution lifecycle of an agent. It handles sending messages to the agent, processing tool calls, feeding results back, and collecting the final response -- all while maintaining session state."
+    }
+  ]}
+/>

@@ -1,0 +1,441 @@
+---
+title: "LlamaIndex: Connect AI to Your Data"
+description: "Master LlamaIndex - the data framework that makes it easy to build AI apps over your documents"
+difficulty: "intermediate"
+duration: 25
+order: 47
+tags: ["LlamaIndex", "Data", "RAG", "Documents", "AI Framework"]
+---
+
+# LlamaIndex: Connect AI to Your Data
+
+LLMs are powerful, but they don't know about *your* data -- your company documents, your codebase, your research papers. **LlamaIndex** is a data framework designed to bridge this gap. It makes it straightforward to ingest, structure, index, and query your private data using LLMs.
+
+If LangChain is a general-purpose toolkit for building LLM applications, LlamaIndex is a specialized framework laser-focused on one thing: **connecting AI to your data**.
+
+<Callout type="info">
+**LlamaIndex Definition:** An open-source data framework for building LLM applications over custom data. It provides tools for ingesting data from any source, structuring it into optimized indices, and querying it using natural language -- making it the go-to framework for RAG (Retrieval-Augmented Generation) pipelines.
+</Callout>
+
+## Why LlamaIndex?
+
+Building a RAG system from scratch involves many steps: loading documents in different formats, splitting them into chunks, computing embeddings, storing them in a vector database, retrieving relevant chunks at query time, and synthesizing a final answer. LlamaIndex provides clean abstractions for every one of these steps.
+
+Key reasons developers choose LlamaIndex:
+
+1. **Data-first design** -- built specifically for connecting LLMs to data
+2. **160+ data connectors** -- load from PDFs, databases, APIs, Notion, Slack, Google Drive, and more via LlamaHub
+3. **Multiple index types** -- vector, keyword, tree, summary, and knowledge graph indices
+4. **Advanced retrieval** -- hybrid search, reranking, recursive retrieval, sub-question decomposition
+5. **Simple to start, powerful to scale** -- a basic pipeline is 5 lines of code; production pipelines have full customization
+
+## Installation and Setup
+
+```bash
+# Install LlamaIndex core
+pip install llama-index
+
+# Install OpenAI integration (default LLM and embedding provider)
+pip install llama-index-llms-openai llama-index-embeddings-openai
+
+# Optional: readers for PDF, DOCX, and other file types
+pip install llama-index-readers-file
+```
+
+Set your API key:
+
+```bash
+export OPENAI_API_KEY="your_openai_api_key_here"
+```
+
+<Callout type="warning">
+Never hardcode API keys in your source files. Use environment variables or a `.env` file with `python-dotenv`.
+</Callout>
+
+## Core Concepts
+
+LlamaIndex has five key abstractions that form the backbone of every application.
+
+### 1. Documents
+
+A Document is a container for your source data. It could be a PDF, a webpage, a database row, or an API response. Documents hold the raw text and associated metadata.
+
+```python
+from llama_index.core import Document
+
+# Create documents manually
+doc = Document(
+    text="LlamaIndex is a data framework for LLM applications.",
+    metadata={"source": "docs", "category": "overview"}
+)
+
+# Or load documents from files (the most common approach)
+from llama_index.core import SimpleDirectoryReader
+
+# Load all supported files from a directory
+documents = SimpleDirectoryReader("./my_data").load_data()
+print(f"Loaded {len(documents)} documents")
+
+# Load specific file types with recursive directory scanning
+documents = SimpleDirectoryReader(
+    input_dir="./knowledge_base",
+    recursive=True,
+    required_exts=[".pdf", ".txt", ".md", ".docx"]
+).load_data()
+```
+
+### 2. Nodes
+
+Nodes are chunks of Documents. When you build an index, LlamaIndex splits your Documents into smaller Nodes that are suitable for embedding and retrieval. Each Node maintains a reference back to its source Document and preserves metadata.
+
+```python
+from llama_index.core.node_parser import SentenceSplitter
+
+# Split documents into nodes (chunks)
+parser = SentenceSplitter(
+    chunk_size=1024,    # Max characters per chunk
+    chunk_overlap=200   # Overlap between chunks for context continuity
+)
+
+nodes = parser.get_nodes_from_documents(documents)
+print(f"Created {len(nodes)} nodes from {len(documents)} documents")
+
+# Inspect a node
+print(f"Node text: {nodes[0].text[:100]}...")
+print(f"Source doc: {nodes[0].metadata.get('file_name', 'N/A')}")
+```
+
+<Callout type="tip">
+**Chunk size matters.** Smaller chunks (256-512 tokens) give more precise retrieval but may lose context. Larger chunks (1024-2048 tokens) preserve more context but may include irrelevant information. Start with 1024 and adjust based on your retrieval quality.
+</Callout>
+
+### 3. Indices
+
+An Index organizes your Nodes for efficient retrieval. The most common type is the VectorStoreIndex, which embeds each Node and stores the vectors for similarity search.
+
+```python
+from llama_index.core import VectorStoreIndex
+
+# Build a vector index from documents
+# (handles chunking and embedding automatically)
+index = VectorStoreIndex.from_documents(documents)
+
+# Or build from pre-computed nodes for more control
+index = VectorStoreIndex(nodes)
+```
+
+LlamaIndex supports several index types for different use cases:
+
+| Index Type | How It Works | Best For |
+|-----------|-------------|---------|
+| **VectorStoreIndex** | Embeds nodes, retrieves by semantic similarity | General-purpose semantic search |
+| **SummaryIndex** | Stores all nodes, iterates through them | Small datasets, comprehensive answers |
+| **TreeIndex** | Builds a tree of summaries from leaf nodes | Hierarchical documents, summarization |
+| **KeywordTableIndex** | Extracts keywords for keyword-based lookup | Exact term matching, structured data |
+| **KnowledgeGraphIndex** | Builds a knowledge graph from text entities | Relationship-heavy data, entity queries |
+
+### 4. Query Engines
+
+A Query Engine wraps an Index and provides a natural language interface. You ask a question in plain English, and it retrieves relevant context, sends it to the LLM, and returns a synthesized answer.
+
+```python
+# Create a query engine from the index
+query_engine = index.as_query_engine()
+
+# Ask a question
+response = query_engine.query("What is LlamaIndex used for?")
+print(response)
+
+# Access source nodes that were used to generate the answer
+for node in response.source_nodes:
+    print(f"Source: {node.metadata.get('file_name')} | Score: {node.score:.3f}")
+```
+
+You can customize retrieval and synthesis behavior:
+
+```python
+query_engine = index.as_query_engine(
+    similarity_top_k=5,            # Retrieve top 5 most relevant chunks
+    response_mode="compact",        # Compact context before sending to LLM
+    streaming=True                  # Stream the response token by token
+)
+
+# With streaming
+streaming_response = query_engine.query("Explain the architecture.")
+for text in streaming_response.response_gen:
+    print(text, end="", flush=True)
+```
+
+Response modes control how the LLM synthesizes answers from retrieved chunks:
+
+| Response Mode | Behavior |
+|---------------|----------|
+| **compact** | Stuffs as many chunks as possible into one LLM call |
+| **refine** | Iterates through chunks, refining the answer with each one |
+| **tree_summarize** | Builds a tree of summaries for long contexts |
+| **simple_summarize** | Truncates context to fit in a single LLM call |
+
+### 5. Chat Engines
+
+For conversational applications, Chat Engines maintain conversation history and context across multiple turns.
+
+```python
+# Create a chat engine with context awareness
+chat_engine = index.as_chat_engine(
+    chat_mode="condense_plus_context",
+    verbose=True
+)
+
+# Multi-turn conversation
+response1 = chat_engine.chat("What are the main features of LlamaIndex?")
+print(response1)
+
+# Follow-up question (engine remembers context)
+response2 = chat_engine.chat("How does it compare to LangChain?")
+print(response2)
+
+# Reset conversation history
+chat_engine.reset()
+```
+
+<Callout type="info">
+**condense_plus_context mode:** The chat engine first condenses the conversation history and current question into a standalone query, then retrieves relevant context, and finally generates a response. This prevents retrieval quality from degrading as conversations grow longer.
+</Callout>
+
+## Building a Complete RAG Pipeline
+
+Here is a complete, working RAG system that you can run over your own documents.
+
+```python
+# rag_app.py
+import os
+from llama_index.core import (
+    VectorStoreIndex,
+    SimpleDirectoryReader,
+    Settings,
+    StorageContext,
+    load_index_from_storage
+)
+from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
+
+# Configure global settings
+Settings.llm = OpenAI(model="gpt-4o", temperature=0.1)
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+
+PERSIST_DIR = "./storage"
+
+
+def build_index():
+    """Load documents and build the vector index."""
+    documents = SimpleDirectoryReader(
+        input_dir="./data",
+        recursive=True,
+        required_exts=[".pdf", ".txt", ".md", ".docx"]
+    ).load_data()
+
+    print(f"Loaded {len(documents)} documents")
+    index = VectorStoreIndex.from_documents(documents)
+
+    # Persist to disk so we don't rebuild every time
+    index.storage_context.persist(persist_dir=PERSIST_DIR)
+    print(f"Index persisted to {PERSIST_DIR}")
+    return index
+
+
+def load_index():
+    """Load a previously built index from disk."""
+    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
+    return load_index_from_storage(storage_context)
+
+
+def get_index():
+    """Get or build the index."""
+    if os.path.exists(PERSIST_DIR):
+        print("Loading existing index...")
+        return load_index()
+    print("Building new index...")
+    return build_index()
+
+
+def main():
+    index = get_index()
+
+    query_engine = index.as_query_engine(
+        similarity_top_k=5,
+        response_mode="compact"
+    )
+
+    print("\nRAG System Ready. Type 'quit' to exit.\n")
+    while True:
+        question = input("Question: ").strip()
+        if question.lower() in ("quit", "exit", "q"):
+            break
+
+        response = query_engine.query(question)
+        print(f"\nAnswer: {response}\n")
+
+        # Show source documents
+        if response.source_nodes:
+            print("Sources:")
+            for i, node in enumerate(response.source_nodes, 1):
+                source = node.metadata.get("file_name", "Unknown")
+                score = f"{node.score:.3f}" if node.score else "N/A"
+                print(f"  {i}. {source} (relevance: {score})")
+            print()
+
+
+if __name__ == "__main__":
+    main()
+```
+
+<Callout type="tip">
+**Persisting the Index:** The `persist()` method saves your index to disk so you don't need to re-embed all your documents every time you start the application. This saves both time and API costs. On subsequent runs, loading from storage is nearly instant.
+</Callout>
+
+## LlamaIndex vs LangChain
+
+Both frameworks are powerful, but they solve different primary problems.
+
+| Aspect | LlamaIndex | LangChain |
+|--------|-----------|-----------|
+| **Primary focus** | Data indexing and retrieval | General LLM application building |
+| **Key strength** | RAG pipelines, document Q&A | Chains, agents, complex workflows |
+| **Data connectors** | 160+ built-in via LlamaHub | Fewer native connectors |
+| **Index types** | Vector, tree, keyword, knowledge graph | Primarily vector-based |
+| **Query synthesis** | Multiple modes (compact, refine, tree_summarize) | Basic context stuffing |
+| **Learning curve** | Lower for data/RAG tasks | Lower for agent/chain tasks |
+| **Best for** | "I want to chat with my documents" | "I want to build complex AI workflows" |
+| **Composability** | Can be used inside LangChain agents | Can use LlamaIndex as a retrieval tool |
+
+<Callout type="info">
+**They work together.** LlamaIndex and LangChain are complementary, not competitors. You can use LlamaIndex as a retrieval tool inside a LangChain agent, or use LangChain's chain abstractions to orchestrate LlamaIndex query engines. Many production systems use both.
+</Callout>
+
+## Advanced Features
+
+### Sub-Question Query Engine
+
+For complex questions that span multiple data sources, the sub-question query engine breaks a question into targeted sub-questions.
+
+```python
+from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.query_engine import SubQuestionQueryEngine
+
+# Create tools from different indices
+tools = [
+    QueryEngineTool(
+        query_engine=financial_index.as_query_engine(),
+        metadata=ToolMetadata(
+            name="financials",
+            description="Contains financial reports and earnings data"
+        )
+    ),
+    QueryEngineTool(
+        query_engine=product_index.as_query_engine(),
+        metadata=ToolMetadata(
+            name="products",
+            description="Contains product documentation and roadmaps"
+        )
+    )
+]
+
+# Engine automatically decomposes complex questions
+engine = SubQuestionQueryEngine.from_defaults(query_engine_tools=tools)
+
+response = engine.query(
+    "How did Q3 product launches affect revenue growth?"
+)
+# The engine will ask the product index about Q3 launches
+# and the financial index about revenue, then synthesize both
+```
+
+### Using External Vector Stores
+
+LlamaIndex integrates with all major vector databases for production deployments.
+
+```python
+# ChromaDB example
+import chromadb
+from llama_index.vector_stores.chroma import ChromaVectorStore
+
+chroma_client = chromadb.PersistentClient(path="./chroma_db")
+collection = chroma_client.get_or_create_collection("my_docs")
+
+vector_store = ChromaVectorStore(chroma_collection=collection)
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+index = VectorStoreIndex.from_documents(
+    documents,
+    storage_context=storage_context
+)
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You Have Learned:**
+1. LlamaIndex is a data framework for building LLM applications over your private data
+2. The five core abstractions are Documents, Nodes, Indices, Query Engines, and Chat Engines
+3. A basic RAG pipeline can be built in under 10 lines of code
+4. Multiple index types serve different data patterns and retrieval needs
+5. Indices can be persisted to disk to avoid re-embedding on every restart
+6. LlamaIndex and LangChain are complementary -- use each for its strengths
+</Callout>
+
+## Next Steps
+
+Try building a RAG system over your own documents. Start with a small set of PDFs or markdown files and experiment with different chunk sizes, index types, and response modes to see how they affect answer quality.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What is the primary focus of LlamaIndex compared to LangChain?",
+      options: [
+        "Building chat interfaces",
+        "Data ingestion, indexing, and retrieval for LLM applications",
+        "Training custom language models",
+        "Deploying AI applications to the cloud"
+      ],
+      correctAnswer: 1,
+      explanation: "LlamaIndex is specifically designed for the data problem -- ingesting documents, building indices, and providing query interfaces. LangChain is more general-purpose, focused on chains, agents, and complex LLM workflows."
+    },
+    {
+      question: "What is the difference between a Document and a Node in LlamaIndex?",
+      options: [
+        "Documents are for text data, Nodes are for images",
+        "A Document is a raw source file, while a Node is a smaller chunk of a Document used for indexing and retrieval",
+        "Documents are stored in databases, Nodes are stored in memory",
+        "There is no difference -- they are interchangeable terms"
+      ],
+      correctAnswer: 1,
+      explanation: "A Document represents a full source (a PDF, a webpage, etc.) while Nodes are smaller chunks that LlamaIndex creates from Documents. Nodes are what get embedded and stored in the index for retrieval."
+    },
+    {
+      question: "Why would you persist a LlamaIndex index to disk?",
+      options: [
+        "To share the index with other users",
+        "To avoid re-embedding all documents every time the application starts, saving time and API costs",
+        "Persistence is required for the index to work at all",
+        "To make the index searchable from a web browser"
+      ],
+      correctAnswer: 1,
+      explanation: "Embedding documents requires API calls that cost money and take time. Persisting the index to disk means you compute embeddings once. On subsequent runs, you load the pre-built index nearly instantly."
+    },
+    {
+      question: "What does the similarity_top_k parameter control in a query engine?",
+      options: [
+        "The temperature of the LLM response",
+        "The number of most relevant document chunks retrieved for answering a question",
+        "The maximum length of the response",
+        "The number of documents that can be loaded"
+      ],
+      correctAnswer: 1,
+      explanation: "similarity_top_k controls how many of the most semantically similar document chunks are retrieved from the index and sent to the LLM as context for generating an answer. Higher values provide more context but use more tokens."
+    }
+  ]}
+/>

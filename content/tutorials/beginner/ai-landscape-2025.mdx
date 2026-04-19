@@ -1,0 +1,158 @@
+---
+title: "The AI Landscape: Who's Building What"
+description: "A friendly guide to the major AI companies, models, and what makes each one special"
+difficulty: "beginner"
+duration: 12
+order: 20
+tags: ["AI Companies", "OpenAI", "Google", "Anthropic", "Meta", "AI Models"]
+---
+
+## The AI world is huge -- let's make sense of it
+
+If you've been following along in this series, you've heard a lot of company and model names thrown around. OpenAI, Google, Claude, Gemini, Llama... it can feel like alphabet soup.
+
+Let's fix that. In this lesson, we'll walk through the major players in AI, what they're building, and why it all matters. Think of this as your friendly field guide to the AI landscape.
+
+## The "Big 4" of AI
+
+Four companies are leading the charge in large language models. Each has a different philosophy and set of strengths.
+
+### OpenAI (GPT-4o, o1, o3)
+
+The company that started the current AI boom with ChatGPT. OpenAI is probably the name most people associate with AI.
+
+- **Key models:** GPT-4o (fast and multimodal), o1 and o3 (reasoning-focused models that "think" before answering)
+- **Products:** ChatGPT, DALL-E (images), Sora (video), API platform
+- **Known for:** Being first to market, massive consumer reach, strong partnerships with Microsoft
+- **Philosophy:** Move fast, ship products, aim for AGI
+
+### Google (Gemini)
+
+Google has been doing AI research longer than almost anyone (they invented the Transformer architecture that powers *all* modern LLMs). They've consolidated under the **Gemini** brand.
+
+- **Key models:** Gemini 2.0 Flash (fast), Gemini 2.0 Pro (powerful), Gemini Ultra (their biggest)
+- **Products:** Gemini chatbot, AI in Google Search, Workspace, Android, and Cloud
+- **Known for:** Massive scale, integration across billions of devices, strong multimodal capabilities
+- **Philosophy:** AI woven into everything Google builds
+
+<Callout type="info">
+**Multimodal Definition:** An AI model that can understand and generate more than just text. Multimodal models can work with images, audio, video, and code -- sometimes all at once. Most leading models in 2025 are multimodal.
+</Callout>
+
+### Anthropic (Claude)
+
+Anthropic was founded by former OpenAI researchers who wanted to focus on AI safety. Their model, **Claude**, has become a favorite among developers and professionals.
+
+- **Key models:** Claude 4 Opus (most capable), Claude Sonnet (balanced), Claude Haiku (fast and lightweight)
+- **Products:** claude.ai chatbot, Claude Code (terminal coding), API platform
+- **Known for:** Long context windows (up to 1M tokens!), safety research, excellent at writing and coding
+- **Philosophy:** Build powerful AI responsibly, with safety as a core priority
+
+### Meta (Llama)
+
+Meta (Facebook's parent company) took a radically different approach: they made their models **open source**. Anyone can download, modify, and use Llama models for free.
+
+- **Key models:** Llama 3, Llama 4 (latest generation)
+- **Products:** Open-source models, AI features in Facebook/Instagram/WhatsApp
+- **Known for:** Democratizing AI through open source, enabling a massive ecosystem of fine-tuned models
+- **Philosophy:** AI should be open and accessible to everyone
+
+<Callout type="tip">
+**Pro Tip:** You don't need to pick one company or model to be loyal to. Each has strengths in different areas. Many professionals use Claude for writing and analysis, GPT-4o for quick tasks, and Gemini for anything deeply integrated with Google services.
+</Callout>
+
+## Open source vs. closed source (and why it matters)
+
+This is one of the biggest debates in AI right now:
+
+**Closed source** (OpenAI, Google, Anthropic):
+- You access the model through an API or website
+- The model weights and training data are proprietary
+- The company controls how the model behaves
+- Usually more powerful and polished
+
+**Open source** (Meta, Mistral, and others):
+- Anyone can download the full model
+- You can run it on your own hardware -- your data never leaves your computer
+- You can customize and fine-tune it for specific tasks
+- Drives innovation because thousands of developers improve on it
+
+Neither approach is "better" -- they serve different needs. If you care about privacy, open source is great. If you want the best performance with minimal setup, closed source models are usually ahead.
+
+## Smaller players making waves
+
+The AI world isn't just about the Big 4. Several smaller companies are doing seriously impressive work:
+
+- **Mistral** (France) -- punches way above its weight with efficient, high-quality models that rival much larger competitors
+- **xAI** (Elon Musk) -- building Grok, integrated into the X platform, known for fewer content restrictions
+- **Cohere** -- focused on enterprise AI, great for businesses that need reliable, deployable models
+- **DeepSeek** (China) -- made headlines with surprisingly capable open-source models at lower costs
+- **Stability AI** -- leaders in open-source image generation (Stable Diffusion)
+
+![Diagram showing the AI company landscape organized by open source vs closed source, with model names and key products](/images/tutorials/ai-landscape-map.png)
+
+## The hardware race
+
+AI models need enormous computing power. Behind the scenes, there's a fierce competition over the chips that make it all possible:
+
+- **NVIDIA** -- dominates the AI chip market with their H100 and B200 GPUs. If AI is gold, NVIDIA is selling the pickaxes
+- **Google TPUs** -- custom chips designed specifically for training and running AI models at Google's scale
+- **Apple Silicon** -- increasingly capable of running smaller AI models locally on your Mac or iPhone
+- **AMD and Intel** -- racing to compete with NVIDIA's dominance in AI hardware
+
+<Callout type="info">
+**GPU (Graphics Processing Unit) Definition:** Originally designed for rendering video game graphics, GPUs turned out to be perfect for AI training because they can do thousands of calculations simultaneously. Training a modern LLM requires thousands of GPUs working together for months.
+</Callout>
+
+## The AI frameworks ecosystem
+
+If you're interested in *building* with AI (even as a beginner), there are some popular frameworks worth knowing about:
+
+- **LangChain** -- the most popular framework for building LLM-powered applications, great for chaining together multiple AI steps
+- **LlamaIndex** -- specialized in connecting LLMs to your own data sources (perfect for RAG applications)
+- **CrewAI** -- makes it easy to build multi-agent systems where several AI agents collaborate
+- **Google ADK (Agent Development Kit)** -- Google's framework for building AI agents in their ecosystem
+- **Vercel AI SDK** -- clean, simple tools for adding AI to web applications
+
+## How to choose the right model
+
+Feeling overwhelmed? Here's a simple guide:
+
+| Need | Best choice |
+|---|---|
+| General chat and questions | ChatGPT or Claude |
+| Writing and analysis | Claude (Opus or Sonnet) |
+| Coding help | Claude Code or GPT-4o |
+| Google ecosystem integration | Gemini |
+| Privacy / running locally | Llama or Mistral |
+| Image generation | DALL-E 3, Midjourney, or Stable Diffusion |
+| Budget-friendly API use | Gemini Flash, Claude Haiku, or open-source models |
+
+## The AI timeline: key moments
+
+It helps to see how fast this has all moved:
+
+- **2017** -- Google publishes "Attention Is All You Need," introducing the Transformer architecture
+- **2020** -- OpenAI releases GPT-3, showing LLMs can do remarkable things
+- **2022 (Nov)** -- ChatGPT launches, breaks the internet, reaches 100M users in 2 months
+- **2023** -- GPT-4 arrives, Claude 2 launches, Llama goes open source, AI coding tools explode
+- **2024** -- Reasoning models (o1), agentic AI, multimodal everything, AI agents go mainstream
+- **2025** -- The agent era accelerates, AI integrated into operating systems, 1M+ token context windows
+
+<Callout type="tip">
+**Pro Tip:** The AI field moves incredibly fast. The best way to stay current is to follow a few trusted sources: newsletters like "The Batch" by Andrew Ng, blogs from the major AI companies, and communities on Reddit (r/LocalLLaMA, r/artificial) or X/Twitter.
+</Callout>
+
+## You now have the big picture
+
+Congratulations -- you've just completed the "Real-World AI Tools" module! You now understand:
+
+- How to use AI for research (NotebookLM)
+- How AI is transforming coding (Copilot, Cursor, Claude Code)
+- How to build apps without coding (Bolt.new, Lovable, v0)
+- What agentic AI is and why it matters
+- Who the major players are and what makes each one unique
+
+The AI landscape will keep evolving, but the foundation you've built here will help you make sense of every new development. You're no longer just a spectator -- you understand the game.
+
+Now get out there and start experimenting. The best way to learn AI is to *use* AI!

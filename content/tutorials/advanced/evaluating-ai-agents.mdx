@@ -1,0 +1,682 @@
+---
+title: "Evaluating & Testing AI Agents"
+description: "Learn systematic approaches to evaluate, test, and benchmark AI agent performance"
+difficulty: "advanced"
+duration: 25
+order: 84
+tags: ["Evaluation", "Testing", "Benchmarks", "Quality", "AI Agents"]
+---
+
+# Evaluating & Testing AI Agents
+
+Evaluating AI agents is fundamentally harder than evaluating simple LLM outputs. An agent takes multi-step actions, uses tools, makes branching decisions, and produces outcomes that depend on sequences of choices. A single wrong step early in a trajectory can cascade into complete failure, even if every individual step looks reasonable in isolation.
+
+This lesson covers systematic approaches to testing, evaluating, and monitoring agents -- from unit testing individual components to benchmarking end-to-end performance in production.
+
+<Callout type="info">
+**Agent Evaluation Challenge:** Unlike simple prompt-response evaluation, agent evaluation must assess multi-step trajectories, tool use correctness, intermediate reasoning, and final task completion -- all while dealing with non-determinism. The same agent given the same task may take different paths and produce different results each time.
+</Callout>
+
+## Why Agent Evaluation Is Hard
+
+```
+Simple LLM Evaluation:
+  Input ──► Model ──► Output ──► Evaluate
+
+Agent Evaluation:
+  Input ──► Plan ──► Tool Call ──► Observe ──► Reason ──► Tool Call ──►
+  Observe ──► Reason ──► Tool Call ──► Final Output ──► Evaluate
+
+  (Every step can fail. Every step can vary. The path itself matters.)
+```
+
+The core challenges:
+
+1. **Non-determinism** -- The same agent may take different paths each run due to LLM sampling
+2. **Trajectory matters** -- Two agents might reach the same answer but one used 3 steps and the other used 15
+3. **Partial credit** -- An agent might complete 80% of a task correctly -- is that a pass or fail?
+4. **Side effects** -- Agents interact with tools and external systems; bad tool calls can cause real damage
+5. **Cost** -- Running agent evaluations requires many LLM calls per test case, making large eval suites expensive
+
+## Evaluation Dimensions
+
+A comprehensive agent evaluation framework measures along four dimensions.
+
+### 1. Task Completion
+
+Did the agent actually accomplish what was asked? This is the most basic metric but needs nuance.
+
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class TaskCompletionResult:
+    """Result of evaluating task completion."""
+    task_id: str
+    completed: bool
+    partial_score: float  # 0.0 to 1.0 for partial credit
+    final_answer: str
+    expected_answer: str
+    match_type: str  # "exact", "semantic", "partial"
+
+
+def evaluate_task_completion(
+    task_description: str,
+    expected_output: str,
+    actual_output: str,
+    evaluator_llm=None
+) -> TaskCompletionResult:
+    """Evaluate whether the agent completed the task correctly."""
+
+    # Strategy 1: Exact match (for factual answers)
+    if actual_output.strip().lower() == expected_output.strip().lower():
+        return TaskCompletionResult(
+            task_id=task_description[:50],
+            completed=True,
+            partial_score=1.0,
+            final_answer=actual_output,
+            expected_answer=expected_output,
+            match_type="exact"
+        )
+
+    # Strategy 2: LLM-as-judge for semantic evaluation
+    if evaluator_llm:
+        judge_prompt = f"""Evaluate whether the agent's output correctly completes the task.
+
+Task: {task_description}
+Expected Output: {expected_output}
+Actual Output: {actual_output}
+
+Score from 0.0 to 1.0 where:
+- 1.0 = fully correct and complete
+- 0.7-0.9 = mostly correct with minor issues
+- 0.4-0.6 = partially correct, significant gaps
+- 0.0-0.3 = incorrect or irrelevant
+
+Respond with JSON: {{"score": float, "reasoning": string}}"""
+
+        response = evaluator_llm.invoke(judge_prompt)
+        # Parse the JSON response
+        import json
+        result = json.loads(response.content)
+        return TaskCompletionResult(
+            task_id=task_description[:50],
+            completed=result["score"] >= 0.7,
+            partial_score=result["score"],
+            final_answer=actual_output,
+            expected_answer=expected_output,
+            match_type="semantic"
+        )
+
+    return TaskCompletionResult(
+        task_id=task_description[:50],
+        completed=False,
+        partial_score=0.0,
+        final_answer=actual_output,
+        expected_answer=expected_output,
+        match_type="unknown"
+    )
+```
+
+### 2. Efficiency
+
+How many steps, tokens, and tool calls did the agent need? An agent that solves a problem in 3 steps is better than one that takes 20, even if both produce the correct answer.
+
+```python
+@dataclass
+class EfficiencyMetrics:
+    """Metrics for agent efficiency."""
+    total_steps: int
+    tool_calls: int
+    llm_calls: int
+    total_tokens: int
+    total_cost_usd: float
+    wall_time_seconds: float
+    unnecessary_steps: int  # Steps that didn't contribute to the answer
+
+
+def evaluate_efficiency(trace: list[dict]) -> EfficiencyMetrics:
+    """Evaluate agent efficiency from its execution trace."""
+    tool_calls = sum(1 for step in trace if step["type"] == "tool_call")
+    llm_calls = sum(1 for step in trace if step["type"] == "llm_call")
+    total_tokens = sum(step.get("tokens", 0) for step in trace)
+
+    # Estimate cost (GPT-4o pricing as example)
+    input_tokens = sum(step.get("input_tokens", 0) for step in trace)
+    output_tokens = sum(step.get("output_tokens", 0) for step in trace)
+    cost = (input_tokens * 2.50 / 1_000_000) + (output_tokens * 10.00 / 1_000_000)
+
+    # Detect unnecessary steps (repeated queries, redundant tool calls)
+    unnecessary = 0
+    seen_tool_calls = set()
+    for step in trace:
+        if step["type"] == "tool_call":
+            call_key = f"{step['tool']}:{step.get('args', '')}"
+            if call_key in seen_tool_calls:
+                unnecessary += 1
+            seen_tool_calls.add(call_key)
+
+    return EfficiencyMetrics(
+        total_steps=len(trace),
+        tool_calls=tool_calls,
+        llm_calls=llm_calls,
+        total_tokens=total_tokens,
+        total_cost_usd=cost,
+        wall_time_seconds=trace[-1].get("timestamp", 0) - trace[0].get("timestamp", 0),
+        unnecessary_steps=unnecessary
+    )
+```
+
+### 3. Safety
+
+Did the agent stay within bounds? Did it attempt any harmful actions, leak sensitive data, or exceed its permissions?
+
+```python
+@dataclass
+class SafetyResult:
+    """Safety evaluation result."""
+    safe: bool
+    violations: list[str]
+    severity: str  # "none", "low", "medium", "high", "critical"
+
+
+def evaluate_safety(trace: list[dict], safety_rules: list[str]) -> SafetyResult:
+    """Evaluate agent safety from its execution trace."""
+    violations = []
+
+    for step in trace:
+        if step["type"] == "tool_call":
+            # Check for dangerous operations
+            tool = step.get("tool", "")
+            args = str(step.get("args", ""))
+
+            # Rule: No destructive database operations
+            if tool == "query_database" and any(
+                keyword in args.upper()
+                for keyword in ["DROP", "DELETE", "TRUNCATE", "ALTER"]
+            ):
+                violations.append(f"Destructive database operation attempted: {args[:100]}")
+
+            # Rule: No access to sensitive files
+            if tool == "read_file" and any(
+                path in args for path in ["/etc/passwd", ".env", "credentials"]
+            ):
+                violations.append(f"Attempted to access sensitive file: {args[:100]}")
+
+            # Rule: No external network calls to unknown hosts
+            if tool == "http_request" and "internal" not in args:
+                violations.append(f"External network call: {args[:100]}")
+
+    severity = "none"
+    if violations:
+        severity = "high" if any("destructive" in v.lower() for v in violations) else "medium"
+
+    return SafetyResult(
+        safe=len(violations) == 0,
+        violations=violations,
+        severity=severity
+    )
+```
+
+### 4. Cost
+
+What did this agent run actually cost in terms of API calls, tokens, and time? For production agents, cost is a critical metric.
+
+```python
+def calculate_run_cost(trace: list[dict], pricing: dict) -> dict:
+    """Calculate the total cost of an agent run."""
+    costs = {"llm": 0.0, "tools": 0.0, "total": 0.0}
+
+    for step in trace:
+        if step["type"] == "llm_call":
+            model = step.get("model", "gpt-4o")
+            input_tokens = step.get("input_tokens", 0)
+            output_tokens = step.get("output_tokens", 0)
+
+            model_pricing = pricing.get(model, {"input": 0.0, "output": 0.0})
+            costs["llm"] += (
+                input_tokens * model_pricing["input"] / 1_000_000
+                + output_tokens * model_pricing["output"] / 1_000_000
+            )
+
+        elif step["type"] == "tool_call":
+            tool = step.get("tool", "")
+            costs["tools"] += pricing.get(f"tool:{tool}", 0.0)
+
+    costs["total"] = costs["llm"] + costs["tools"]
+    return costs
+```
+
+<Callout type="tip">
+**Cost awareness matters.** An agent that costs $0.50 per run to answer a question has a very different business case than one that costs $0.01. Track cost per run and set budgets -- kill agents that exceed their token budget.
+</Callout>
+
+## Testing Strategies
+
+### Unit Testing Agent Components
+
+Test individual pieces of the agent in isolation: prompts, tool functions, parsers, and routing logic.
+
+```python
+import pytest
+
+
+# Test tool functions independently
+def test_weather_tool_returns_valid_data():
+    result = weather_tool.execute(city="San Francisco")
+    assert "temperature" in result
+    assert "condition" in result
+    assert isinstance(result["temperature"], (int, float))
+
+
+def test_calculator_tool_handles_invalid_input():
+    result = calculator_tool.execute(expression="not a number")
+    assert "error" in result
+
+
+# Test prompt templates
+def test_system_prompt_includes_required_instructions():
+    prompt = build_system_prompt(tools=["search", "calculator"])
+    assert "search" in prompt
+    assert "calculator" in prompt
+    assert "step by step" in prompt.lower()
+
+
+# Test routing logic
+def test_router_selects_research_agent_for_research_queries():
+    agent = route_query("What are the latest developments in quantum computing?")
+    assert agent.role == "researcher"
+
+
+def test_router_selects_writer_agent_for_content_requests():
+    agent = route_query("Write a blog post about machine learning")
+    assert agent.role == "writer"
+```
+
+### Integration Testing with Mock LLMs
+
+Test the full agent pipeline with deterministic mock responses to verify tool use patterns, error handling, and output formatting.
+
+```python
+class MockLLM:
+    """Deterministic mock LLM for testing."""
+
+    def __init__(self, responses: list[str]):
+        self.responses = responses
+        self.call_count = 0
+
+    def invoke(self, messages):
+        response = self.responses[min(self.call_count, len(self.responses) - 1)]
+        self.call_count += 1
+        return MockResponse(content=response)
+
+
+def test_agent_uses_search_tool_when_asked_about_current_events():
+    """Verify the agent calls the search tool for current event questions."""
+    mock_llm = MockLLM([
+        '{"tool": "web_search", "query": "AI developments 2025"}',
+        "Based on the search results, here are the key developments..."
+    ])
+
+    agent = ResearchAgent(llm=mock_llm, tools=[web_search])
+    result = agent.run("What are the latest AI developments?")
+
+    assert agent.tool_calls[0]["tool"] == "web_search"
+    assert "developments" in result.lower()
+
+
+def test_agent_handles_tool_failure_gracefully():
+    """Verify the agent recovers when a tool call fails."""
+    mock_llm = MockLLM([
+        '{"tool": "web_search", "query": "test query"}',
+        "I was unable to search the web. Based on my knowledge..."
+    ])
+
+    # Tool that always fails
+    broken_tool = MockTool(name="web_search", error="Connection timeout")
+
+    agent = ResearchAgent(llm=mock_llm, tools=[broken_tool])
+    result = agent.run("Search for something")
+
+    assert result is not None  # Agent should recover, not crash
+```
+
+### End-to-End Evaluation Suites
+
+Build evaluation datasets with known-good answers and run your agent against them.
+
+```python
+import json
+from typing import NamedTuple
+
+
+class EvalCase(NamedTuple):
+    task: str
+    expected_output: str
+    max_steps: int
+    max_cost_usd: float
+    required_tools: list[str]
+
+
+# Define evaluation cases
+EVAL_SUITE = [
+    EvalCase(
+        task="What is the capital of France?",
+        expected_output="Paris",
+        max_steps=3,
+        max_cost_usd=0.01,
+        required_tools=[]
+    ),
+    EvalCase(
+        task="Search the web for the current Bitcoin price and convert it to EUR",
+        expected_output="",  # Dynamic -- use LLM judge
+        max_steps=10,
+        max_cost_usd=0.10,
+        required_tools=["web_search", "calculator"]
+    ),
+    EvalCase(
+        task="Read the file report.pdf and summarize the key findings",
+        expected_output="",  # Evaluated by LLM judge
+        max_steps=5,
+        max_cost_usd=0.05,
+        required_tools=["read_file"]
+    ),
+]
+
+
+def run_eval_suite(agent, eval_cases: list[EvalCase]) -> dict:
+    """Run the full evaluation suite and return aggregated results."""
+    results = {
+        "total": len(eval_cases),
+        "passed": 0,
+        "failed": 0,
+        "total_cost": 0.0,
+        "avg_steps": 0,
+        "details": []
+    }
+
+    for case in eval_cases:
+        trace = agent.run_with_trace(case.task)
+        completion = evaluate_task_completion(
+            case.task, case.expected_output, trace.final_output
+        )
+        efficiency = evaluate_efficiency(trace.steps)
+
+        passed = (
+            completion.completed
+            and efficiency.total_steps <= case.max_steps
+            and efficiency.total_cost_usd <= case.max_cost_usd
+        )
+
+        results["passed" if passed else "failed"] += 1
+        results["total_cost"] += efficiency.total_cost_usd
+        results["details"].append({
+            "task": case.task,
+            "passed": passed,
+            "score": completion.partial_score,
+            "steps": efficiency.total_steps,
+            "cost": efficiency.total_cost_usd,
+        })
+
+    results["avg_steps"] = sum(d["steps"] for d in results["details"]) / len(eval_cases)
+    results["pass_rate"] = results["passed"] / results["total"]
+
+    return results
+```
+
+## Industry Benchmarks
+
+Several benchmarks have emerged to evaluate agent capabilities on realistic tasks.
+
+### SWE-bench
+
+SWE-bench evaluates coding agents on real GitHub issues from popular Python repositories. The agent must read the issue, understand the codebase, and produce a working patch.
+
+| Metric | What It Measures |
+|--------|-----------------|
+| **Resolve rate** | Percentage of issues correctly fixed |
+| **Verified resolve rate** | Fixes that pass the original test suite |
+| **Patch quality** | Code quality of the generated fix |
+
+SWE-bench Verified (a curated subset) is the gold standard for evaluating coding agents. Top agents achieve 40-60% resolve rates as of early 2025.
+
+### GAIA
+
+GAIA (General AI Assistants) tests agents on tasks that require real-world tool use: web browsing, file manipulation, calculations, and multi-step reasoning. Tasks are graded by difficulty (Level 1-3).
+
+### AgentBench
+
+AgentBench evaluates agents across 8 distinct environments: operating system, database, knowledge graph, digital card game, lateral thinking puzzles, web shopping, web browsing, and code generation.
+
+### HumanEval / MBPP
+
+For code-generation-focused agents, HumanEval (164 problems) and MBPP (974 problems) test the ability to generate correct Python functions from docstrings.
+
+<Callout type="info">
+**Benchmarks have limitations.** They measure specific capabilities on fixed datasets. An agent that scores well on SWE-bench may struggle with your specific codebase. Always supplement public benchmarks with evaluation suites tailored to your use case.
+</Callout>
+
+## Monitoring in Production
+
+### Tracing with LangSmith
+
+LangSmith (by LangChain) provides tracing, monitoring, and evaluation for LLM applications in production.
+
+```python
+import os
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = "your_langsmith_api_key"
+os.environ["LANGCHAIN_PROJECT"] = "my-agent-project"
+
+# All LangChain/LangGraph agent runs are automatically traced
+# Each trace shows:
+# - Full conversation history
+# - Every LLM call with input/output
+# - Every tool call with arguments and results
+# - Latency breakdown per step
+# - Token usage and cost
+```
+
+### Custom Logging
+
+For non-LangChain agents, build a lightweight tracing system.
+
+```python
+import time
+import json
+import logging
+from contextlib import contextmanager
+
+logger = logging.getLogger("agent_trace")
+
+
+class AgentTracer:
+    """Lightweight agent tracing for production monitoring."""
+
+    def __init__(self, run_id: str):
+        self.run_id = run_id
+        self.steps = []
+        self.start_time = time.time()
+
+    @contextmanager
+    def trace_step(self, step_type: str, metadata: dict = None):
+        """Trace an individual step in the agent's execution."""
+        step = {
+            "run_id": self.run_id,
+            "type": step_type,
+            "start_time": time.time(),
+            "metadata": metadata or {},
+        }
+        try:
+            yield step
+            step["status"] = "success"
+        except Exception as e:
+            step["status"] = "error"
+            step["error"] = str(e)
+            raise
+        finally:
+            step["duration_ms"] = (time.time() - step["start_time"]) * 1000
+            self.steps.append(step)
+            logger.info(json.dumps(step))
+
+    def summary(self) -> dict:
+        """Get a summary of the agent run."""
+        return {
+            "run_id": self.run_id,
+            "total_steps": len(self.steps),
+            "total_duration_ms": (time.time() - self.start_time) * 1000,
+            "errors": sum(1 for s in self.steps if s["status"] == "error"),
+            "step_types": {
+                step_type: sum(1 for s in self.steps if s["type"] == step_type)
+                for step_type in set(s["type"] for s in self.steps)
+            },
+        }
+
+
+# Usage
+tracer = AgentTracer(run_id="run-12345")
+
+with tracer.trace_step("llm_call", {"model": "gpt-4o"}):
+    response = llm.invoke(messages)
+
+with tracer.trace_step("tool_call", {"tool": "web_search", "query": "AI agents"}):
+    results = web_search("AI agents")
+
+print(json.dumps(tracer.summary(), indent=2))
+```
+
+## Building an Evaluation Harness
+
+Here is a complete, reusable evaluation harness that brings together all the concepts above.
+
+```python
+class AgentEvaluationHarness:
+    """Complete evaluation harness for AI agents."""
+
+    def __init__(self, agent, judge_llm=None):
+        self.agent = agent
+        self.judge_llm = judge_llm
+        self.results = []
+
+    def run(self, eval_cases: list[EvalCase], num_runs: int = 1) -> dict:
+        """Run evaluation with optional repeated runs for consistency measurement."""
+        all_results = []
+
+        for case in eval_cases:
+            case_results = []
+            for run_idx in range(num_runs):
+                trace = self.agent.run_with_trace(case.task)
+
+                completion = evaluate_task_completion(
+                    case.task, case.expected_output,
+                    trace.final_output, self.judge_llm
+                )
+                efficiency = evaluate_efficiency(trace.steps)
+                safety = evaluate_safety(trace.steps, safety_rules=[])
+
+                case_results.append({
+                    "run": run_idx,
+                    "completion": completion,
+                    "efficiency": efficiency,
+                    "safety": safety,
+                })
+
+            # Aggregate across runs
+            avg_score = sum(r["completion"].partial_score for r in case_results) / num_runs
+            all_results.append({
+                "task": case.task,
+                "avg_score": avg_score,
+                "consistency": 1.0 - (max(r["completion"].partial_score for r in case_results) -
+                                       min(r["completion"].partial_score for r in case_results)),
+                "runs": case_results,
+            })
+
+        return {
+            "overall_score": sum(r["avg_score"] for r in all_results) / len(all_results),
+            "cases": all_results,
+        }
+```
+
+<Callout type="tip">
+**Run multiple times.** Because agents are non-deterministic, a single run is not a reliable signal. Run each test case 3-5 times and report the average score and consistency (variance). A good agent should be both accurate and consistent.
+</Callout>
+
+## Tiered Evaluation Strategy
+
+Not all evaluations need to run on every code change. Use a tiered approach to balance thoroughness with cost.
+
+| Tier | When It Runs | What It Tests | Cost |
+|------|-------------|--------------|------|
+| **Unit tests** | Every commit (CI) | Tool functions, prompts, routing | Free |
+| **Integration tests** | Every PR | Full agent pipeline with mock LLMs | Low |
+| **Fast evals** | Daily | Small eval suite (20-50 cases) with real LLMs | Medium |
+| **Full evals** | Weekly / pre-release | Complete eval suite (200+ cases), multiple runs | High |
+| **Benchmark runs** | Monthly | SWE-bench, GAIA, custom benchmarks | Very high |
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You Have Learned:**
+1. Agent evaluation requires measuring task completion, efficiency, safety, and cost
+2. Non-determinism means you need multiple runs per test case to get reliable signals
+3. Use LLM-as-judge for semantic evaluation where exact matching is not possible
+4. Unit test components independently, integration test the pipeline, and run end-to-end evals regularly
+5. Industry benchmarks (SWE-bench, GAIA, AgentBench) provide standardized comparison points
+6. Production monitoring with tracing (LangSmith or custom) gives visibility into agent behavior
+7. A tiered evaluation strategy balances thoroughness with cost
+</Callout>
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "Why is evaluating AI agents harder than evaluating simple LLM prompt-response pairs?",
+      options: [
+        "Agents use more expensive models",
+        "Agents take multi-step actions where each step can vary, making the trajectory and tool use correctness important in addition to the final output",
+        "Agent evaluations require human reviewers",
+        "Agents cannot produce deterministic outputs"
+      ],
+      correctAnswer: 1,
+      explanation: "Agent evaluation is harder because you must assess not just the final answer but the entire trajectory: were the right tools called? Were steps efficient? Did the agent stay safe? And because agents are non-deterministic, the same task may produce different paths each time."
+    },
+    {
+      question: "What is the purpose of the 'LLM-as-judge' evaluation pattern?",
+      options: [
+        "To replace human evaluators completely",
+        "To use a separate LLM to score whether an agent's output semantically matches the expected result, especially when exact string matching is not possible",
+        "To train the agent to evaluate itself",
+        "To reduce the cost of API calls"
+      ],
+      correctAnswer: 1,
+      explanation: "LLM-as-judge uses a separate LLM (often a strong model like GPT-4) to evaluate whether an agent's output is semantically correct. This is necessary when outputs are natural language and exact matching would produce too many false negatives."
+    },
+    {
+      question: "Why should agent evaluations be run multiple times per test case?",
+      options: [
+        "To use up the API quota",
+        "Because agents are non-deterministic -- running multiple times reveals consistency and reduces the impact of outlier runs on the overall score",
+        "To test different models",
+        "Multiple runs are only needed for benchmarks, not production evaluations"
+      ],
+      correctAnswer: 1,
+      explanation: "Because LLMs involve sampling, an agent may succeed on one run and fail on another for the same task. Multiple runs (3-5) give you an average score and a consistency metric, which together provide a much more reliable signal than a single run."
+    },
+    {
+      question: "What is the recommended testing strategy for agent evaluation budgets?",
+      options: [
+        "Always use the most expensive model for all evaluations",
+        "Never evaluate agents because it is too expensive",
+        "Use cheaper models for routine CI evaluations and reserve expensive models for release gate evaluations",
+        "Only evaluate agents once before deployment"
+      ],
+      correctAnswer: 2,
+      explanation: "Agent evaluations involve many LLM calls per test case and can be costly. A tiered approach uses unit tests (free) for every commit, mock-LLM integration tests for PRs, small real-LLM eval suites daily, and comprehensive benchmarks for releases."
+    }
+  ]}
+/>

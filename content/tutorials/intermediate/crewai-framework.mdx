@@ -1,0 +1,445 @@
+---
+title: "CrewAI: Building AI Teams That Collaborate"
+description: "Learn CrewAI - the popular framework for creating teams of AI agents that work together"
+difficulty: "intermediate"
+duration: 25
+order: 44
+tags: ["CrewAI", "Multi-Agent", "AI Teams", "Collaboration"]
+---
+
+# CrewAI: Building AI Teams That Collaborate
+
+CrewAI takes a fundamentally different approach to multi-agent systems. Instead of thinking about agents as tools or services that hand off to each other, CrewAI models agents as **team members** -- each with a role, a goal, and a backstory that shapes their behavior. You assign them tasks, organize them into a crew, and let them collaborate to produce results.
+
+This role-based design makes CrewAI intuitive and powerful, especially for knowledge work like research, content creation, and analysis.
+
+<Callout type="info">
+**CrewAI Definition:** An open-source Python framework for orchestrating autonomous AI agents as collaborative teams. Each agent has a defined role, goal, and backstory, and agents work together on tasks through sequential or hierarchical processes to accomplish complex goals.
+</Callout>
+
+## Why CrewAI Is Popular
+
+CrewAI gained rapid adoption because it maps to how humans actually organize work:
+
+1. **Role-based agents** -- like hiring for a job (researcher, writer, editor)
+2. **Task assignment** -- clear deliverables for each agent
+3. **Process management** -- sequential (assembly line) or hierarchical (manager delegates)
+4. **Delegation** -- agents can ask other agents for help
+5. **Simple API** -- a crew can be built in under 50 lines of code
+
+## Core Concepts
+
+### Agents: Roles with Personality
+
+A CrewAI agent is defined by three key attributes: role, goal, and backstory. The backstory is what makes CrewAI unique -- it gives the agent a persona that shapes how it approaches tasks.
+
+```python
+from crewai import Agent
+
+# A research agent
+researcher = Agent(
+    role="Senior Research Analyst",
+    goal="Find comprehensive, accurate information on any given topic",
+    backstory="""You are a veteran research analyst with 15 years of experience
+    at a top consulting firm. You're known for your thorough approach --
+    you never settle for surface-level information. You cross-reference
+    multiple sources and always identify the most credible data.
+    Your research has informed billion-dollar business decisions.""",
+    verbose=True,
+    allow_delegation=True,
+    llm="gpt-4o"
+)
+
+# A writing agent
+writer = Agent(
+    role="Content Strategist",
+    goal="Transform research into clear, engaging, and well-structured content",
+    backstory="""You are an award-winning content strategist who has written
+    for major tech publications. You excel at taking complex technical
+    information and making it accessible to a broad audience.
+    Your writing is known for being clear, concise, and compelling.""",
+    verbose=True,
+    allow_delegation=False,
+    llm="gpt-4o"
+)
+
+# An editing agent
+editor = Agent(
+    role="Senior Editor",
+    goal="Ensure all content is polished, accurate, and publication-ready",
+    backstory="""You are a meticulous editor with a sharp eye for detail.
+    You've edited for The New York Times and Harvard Business Review.
+    You focus on clarity, factual accuracy, logical flow, and engaging
+    prose. You're not afraid to suggest major rewrites when needed.""",
+    verbose=True,
+    allow_delegation=False,
+    llm="gpt-4o"
+)
+```
+
+<Callout type="tip">
+**Backstory matters more than you think.** A well-crafted backstory significantly improves agent output quality. It establishes expertise, sets expectations for depth and style, and prevents generic responses. Think of it as a system prompt with personality.
+</Callout>
+
+### Tasks: Clear Deliverables
+
+Tasks define what each agent needs to do. A good task has a clear description and expected output format.
+
+```python
+from crewai import Task
+
+# Research task
+research_task = Task(
+    description="""Research the current state of AI agents in enterprise software.
+    Cover the following areas:
+    1. Market size and growth projections for AI agent platforms
+    2. Top 5 enterprise use cases with real company examples
+    3. Key technical challenges and how companies are solving them
+    4. Predictions for the next 2-3 years
+
+    Be thorough and cite specific data points wherever possible.""",
+    expected_output="""A comprehensive research brief with:
+    - Executive summary (3-4 sentences)
+    - Market overview with specific numbers
+    - Use cases with company examples
+    - Technical challenges section
+    - Future predictions
+    Total length: 800-1200 words.""",
+    agent=researcher
+)
+
+# Writing task (depends on research)
+writing_task = Task(
+    description="""Using the research provided, write a blog post titled
+    "The Rise of AI Agents in Enterprise Software."
+
+    The post should be:
+    - Engaging and accessible to a business audience
+    - Well-structured with clear headings
+    - Include specific examples and data from the research
+    - Have a strong introduction and conclusion
+    - 1000-1500 words""",
+    expected_output="""A publication-ready blog post in markdown format with:
+    - Compelling title and subtitle
+    - Introduction that hooks the reader
+    - 4-5 main sections with headings
+    - Data points and examples woven throughout
+    - Strong conclusion with a call to action""",
+    agent=writer
+)
+
+# Editing task (depends on writing)
+editing_task = Task(
+    description="""Review and edit the blog post for publication.
+
+    Check for:
+    1. Factual accuracy -- verify all claims match the research
+    2. Clarity -- ensure every paragraph has a clear purpose
+    3. Flow -- smooth transitions between sections
+    4. Engagement -- compelling opening, strong conclusion
+    5. Grammar and style -- clean, professional prose
+
+    Make direct edits rather than just suggesting changes.""",
+    expected_output="""The final, polished blog post ready for publication.
+    Include a brief editor's note at the top summarizing the key changes made.""",
+    agent=editor
+)
+```
+
+### Crews: Teams in Action
+
+A Crew brings agents and tasks together, defining how they collaborate.
+
+```python
+from crewai import Crew, Process
+
+# Create the crew
+content_crew = Crew(
+    agents=[researcher, writer, editor],
+    tasks=[research_task, writing_task, editing_task],
+    process=Process.sequential,  # Tasks run in order
+    verbose=True
+)
+
+# Run the crew
+result = content_crew.kickoff()
+print(result)
+```
+
+## Process Types
+
+CrewAI supports two process types that determine how tasks are executed.
+
+### Sequential Process
+
+Tasks execute one after another. The output of each task is available to the next.
+
+```python
+# Assembly line: Research → Write → Edit
+crew = Crew(
+    agents=[researcher, writer, editor],
+    tasks=[research_task, writing_task, editing_task],
+    process=Process.sequential
+)
+```
+
+```
+┌──────────┐     ┌──────────┐     ┌──────────┐
+│Researcher│────►│  Writer  │────►│  Editor  │
+│          │     │          │     │          │
+│ Research │     │  Draft   │     │  Polish  │
+│  brief   │     │  post    │     │  final   │
+└──────────┘     └──────────┘     └──────────┘
+```
+
+### Hierarchical Process
+
+A manager agent coordinates the team, delegating tasks and reviewing results.
+
+```python
+crew = Crew(
+    agents=[researcher, writer, editor],
+    tasks=[research_task, writing_task, editing_task],
+    process=Process.hierarchical,
+    manager_llm="gpt-4o"  # The manager uses this model
+)
+```
+
+```
+              ┌──────────┐
+              │ Manager  │
+              │ (auto)   │
+              └────┬─────┘
+          ┌────────┼────────┐
+          ▼        ▼        ▼
+    ┌──────────┐ ┌──────┐ ┌──────┐
+    │Researcher│ │Writer│ │Editor│
+    └──────────┘ └──────┘ └──────┘
+```
+
+<Callout type="info">
+**Sequential vs. Hierarchical:** Use sequential when tasks have a clear linear dependency (research before writing before editing). Use hierarchical when tasks are more dynamic and a manager needs to decide the order, assign tasks on the fly, or have agents redo work.
+</Callout>
+
+## Adding Tools
+
+CrewAI agents become much more powerful with tools. CrewAI supports custom tools and integrates with LangChain tools.
+
+```python
+from crewai.tools import tool
+
+@tool("Web Search")
+def web_search(query: str) -> str:
+    """Search the web for current information on a topic.
+
+    Args:
+        query: The search query to look up.
+    """
+    from duckduckgo_search import DDGS
+    results = DDGS().text(query, max_results=5)
+    formatted = ""
+    for r in results:
+        formatted += f"- {r['title']}: {r['body'][:200]}\n"
+    return formatted
+
+
+@tool("Read Webpage")
+def read_webpage(url: str) -> str:
+    """Read and extract the main content from a webpage.
+
+    Args:
+        url: The full URL of the webpage to read.
+    """
+    import requests
+    from bs4 import BeautifulSoup
+    response = requests.get(url, timeout=10)
+    soup = BeautifulSoup(response.content, "html.parser")
+    for tag in soup(["script", "style", "nav", "footer"]):
+        tag.decompose()
+    text = soup.get_text(separator="\n", strip=True)
+    return text[:3000]  # Limit length
+
+
+# Give tools to the researcher
+researcher = Agent(
+    role="Senior Research Analyst",
+    goal="Find comprehensive, accurate information using web research",
+    backstory="You are a veteran analyst who always verifies claims with primary sources.",
+    tools=[web_search, read_webpage],
+    verbose=True,
+    llm="gpt-4o"
+)
+```
+
+## Agent Delegation
+
+When `allow_delegation=True`, an agent can ask other crew members for help during a task. This enables dynamic collaboration.
+
+```python
+# The writer can ask the researcher for clarification
+writer = Agent(
+    role="Content Strategist",
+    goal="Write compelling content based on solid research",
+    backstory="You are an experienced writer who values accuracy.",
+    allow_delegation=True,  # Can ask researcher for more info
+    llm="gpt-4o"
+)
+```
+
+When the writer encounters a claim that needs verification, it can delegate a mini-task to the researcher, get the answer, and continue writing.
+
+## CrewAI vs AutoGen
+
+| Feature | CrewAI | AutoGen (Microsoft) |
+|---------|--------|-------------------|
+| **Mental model** | Team with roles and tasks | Conversation between agents |
+| **Agent definition** | Role, goal, backstory | System message, capabilities |
+| **Process control** | Sequential or hierarchical | Conversation patterns |
+| **Task structure** | Explicit tasks with expected outputs | Emergent from conversation |
+| **Ease of use** | Very intuitive (team metaphor) | More flexible but complex |
+| **Human-in-the-loop** | Supported | First-class feature |
+| **Best for** | Structured workflows, content pipelines | Dynamic conversations, research |
+| **Learning curve** | Low | Medium-high |
+
+## Real-World Use Cases
+
+### 1. Market Research
+
+```python
+from crewai import Agent, Task, Crew, Process
+
+analyst = Agent(
+    role="Market Analyst",
+    goal="Provide data-driven market intelligence",
+    backstory="Senior analyst at McKinsey with deep industry expertise.",
+    tools=[web_search],
+    llm="gpt-4o"
+)
+
+strategist = Agent(
+    role="Strategy Consultant",
+    goal="Turn market data into actionable strategic recommendations",
+    backstory="Former BCG partner specializing in competitive strategy.",
+    llm="gpt-4o"
+)
+
+research = Task(
+    description="Analyze the cloud infrastructure market: size, growth, top players, trends.",
+    expected_output="Market analysis report with data and competitive landscape.",
+    agent=analyst
+)
+
+strategy = Task(
+    description="Based on the market analysis, recommend a go-to-market strategy for a new cloud startup.",
+    expected_output="Strategic plan with 3 recommended approaches, risks, and timelines.",
+    agent=strategist
+)
+
+crew = Crew(agents=[analyst, strategist], tasks=[research, strategy], process=Process.sequential)
+result = crew.kickoff()
+```
+
+### 2. Code Review Pipeline
+
+```python
+reviewer = Agent(
+    role="Senior Code Reviewer",
+    goal="Identify bugs, security issues, and improvement opportunities",
+    backstory="Staff engineer with expertise in Python, security, and clean code.",
+    llm="gpt-4o"
+)
+
+optimizer = Agent(
+    role="Performance Engineer",
+    goal="Optimize code for speed, memory usage, and scalability",
+    backstory="Performance specialist who has optimized systems handling millions of requests.",
+    llm="gpt-4o"
+)
+
+review_task = Task(
+    description="Review this Python code for bugs, security issues, and best practices: [code here]",
+    expected_output="Code review with categorized findings: critical, important, suggestions.",
+    agent=reviewer
+)
+
+optimize_task = Task(
+    description="Based on the review, suggest performance optimizations with benchmarks.",
+    expected_output="Optimization report with before/after comparisons.",
+    agent=optimizer
+)
+
+review_crew = Crew(
+    agents=[reviewer, optimizer],
+    tasks=[review_task, optimize_task],
+    process=Process.sequential
+)
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You've Learned:**
+1. CrewAI models agents as team members with roles, goals, and backstories
+2. Tasks define clear deliverables with expected output formats
+3. Crews orchestrate agents with sequential or hierarchical processes
+4. Agent delegation enables dynamic collaboration between team members
+5. Tools extend agent capabilities (web search, file access, APIs)
+6. The role/backstory pattern produces higher-quality outputs than generic instructions
+</Callout>
+
+## Next Steps
+
+You've now learned three major agentic frameworks: Google ADK, OpenAI Agents SDK, and CrewAI. In the next lesson, we'll put it all together in a hands-on project -- building a complete multi-agent research system using CrewAI.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What makes CrewAI's approach to agents unique compared to other frameworks?",
+      options: [
+        "It uses the fastest LLM models available",
+        "Agents are defined with a role, goal, and backstory, modeling them as team members",
+        "It can only use open-source models",
+        "It requires no code to set up"
+      ],
+      correctAnswer: 1,
+      explanation: "CrewAI's unique approach is modeling agents as team members with defined roles, goals, and backstories. This role-based design gives agents personality and expertise that shapes their behavior, leading to higher-quality outputs."
+    },
+    {
+      question: "What is the difference between sequential and hierarchical process in CrewAI?",
+      options: [
+        "Sequential is faster, hierarchical is more accurate",
+        "Sequential runs tasks in order, hierarchical has a manager that delegates and coordinates dynamically",
+        "Sequential uses one model, hierarchical uses multiple models",
+        "There is no practical difference between them"
+      ],
+      correctAnswer: 1,
+      explanation: "In sequential process, tasks execute one after another in a defined order. In hierarchical process, a manager agent is automatically created to coordinate the team, delegating tasks and potentially reassigning work based on results."
+    },
+    {
+      question: "What does allow_delegation=True enable on a CrewAI agent?",
+      options: [
+        "It allows the agent to create new agents at runtime",
+        "It lets the agent ask other crew members for help during a task",
+        "It gives the agent access to the internet",
+        "It allows the agent to skip tasks it doesn't want to do"
+      ],
+      correctAnswer: 1,
+      explanation: "When allow_delegation is True, an agent can ask other agents in the crew for help during task execution. For example, a writer agent could ask a researcher agent for additional data it needs to complete its writing task."
+    },
+    {
+      question: "Why does CrewAI's 'backstory' attribute improve agent output quality?",
+      options: [
+        "It makes the agent run on more powerful hardware",
+        "It establishes expertise and persona, shaping how the agent approaches tasks and preventing generic responses",
+        "It provides training data for the model",
+        "It reduces the number of API calls needed"
+      ],
+      correctAnswer: 1,
+      explanation: "The backstory establishes the agent's expertise, personality, and working style. This context helps the LLM generate more specific, expert-level responses rather than generic ones, similar to how role-playing prompts improve output quality."
+    }
+  ]}
+/>

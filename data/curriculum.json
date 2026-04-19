@@ -118,13 +118,51 @@
             "order": 15
           }
         ]
+      },
+      {
+        "id": "real-world-ai",
+        "title": "Real-World AI Tools",
+        "description": "The AI tools reshaping how we work, code, and create",
+        "order": 4,
+        "lessons": [
+          {
+            "slug": "notebooklm-research",
+            "title": "Google NotebookLM: Your AI Research Partner",
+            "duration": 15,
+            "order": 16
+          },
+          {
+            "slug": "ai-code-assistants",
+            "title": "AI Code Assistants: GitHub Copilot, Cursor & Claude Code",
+            "duration": 12,
+            "order": 17
+          },
+          {
+            "slug": "no-code-ai-builders",
+            "title": "No-Code AI App Builders: Bolt.new, Lovable & v0",
+            "duration": 15,
+            "order": 18
+          },
+          {
+            "slug": "what-is-agentic-ai",
+            "title": "What is Agentic AI? (The Simple Version)",
+            "duration": 10,
+            "order": 19
+          },
+          {
+            "slug": "ai-landscape-2025",
+            "title": "The AI Landscape: Who's Building What",
+            "duration": 12,
+            "order": 20
+          }
+        ]
       }
     ]
   },
   "intermediate": {
     "title": "Creator & Builder",
-    "description": "Build real AI apps - for anyone ready to level up",
-    "duration": "4-6 weeks",
+    "description": "Build real AI apps with modern frameworks and agentic tools",
+    "duration": "5-7 weeks",
     "icon": "Code",
     "modules": [
       {
@@ -173,7 +211,7 @@
         "lessons": [
           {
             "slug": "gpt-evolution",
-            "title": "GPT Series Evolution (GPT-1 → GPT-4)",
+            "title": "GPT Series Evolution (GPT-1 to GPT-4o)",
             "duration": 20,
             "order": 21
           },
@@ -316,13 +354,89 @@
             "order": 40
           }
         ]
+      },
+      {
+        "id": "agentic-frameworks",
+        "title": "Agentic AI Frameworks",
+        "description": "Build AI agents with Google ADK, OpenAI Agents SDK, and CrewAI",
+        "order": 6,
+        "lessons": [
+          {
+            "slug": "agentic-ai-deep-dive",
+            "title": "Understanding Agentic AI: Beyond Chatbots",
+            "duration": 20,
+            "order": 41
+          },
+          {
+            "slug": "google-adk",
+            "title": "Google ADK: Agent Development Kit",
+            "duration": 25,
+            "order": 42
+          },
+          {
+            "slug": "openai-agents-sdk",
+            "title": "OpenAI Agents SDK: Building Smart Agents",
+            "duration": 25,
+            "order": 43
+          },
+          {
+            "slug": "crewai-framework",
+            "title": "CrewAI: Building AI Teams That Collaborate",
+            "duration": 25,
+            "order": 44
+          },
+          {
+            "slug": "agentic-frameworks-project",
+            "title": "Project: Build a Multi-Agent Research System",
+            "duration": 45,
+            "order": 45
+          }
+        ]
+      },
+      {
+        "id": "modern-ai-dev",
+        "title": "Modern AI Development",
+        "description": "MCP, LlamaIndex, Vercel AI SDK, and the modern AI stack",
+        "order": 7,
+        "lessons": [
+          {
+            "slug": "model-context-protocol",
+            "title": "MCP: Model Context Protocol Explained",
+            "duration": 20,
+            "order": 46
+          },
+          {
+            "slug": "llamaindex-basics",
+            "title": "LlamaIndex: Connect AI to Your Data",
+            "duration": 25,
+            "order": 47
+          },
+          {
+            "slug": "vercel-ai-sdk",
+            "title": "Vercel AI SDK: AI for Web Apps",
+            "duration": 20,
+            "order": 48
+          },
+          {
+            "slug": "ai-dev-tools",
+            "title": "AI-Powered Development: The New Way to Code",
+            "duration": 15,
+            "order": 49
+          },
+          {
+            "slug": "fullstack-ai-project",
+            "title": "Project: Build a Full-Stack AI Application",
+            "duration": 45,
+            "order": 50
+          }
+        ]
       }
     ]
   },
   "advanced": {
     "title": "Advanced Developer",
-    "description": "For developers who want to build production AI",
-    "duration": "6-8 weeks",
+    "description": "Production AI systems, agentic architectures, and cutting-edge deployment",
+    "duration": "8-10 weeks",
     "icon": "Rocket",
     "modules": [
       {
@@ -626,6 +740,44 @@
             "title": "The Future of LLMs",
             "duration": 20,
             "order": 80
+          }
+        ]
+      },
+      {
+        "id": "production-agentic",
+        "title": "Production Agentic Systems",
+        "description": "AutoGen, orchestration patterns, MCP servers, and agent evaluation",
+        "order": 9,
+        "lessons": [
+          {
+            "slug": "autogen-framework",
+            "title": "AutoGen: Microsoft's Multi-Agent Framework",
+            "duration": 25,
+            "order": 81
+          },
+          {
+            "slug": "agent-orchestration-patterns",
+            "title": "Agent Orchestration Patterns",
+            "duration": 30,
+            "order": 82
+          },
+          {
+            "slug": "mcp-servers-production",
+            "title": "Building MCP Servers for Production",
+            "duration": 30,
+            "order": 83
+          },
+          {
+            "slug": "evaluating-ai-agents",
+            "title": "Evaluating & Testing AI Agents",
+            "duration": 25,
+            "order": 84
+          },
+          {
+            "slug": "production-agents-project",
+            "title": "Project: Production Multi-Agent Pipeline",
+            "duration": 60,
+            "order": 85
           }
         ]
       }

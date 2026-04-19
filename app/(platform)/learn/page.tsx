@@ -73,11 +73,11 @@ export default function LearnPage() {
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               Master{" "}
-              <span className="gradient-text">Large Language Models</span>
+              <span className="gradient-text">LLMs & Agentic AI</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              From complete beginner to production AI engineer. Learn at your own pace with
-              hands-on tutorials, paper explanations, and real-world projects.
+              From complete beginner to production AI engineer. 100+ hands-on lessons covering
+              Google ADK, CrewAI, MCP, LangChain, RAG, fine-tuning, and the entire agentic AI stack.
             </p>
 
             {/* Progress for logged in users */}

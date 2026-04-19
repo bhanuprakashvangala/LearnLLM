@@ -1,0 +1,413 @@
+---
+title: "MCP: Model Context Protocol Explained"
+description: "Understand the open protocol that's becoming the USB-C of AI tool connections"
+difficulty: "intermediate"
+duration: 20
+order: 46
+tags: ["MCP", "Anthropic", "Protocol", "Tool Use", "Integration"]
+---
+
+# MCP: Model Context Protocol Explained
+
+Imagine you are building an AI application that needs to access a database, read files from Google Drive, search through Slack messages, and query a GitHub repository. Without a standard protocol, you would need to build a custom integration for each tool, for each AI model. With 5 models and 10 tools, that is 50 custom integrations. Now imagine the entire industry -- thousands of models and thousands of tools -- and the problem becomes clear.
+
+The Model Context Protocol (MCP) solves this by providing a single, open standard for connecting AI models to external tools and data sources.
+
+<Callout type="info">
+**Model Context Protocol (MCP):** An open protocol, originally developed by Anthropic, that standardizes how AI applications connect to external data sources and tools. Think of it as the USB-C of AI integrations -- one standard interface that works everywhere.
+</Callout>
+
+## The Problem MCP Solves
+
+Before MCP, the AI integration landscape looked like this:
+
+```
+Without MCP (N x M integrations):
+
+  Claude ──── Custom ──── GitHub
+  Claude ──── Custom ──── Slack
+  Claude ──── Custom ──── Database
+  GPT-4  ──── Custom ──── GitHub
+  GPT-4  ──── Custom ──── Slack
+  GPT-4  ──── Custom ──── Database
+  Gemini ──── Custom ──── GitHub
+  Gemini ──── Custom ──── Slack
+  Gemini ──── Custom ──── Database
+
+  3 models x 3 tools = 9 custom integrations
+```
+
+Every model provider builds their own way to call tools. Every tool provider builds connectors for each model. The result is fragmented, duplicated work that scales poorly.
+
+```
+With MCP (N + M integrations):
+
+  Claude ─┐                ┌── GitHub MCP Server
+  GPT-4  ─┤── MCP ─────────┤── Slack MCP Server
+  Gemini ─┘   Protocol     └── Database MCP Server
+
+  3 models + 3 tools = 6 implementations (via shared protocol)
+```
+
+With MCP, each model implements the MCP client once, each tool implements the MCP server once, and everything just connects. As the ecosystem grows from 3 to 300 tools, you still only need one client implementation per model.
+
+<Callout type="tip">
+**The USB-C Analogy:** Before USB-C, every phone had a different charging port. USB-C gave us one universal connector. MCP does the same for AI tool integrations -- one protocol that lets any AI model work with any tool.
+</Callout>
+
+## Why Anthropic Built MCP
+
+Anthropic created MCP because they saw this fragmentation problem firsthand while building Claude. Every new tool integration required custom code. Customers wanted Claude to connect to their databases, file systems, and APIs, but each connection was a one-off engineering effort.
+
+Instead of building proprietary connectors that only work with Claude, Anthropic designed MCP as an open standard. Any AI model can implement the client side, and any tool can implement the server side. This benefits the entire ecosystem, not just Anthropic.
+
+## MCP Architecture
+
+The MCP architecture has three layers: Hosts, Clients, and Servers.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        MCP Host                              │
+│              (Claude Desktop, VS Code, IDE)                  │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │                    MCP Client                           │  │
+│  │          (manages server connections)                    │  │
+│  └──────────┬──────────────┬──────────────┬───────────────┘  │
+│             │              │              │                   │
+└─────────────┼──────────────┼──────────────┼──────────────────┘
+              │              │              │
+    ┌─────────▼───┐  ┌──────▼──────┐  ┌───▼──────────┐
+    │ MCP Server  │  │ MCP Server  │  │ MCP Server   │
+    │ (Database)  │  │ (GitHub)    │  │ (Slack)      │
+    └──────┬──────┘  └──────┬──────┘  └──────┬───────┘
+           │                │                │
+    ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼───────┐
+    │  PostgreSQL │  │  GitHub API │  │  Slack API   │
+    └─────────────┘  └─────────────┘  └──────────────┘
+```
+
+### Hosts
+
+The Host is the application the user interacts with. It provides the AI model and the user interface. Examples include:
+
+- **Claude Desktop** -- Anthropic's desktop app with built-in MCP support
+- **Cursor / VS Code** -- Code editors with MCP-compatible AI extensions
+- **Claude Code** -- Anthropic's terminal-based AI coding agent
+- **Custom applications** -- Any app that embeds an MCP client
+
+### Clients
+
+The Client lives inside the Host and manages connections to MCP Servers. It handles:
+
+- Discovering available servers and their capabilities
+- Sending requests to servers on behalf of the AI model
+- Receiving responses and passing them back to the model
+- Managing the lifecycle of server connections
+
+Each Host contains one Client, and each Client can connect to multiple Servers simultaneously.
+
+### Servers
+
+Servers are lightweight programs that expose specific capabilities through the MCP protocol. Each server connects to one external system (a database, an API, a file system) and makes its capabilities available in a standardized way. Servers typically run locally on the user's machine.
+
+## The Three Primitives
+
+MCP servers expose capabilities through three core primitives. Understanding these is key to working with MCP.
+
+### 1. Resources (Read-Only Data)
+
+Resources provide data that the AI model can access. They are conceptually similar to GET endpoints in a REST API -- they let the model read information without modifying anything.
+
+```python
+@server.list_resources()
+async def list_resources():
+    return [
+        Resource(
+            uri="db://schema/users",
+            name="Users Table Schema",
+            description="Schema definition for the users table",
+            mimeType="application/json"
+        )
+    ]
+
+@server.read_resource()
+async def read_resource(uri: str):
+    if uri == "db://schema/users":
+        schema = await get_table_schema("users")
+        return schema
+```
+
+**Use cases:** database schemas, configuration files, documentation, API specifications, user profiles.
+
+### 2. Tools (Actions)
+
+Tools let the AI model perform actions that change state or compute results. They are the equivalent of POST/PUT/DELETE endpoints.
+
+```python
+@server.list_tools()
+async def list_tools():
+    return [
+        Tool(
+            name="query_database",
+            description="Execute a read-only SQL query against the database",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "sql": {
+                        "type": "string",
+                        "description": "The SQL query to execute (SELECT only)"
+                    }
+                },
+                "required": ["sql"]
+            }
+        )
+    ]
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict):
+    if name == "query_database":
+        sql = arguments["sql"]
+        if not sql.strip().upper().startswith("SELECT"):
+            return TextContent(text="Error: Only SELECT queries are allowed.")
+        results = await execute_query(sql)
+        return TextContent(text=json.dumps(results, indent=2))
+```
+
+**Use cases:** database queries, file operations, API calls, sending messages, code execution.
+
+### 3. Prompts (Reusable Templates)
+
+Prompts are pre-built interaction patterns that help users invoke common workflows through the AI model.
+
+```python
+@server.list_prompts()
+async def list_prompts():
+    return [
+        Prompt(
+            name="analyze_table",
+            description="Analyze a database table and provide insights",
+            arguments=[
+                PromptArgument(
+                    name="table_name",
+                    description="Name of the table to analyze",
+                    required=True
+                )
+            ]
+        )
+    ]
+
+@server.get_prompt()
+async def get_prompt(name: str, arguments: dict):
+    if name == "analyze_table":
+        table = arguments["table_name"]
+        return GetPromptResult(
+            messages=[
+                PromptMessage(
+                    role="user",
+                    content=TextContent(
+                        text=f"Analyze the '{table}' table. Read its schema, "
+                             f"run exploratory queries, and report findings."
+                    )
+                )
+            ]
+        )
+```
+
+**Use cases:** data analysis workflows, code review templates, report generation patterns, debugging guides.
+
+<Callout type="info">
+**How the three primitives work together:** A typical MCP server might expose Resources (so the model can read database schemas), Tools (so the model can run queries), and Prompts (so users can trigger an "analyze this table" workflow with one click). Each primitive serves a different purpose.
+</Callout>
+
+## Building a Basic MCP Server
+
+Here is a complete, minimal MCP server in Python that exposes a tool and a resource.
+
+```python
+# my_server.py
+import json
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import Resource, Tool, TextContent
+
+server = Server("demo-server")
+
+
+@server.list_resources()
+async def list_resources():
+    return [
+        Resource(
+            uri="info://server",
+            name="Server Info",
+            description="Information about this MCP server",
+            mimeType="text/plain"
+        )
+    ]
+
+
+@server.read_resource()
+async def read_resource(uri: str):
+    if uri == "info://server":
+        return "Demo MCP server with a calculator tool."
+    raise ValueError(f"Unknown resource: {uri}")
+
+
+@server.list_tools()
+async def list_tools():
+    return [
+        Tool(
+            name="add_numbers",
+            description="Add two numbers together",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "a": {"type": "number", "description": "First number"},
+                    "b": {"type": "number", "description": "Second number"}
+                },
+                "required": ["a", "b"]
+            }
+        )
+    ]
+
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict):
+    if name == "add_numbers":
+        result = arguments["a"] + arguments["b"]
+        return [TextContent(type="text", text=f"Result: {result}")]
+    raise ValueError(f"Unknown tool: {name}")
+
+
+async def main():
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(read_stream, write_stream)
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+```
+
+Install and run:
+
+```bash
+pip install mcp[cli]
+python my_server.py
+```
+
+To connect this server to Claude Desktop, add it to your configuration:
+
+```json
+{
+  "mcpServers": {
+    "demo": {
+      "command": "python",
+      "args": ["/path/to/my_server.py"]
+    }
+  }
+}
+```
+
+<Callout type="tip">
+**Testing MCP Servers:** Use the MCP Inspector (`npx @modelcontextprotocol/inspector`) to test your servers interactively before connecting them to a host. It lets you list resources, call tools, and debug issues without needing Claude Desktop.
+</Callout>
+
+## The MCP Ecosystem
+
+The MCP ecosystem is growing rapidly. Here are key categories of servers available:
+
+| Category | Examples | What They Do |
+|----------|----------|-------------|
+| **Developer Tools** | GitHub, GitLab, Linear | Manage repos, issues, PRs |
+| **Databases** | PostgreSQL, SQLite, MongoDB | Query and manage data |
+| **Communication** | Slack, Discord, Email | Send and read messages |
+| **File Systems** | Local files, Google Drive, S3 | Read and write files |
+| **Knowledge** | Notion, Confluence, Wikipedia | Access documentation and wikis |
+| **Web** | Brave Search, Puppeteer, Fetch | Search and browse the web |
+| **Observability** | Sentry, Datadog | Access logs, errors, metrics |
+
+Anthropic maintains a public directory of MCP servers, and the community contributes new ones regularly. You can find them on the official MCP GitHub repository.
+
+## Why MCP Matters
+
+MCP matters for three audiences:
+
+**For AI application developers:** Write one integration layer and get access to a growing ecosystem of tools. When a new MCP server is published for a service your users need, it just works -- no custom code required.
+
+**For tool and service providers:** Build one server and every MCP-compatible AI application can use it. Instead of building separate plugins for Claude, ChatGPT, Copilot, and every other AI tool, you build once.
+
+**For the AI ecosystem as a whole:** MCP reduces fragmentation, creates a shared standard, and accelerates innovation by making tools composable and reusable across the entire industry.
+
+<Callout type="info">
+**MCP is fully open source.** The protocol specification, SDKs (Python and TypeScript), and reference servers are all available under permissive open-source licenses. Anyone can build MCP servers and clients.
+</Callout>
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You Have Learned:**
+1. MCP solves the N x M integration problem by providing a single protocol for AI-tool connections
+2. The architecture has three layers: Hosts (apps), Clients (connection managers), and Servers (tool providers)
+3. Servers expose three primitives: Resources (read-only data), Tools (actions), and Prompts (reusable templates)
+4. Building a basic MCP server in Python requires just the `mcp` package and a few decorator functions
+5. The ecosystem is growing rapidly with servers for databases, APIs, developer tools, and more
+6. MCP is an open standard that benefits the entire AI ecosystem, not just one provider
+</Callout>
+
+## Next Steps
+
+Now that you understand MCP conceptually, you can explore building production-grade MCP servers with authentication, error handling, and advanced features in the advanced track. You can also browse the official MCP server directory to find servers for the tools you already use.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What core problem does MCP solve for the AI ecosystem?",
+      options: [
+        "It makes AI models run faster",
+        "It reduces the N x M integration problem to N + M by providing a standard protocol",
+        "It replaces the need for API keys",
+        "It trains AI models to use tools automatically"
+      ],
+      correctAnswer: 1,
+      explanation: "Without MCP, every model needs a custom integration for every tool (N x M combinations). MCP provides a standard protocol so each model and each tool only needs one implementation (N + M), dramatically reducing integration work."
+    },
+    {
+      question: "Which of the three MCP primitives would you use to let an AI model send a Slack message?",
+      options: [
+        "Resources -- because it involves accessing Slack data",
+        "Prompts -- because it involves a message template",
+        "Tools -- because sending a message is an action that changes state",
+        "All three are required to send a message"
+      ],
+      correctAnswer: 2,
+      explanation: "Tools are used for actions that change state or have side effects. Sending a Slack message creates a new message in the external world, making it a Tool. Resources are for read-only data, and Prompts are for reusable interaction templates."
+    },
+    {
+      question: "In the MCP architecture, what is the role of the Host?",
+      options: [
+        "It stores tool data and configurations",
+        "It is the user-facing application that contains the AI model and MCP Client",
+        "It runs the external tools and APIs",
+        "It manages authentication between servers"
+      ],
+      correctAnswer: 1,
+      explanation: "The Host is the application the user interacts with (like Claude Desktop or Cursor). It provides the AI model, the user interface, and contains the MCP Client that manages connections to MCP Servers."
+    },
+    {
+      question: "Where do MCP servers typically run?",
+      options: [
+        "In the cloud on Anthropic's servers",
+        "On the user's local machine",
+        "Inside the LLM",
+        "On a dedicated GPU"
+      ],
+      correctAnswer: 1,
+      explanation: "MCP servers run locally on the user's machine, which is important for security since they can access local files, databases, and services without sending data to external servers."
+    }
+  ]}
+/>

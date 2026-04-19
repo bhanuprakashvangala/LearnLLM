@@ -1,0 +1,449 @@
+---
+title: "AutoGen: Microsoft's Multi-Agent Framework"
+description: "Master Microsoft's AutoGen framework for building sophisticated multi-agent conversations and workflows"
+difficulty: "advanced"
+duration: 25
+order: 81
+tags: ["AutoGen", "Microsoft", "Multi-Agent", "Conversations"]
+---
+
+# AutoGen: Microsoft's Multi-Agent Framework
+
+AutoGen is Microsoft's open-source framework for building multi-agent systems where AI agents converse, collaborate, and execute code to solve complex tasks. With the v0.4 release, AutoGen introduced an asynchronous, event-driven architecture that makes it production-ready for serious applications.
+
+<Callout type="info">
+**AutoGen v0.4**: A complete rewrite of the original AutoGen framework, featuring an asynchronous event-driven architecture, improved modularity, and first-class support for custom agent runtimes. It is the current recommended version for new projects.
+</Callout>
+
+## Why AutoGen?
+
+Most multi-agent frameworks require you to manually wire agent communication. AutoGen provides a conversational programming paradigm: agents talk to each other, negotiate solutions, and can even execute code autonomously.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    AutoGen Runtime                           │
+│                                                             │
+│  ┌──────────┐    message    ┌──────────┐    message         │
+│  │ Assistant │──────────────▶│   User   │──────────────┐    │
+│  │  Agent    │◀──────────────│  Proxy   │              │    │
+│  └──────────┘    reply      └──────────┘              │    │
+│       │                          │                     │    │
+│       │ code                     │ human input         │    │
+│       ▼                          ▼ (optional)          │    │
+│  ┌──────────┐              ┌──────────┐          ┌─────▼──┐ │
+│  │  Code    │              │  Human   │          │ Group  │ │
+│  │ Executor │              │  in Loop │          │  Chat  │ │
+│  └──────────┘              └──────────┘          └────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Core Concepts
+
+### ConversableAgent
+
+The foundation of AutoGen. Every agent is a `ConversableAgent` that can send and receive messages:
+
+```python
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.ui import Console
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+# Create an OpenAI model client
+model_client = OpenAIChatCompletionClient(
+    model="gpt-4o",
+    # api_key is read from OPENAI_API_KEY env var by default
+)
+
+# AssistantAgent is the most common ConversableAgent subclass
+assistant = AssistantAgent(
+    name="helpful_assistant",
+    model_client=model_client,
+    system_message="You are a helpful AI assistant. Solve tasks carefully.",
+)
+```
+
+### AssistantAgent
+
+A `ConversableAgent` pre-configured to act as an AI assistant. It wraps a model client and supports tool calling:
+
+```python
+from autogen_agentchat.agents import AssistantAgent
+from autogen_core.tools import FunctionTool
+
+# Define tools as plain Python functions
+def get_stock_price(symbol: str) -> str:
+    """Get the current stock price for a given symbol."""
+    # In production, call a real API
+    prices = {"AAPL": 178.50, "GOOGL": 141.25, "MSFT": 378.90}
+    price = prices.get(symbol.upper(), None)
+    if price:
+        return f"{symbol.upper()}: ${price}"
+    return f"Price not found for {symbol}"
+
+def calculate_portfolio_value(holdings: dict) -> str:
+    """Calculate total portfolio value given holdings as {symbol: shares}."""
+    prices = {"AAPL": 178.50, "GOOGL": 141.25, "MSFT": 378.90}
+    total = sum(prices.get(s, 0) * n for s, n in holdings.items())
+    return f"Total portfolio value: ${total:,.2f}"
+
+# Wrap functions as tools
+stock_tool = FunctionTool(get_stock_price, description="Get stock price")
+portfolio_tool = FunctionTool(calculate_portfolio_value, description="Calculate portfolio value")
+
+# Create assistant with tools
+finance_assistant = AssistantAgent(
+    name="finance_assistant",
+    model_client=model_client,
+    tools=[stock_tool, portfolio_tool],
+    system_message=(
+        "You are a financial assistant. Use your tools to answer "
+        "questions about stock prices and portfolio values."
+    ),
+)
+```
+
+### UserProxyAgent
+
+A proxy for the human user. It can execute code, relay human input, or run autonomously:
+
+```python
+from autogen_agentchat.agents import UserProxyAgent
+
+# UserProxyAgent that asks for human input
+user_proxy = UserProxyAgent(
+    name="user_proxy",
+    description="A proxy for the human user.",
+)
+```
+
+<Callout type="warning">
+**Code Execution Security**: When enabling code execution in AutoGen agents, always use Docker-based execution in production. Never allow arbitrary code execution in an unsandboxed environment. AutoGen v0.4 provides `DockerCommandLineCodeExecutor` for safe execution.
+</Callout>
+
+## Two-Agent Conversation
+
+The simplest AutoGen pattern is a two-agent conversation:
+
+```python
+import asyncio
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.ui import Console
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+async def two_agent_chat():
+    model_client = OpenAIChatCompletionClient(model="gpt-4o")
+
+    # Create a primary assistant
+    primary = AssistantAgent(
+        name="primary_assistant",
+        model_client=model_client,
+        system_message=(
+            "You are a helpful assistant. When the task is complete, "
+            "reply with TERMINATE."
+        ),
+    )
+
+    # Create a critic that reviews work
+    critic = AssistantAgent(
+        name="critic",
+        model_client=model_client,
+        system_message=(
+            "You review the assistant's work for correctness and clarity. "
+            "Provide specific feedback. When satisfied, reply with TERMINATE."
+        ),
+    )
+
+    # Define termination condition
+    termination = TextMentionTermination("TERMINATE")
+
+    # Create a team (group chat with two agents)
+    team = RoundRobinGroupChat(
+        participants=[primary, critic],
+        termination_condition=termination,
+        max_turns=6,
+    )
+
+    # Run the conversation
+    stream = team.run_stream(
+        task="Write a Python function that implements binary search. "
+             "Include type hints and docstring."
+    )
+    await Console(stream)
+
+asyncio.run(two_agent_chat())
+```
+
+## Group Chat with Specialized Agents
+
+For complex tasks, create a group of specialized agents that collaborate:
+
+```python
+import asyncio
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
+from autogen_agentchat.teams import SelectorGroupChat
+from autogen_agentchat.ui import Console
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+async def multi_agent_group_chat():
+    model_client = OpenAIChatCompletionClient(model="gpt-4o")
+
+    # Architect: designs the solution
+    architect = AssistantAgent(
+        name="architect",
+        model_client=model_client,
+        system_message=(
+            "You are a software architect. Design system architectures, "
+            "define components, and specify interfaces. Focus on scalability "
+            "and maintainability. Do NOT write implementation code."
+        ),
+    )
+
+    # Engineer: implements the code
+    engineer = AssistantAgent(
+        name="engineer",
+        model_client=model_client,
+        system_message=(
+            "You are a senior software engineer. Implement code based on "
+            "architectural designs. Write clean, well-documented Python code "
+            "with type hints and error handling."
+        ),
+    )
+
+    # Reviewer: reviews code quality
+    reviewer = AssistantAgent(
+        name="reviewer",
+        model_client=model_client,
+        system_message=(
+            "You are a code reviewer. Review code for bugs, performance "
+            "issues, security vulnerabilities, and adherence to best practices. "
+            "Provide specific, actionable feedback."
+        ),
+    )
+
+    # QA: writes tests
+    qa_engineer = AssistantAgent(
+        name="qa_engineer",
+        model_client=model_client,
+        system_message=(
+            "You are a QA engineer. Write comprehensive pytest test cases "
+            "for the implemented code. Cover edge cases and error conditions. "
+            "When all tests and reviews pass, reply with APPROVE."
+        ),
+    )
+
+    # Termination: stop when QA approves or after max messages
+    termination = TextMentionTermination("APPROVE") | MaxMessageTermination(20)
+
+    # SelectorGroupChat uses the LLM to pick the next speaker
+    team = SelectorGroupChat(
+        participants=[architect, engineer, reviewer, qa_engineer],
+        model_client=model_client,
+        termination_condition=termination,
+    )
+
+    stream = team.run_stream(
+        task="Build a rate limiter class that supports sliding window "
+             "rate limiting with Redis as the backend store."
+    )
+    await Console(stream)
+
+asyncio.run(multi_agent_group_chat())
+```
+
+<Callout type="tip">
+**Speaker Selection**: `SelectorGroupChat` uses an LLM to intelligently choose the next speaker based on conversation context. This is more flexible than round-robin for tasks where the flow depends on what has been said.
+</Callout>
+
+## Code Execution Within Agents
+
+AutoGen agents can generate and execute code, making them powerful for data analysis and programming tasks:
+
+```python
+import asyncio
+from autogen_agentchat.agents import AssistantAgent, CodeExecutorAgent
+from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.ui import Console
+from autogen_ext.code_executors.docker import DockerCommandLineCodeExecutor
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+async def code_execution_example():
+    model_client = OpenAIChatCompletionClient(model="gpt-4o")
+
+    # Create a Docker-based code executor for safety
+    code_executor = DockerCommandLineCodeExecutor(
+        image="python:3.11-slim",
+        timeout=60,
+        work_dir="/tmp/autogen_code",
+    )
+
+    # Agent that writes code
+    coder = AssistantAgent(
+        name="coder",
+        model_client=model_client,
+        system_message=(
+            "You are a Python programmer. Write code to solve tasks. "
+            "Always put code in ```python blocks. When finished, "
+            "reply with TERMINATE."
+        ),
+    )
+
+    # Agent that executes code and reports results
+    executor = CodeExecutorAgent(
+        name="executor",
+        code_executor=code_executor,
+    )
+
+    termination = TextMentionTermination("TERMINATE")
+
+    team = RoundRobinGroupChat(
+        participants=[coder, executor],
+        termination_condition=termination,
+        max_turns=10,
+    )
+
+    stream = team.run_stream(
+        task="Analyze the distribution of prime numbers under 10000. "
+             "Create a histogram showing the gap between consecutive primes."
+    )
+    await Console(stream)
+
+    # Always clean up the executor
+    await code_executor.stop()
+
+asyncio.run(code_execution_example())
+```
+
+## AutoGen Studio
+
+AutoGen Studio is a no-code/low-code interface for building multi-agent workflows visually. It allows you to:
+
+- **Drag-and-drop** agent creation with visual configuration
+- **Visually wire** agent conversations and group chats
+- **Test workflows** interactively in a web UI
+- **Export configurations** as JSON for use in code
+
+```bash
+# Install and launch AutoGen Studio
+pip install autogenstudio
+autogenstudio ui --port 8080
+```
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  AutoGen Studio UI                       │
+│                                                         │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                │
+│  │ Models  │  │ Agents  │  │  Teams  │                 │
+│  └────┬────┘  └────┬────┘  └────┬────┘                 │
+│       │            │            │                       │
+│       └────────────┼────────────┘                       │
+│                    ▼                                    │
+│            ┌──────────────┐                             │
+│            │  Playground  │  ← Test interactively       │
+│            └──────────────┘                             │
+│                    │                                    │
+│                    ▼                                    │
+│            ┌──────────────┐                             │
+│            │   Gallery    │  ← Share & reuse            │
+│            └──────────────┘                             │
+└─────────────────────────────────────────────────────────┘
+```
+
+<Callout type="info">
+**AutoGen Studio** is ideal for prototyping. Once your workflow is validated, export the configuration and integrate it into your production Python codebase for full control.
+</Callout>
+
+## AutoGen vs. CrewAI vs. LangGraph
+
+| Feature | AutoGen v0.4 | CrewAI | LangGraph |
+|---|---|---|---|
+| **Paradigm** | Conversational agents | Role-based crews | Stateful graph workflows |
+| **Architecture** | Event-driven, async | Sequential/hierarchical | DAG-based state machine |
+| **Agent Communication** | Direct messaging + group chat | Task delegation | State passing through edges |
+| **Code Execution** | Built-in (Docker sandbox) | Via tools | Via tools |
+| **Human-in-the-Loop** | First-class UserProxyAgent | Supported | Interrupt/resume nodes |
+| **State Management** | Conversation history | Task context | Explicit state object |
+| **Best For** | Conversational multi-agent flows | Task-oriented teams | Complex stateful workflows |
+| **Learning Curve** | Moderate | Low | Higher |
+
+## When to Use AutoGen
+
+**Choose AutoGen when:**
+
+- Agents need to have extended conversations to refine solutions
+- You want built-in code generation and execution
+- Human-in-the-loop interaction is important
+- You need a visual prototyping tool (AutoGen Studio)
+
+**Choose something else when:**
+
+- You need precise control over execution flow (use LangGraph)
+- Your workflow is strictly sequential with no agent interaction (use a simple pipeline)
+- You need deep integration with LangChain tooling (use LangGraph)
+
+<Callout type="warning">
+**Token Costs**: Multi-agent conversations can consume tokens rapidly. Each message in a group chat is sent to every participant's context window. Monitor token usage carefully and set `max_turns` or termination conditions to prevent runaway conversations.
+</Callout>
+
+## Key Takeaways
+
+1. **AutoGen v0.4** provides an async, event-driven framework for building multi-agent systems through conversational programming
+2. **ConversableAgent** is the foundation -- AssistantAgent and UserProxyAgent are the most commonly used subclasses
+3. **Group chats** enable multiple specialized agents to collaborate, with intelligent speaker selection via `SelectorGroupChat`
+4. **Code execution** is a first-class feature with Docker sandboxing for safety
+5. **AutoGen Studio** provides a visual interface for rapid prototyping before moving to production code
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What is the key architectural change in AutoGen v0.4 compared to earlier versions?",
+      options: [
+        "It removed support for multiple agents",
+        "It switched to a synchronous-only design",
+        "It introduced an asynchronous, event-driven architecture",
+        "It dropped Python support in favor of JavaScript"
+      ],
+      correctAnswer: 2,
+      explanation: "AutoGen v0.4 was a complete rewrite featuring an asynchronous, event-driven architecture that improves scalability and makes it suitable for production deployments."
+    },
+    {
+      question: "Why should you use DockerCommandLineCodeExecutor instead of LocalCommandLineCodeExecutor in production?",
+      options: [
+        "Docker execution is faster",
+        "It sandboxes code execution to prevent arbitrary system access",
+        "Local execution does not support Python",
+        "Docker is required by AutoGen's license"
+      ],
+      correctAnswer: 1,
+      explanation: "Docker-based execution sandboxes the code in an isolated container, preventing AI-generated code from accessing or modifying the host system -- a critical security requirement in production."
+    },
+    {
+      question: "What does SelectorGroupChat use to determine the next speaker in a multi-agent conversation?",
+      options: [
+        "A fixed round-robin schedule",
+        "Random selection",
+        "An LLM that analyzes the conversation context to pick the best next speaker",
+        "The agent that has spoken least frequently"
+      ],
+      correctAnswer: 2,
+      explanation: "SelectorGroupChat uses an LLM to intelligently select the next speaker based on the current conversation context, allowing dynamic and context-aware turn-taking."
+    },
+    {
+      question: "When would you choose LangGraph over AutoGen for a multi-agent system?",
+      options: [
+        "When you need agents to have free-form conversations",
+        "When you need precise control over execution flow with explicit state management",
+        "When you want a no-code visual interface",
+        "When you need built-in code execution"
+      ],
+      correctAnswer: 1,
+      explanation: "LangGraph excels when you need precise control over execution flow through a DAG-based state machine, with explicit state objects passed between nodes. AutoGen is better suited for conversational multi-agent interactions."
+    }
+  ]}
+/>

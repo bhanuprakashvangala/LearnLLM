@@ -1,0 +1,264 @@
+---
+title: "AI-Powered Development: The New Way to Code"
+description: "How AI is transforming software development with intelligent tools and workflows"
+difficulty: "intermediate"
+duration: 15
+order: 49
+tags: ["AI Development", "Cursor", "Windsurf", "Claude Code", "Dev Tools"]
+---
+
+# AI-Powered Development: The New Way to Code
+
+The way we write software is undergoing its biggest shift since the invention of the IDE. AI-powered development tools don't just autocomplete your code -- they understand your entire codebase, plan multi-file changes, run tests, fix bugs, and can even build features end-to-end.
+
+This lesson covers the major AI development tools and how to use them effectively.
+
+<Callout type="info">
+**The Shift:** We've gone from "AI suggests the next line" to "AI understands the entire codebase and can implement features." The best developers in 2025 are the ones who know how to collaborate with these tools effectively.
+</Callout>
+
+## Cursor: The AI-First Code Editor
+
+Cursor is a fork of VS Code rebuilt around AI. It keeps everything you love about VS Code -- extensions, keybindings, settings -- but adds deep AI integration at every level.
+
+### Key Features
+
+**Tab Completion** -- Cursor predicts your next edit, not just the next line. It watches your recent changes and suggests multi-line edits that match your patterns. Press Tab to accept.
+
+**Chat (Cmd+L)** -- Ask questions about your codebase. Cursor automatically finds relevant files and provides answers with code references. You can ask "How does authentication work in this project?" and it will find the relevant files and explain the flow.
+
+**Composer (Cmd+I)** -- The most powerful feature. Describe a change in natural language and Composer plans and applies edits across multiple files simultaneously. You can say "Add a dark mode toggle to the settings page" and it will modify the component, add a context provider, and update the styles.
+
+**`.cursorrules` File** -- A project-level configuration file where you define coding standards, conventions, and context for the AI. This is like a system prompt for your project.
+
+```
+# .cursorrules example
+You are working on a Next.js 14 app with TypeScript.
+- Use the App Router (not Pages Router)
+- Use Tailwind CSS for styling, no CSS modules
+- Use server components by default, add 'use client' only when needed
+- Follow the existing naming conventions in the codebase
+- Write tests using Vitest and React Testing Library
+- Prefer named exports over default exports
+```
+
+<Callout type="tip">
+**Pro tip:** A well-written `.cursorrules` file dramatically improves Cursor's output quality. Spend 10 minutes defining your project conventions and it will save you hours of correcting AI-generated code.
+</Callout>
+
+### When Cursor Excels
+
+- Rapid prototyping and feature development
+- Exploring unfamiliar codebases (ask Chat to explain any file)
+- Multi-file refactoring with Composer
+- Writing tests for existing code
+- Generating boilerplate (API routes, components, data models)
+
+## Claude Code: The Terminal AI Agent
+
+Claude Code is Anthropic's command-line AI coding agent. Unlike Cursor's editor-integrated approach, Claude Code operates in your terminal -- reading files, running commands, editing code, and executing tests like a pair programmer sitting next to you.
+
+### Key Characteristics
+
+- **Agentic** -- Claude Code takes autonomous multi-step actions. You say "fix the failing tests" and it reads the test output, identifies the issues, edits the code, and re-runs the tests to verify.
+- **Full codebase understanding** -- It can read any file in your project and understand the relationships between components.
+- **Tool use** -- It runs shell commands, git operations, and file edits as tools, always showing you what it's about to do.
+- **Terminal-native** -- No GUI. Works over SSH, in CI/CD pipelines, and on remote servers.
+
+### Example Workflow
+
+```bash
+# Start Claude Code in your project
+claude
+
+# Ask it to do something
+> Add input validation to the user registration endpoint.
+  Validate email format, password strength (8+ chars, 1 uppercase,
+  1 number), and that username is 3-20 characters.
+  Add tests for all validation cases.
+
+# Claude Code will:
+# 1. Read the existing registration endpoint
+# 2. Add validation logic
+# 3. Create test cases
+# 4. Run the tests to verify
+# 5. Show you a summary of all changes
+```
+
+### When Claude Code Excels
+
+- Complex, multi-step tasks that require reading and understanding many files
+- Bug investigation ("why is this test failing?")
+- Working on remote servers via SSH
+- CI/CD pipeline integration
+- Tasks that require running commands and verifying results
+
+## Windsurf (Codeium)
+
+Windsurf is Codeium's AI-native code editor, also built on VS Code. Its standout feature is **Cascade** -- an agentic flow that can plan and execute multi-step coding tasks while keeping you in the loop.
+
+### Key Differentiators
+
+- **Cascade** -- An agentic workflow engine that breaks down complex requests into steps, executes them, and asks for confirmation at key decision points
+- **Supercomplete** -- Context-aware autocomplete that considers your recent edits, open files, and terminal output
+- **Free tier** -- Windsurf offers a generous free tier, making it accessible for individual developers and students
+
+### Cascade Example
+
+When you ask Cascade to "add pagination to the products API endpoint," it might:
+
+1. Read the current endpoint implementation
+2. Identify the database query that needs modification
+3. Add query parameters for page and limit
+4. Update the database query with OFFSET and LIMIT
+5. Add pagination metadata to the response
+6. Update the API tests
+7. Show you all changes for review
+
+## GitHub Copilot
+
+GitHub Copilot is the pioneer that started the AI coding revolution. Integrated into VS Code, JetBrains, and Neovim, it provides inline code suggestions, chat, and more recently, agent capabilities through Copilot Workspace.
+
+### Key Features
+
+- **Inline suggestions** -- The original AI autocomplete, trained on public code
+- **Copilot Chat** -- Ask questions about your code in a sidebar panel
+- **Copilot Workspace** -- An agent that can plan and implement changes across repos (GitHub-integrated)
+- **Wide IDE support** -- Works in VS Code, JetBrains (IntelliJ, PyCharm, etc.), Neovim, and Visual Studio
+
+### Copilot's Strengths
+
+- Deepest integration with the GitHub ecosystem (issues, PRs, Actions)
+- Strongest enterprise support and compliance features
+- Works across the most IDEs and editors
+- Copilot Workspace turns GitHub Issues into planned code changes
+
+## How They Compare
+
+| Feature | Cursor | Claude Code | Windsurf | GitHub Copilot |
+|---------|--------|-------------|----------|----------------|
+| **Interface** | VS Code fork | Terminal | VS Code fork | IDE extension |
+| **Multi-file editing** | Composer | Agentic tool use | Cascade | Copilot Workspace |
+| **Inline completion** | Tab (context-aware) | N/A (terminal) | Supercomplete | Inline suggestions |
+| **Chat** | Cmd+L | Terminal chat | Sidebar | Copilot Chat |
+| **Config file** | .cursorrules | CLAUDE.md | .windsurfrules | N/A |
+| **Terminal integration** | Built-in terminal | IS the terminal | Built-in terminal | Limited |
+| **Best for** | Feature development | Complex agentic tasks | Accessible AI coding | GitHub-native workflow |
+| **Price** | Free + Pro ($20/mo) | Usage-based | Free + Pro | $10-39/mo |
+
+<Callout type="info">
+**You don't have to choose just one.** Many developers use Cursor or Windsurf for daily coding and Claude Code for complex tasks that require agentic multi-step execution. The tools are complementary.
+</Callout>
+
+## Best Practices for AI-Assisted Development
+
+### 1. Always Review AI-Generated Code
+
+AI tools produce code that looks correct but may contain subtle bugs, security vulnerabilities, or architectural issues. Always read diffs carefully before accepting changes.
+
+### 2. Provide Context
+
+The better context you give, the better the output. Use `.cursorrules` / `CLAUDE.md` files, reference specific files, and describe not just *what* you want but *why*.
+
+### 3. Work Iteratively
+
+Don't try to generate an entire feature in one prompt. Break work into smaller pieces: create the data model, then the API route, then the UI component, then the tests. Verify each step.
+
+### 4. Use Version Control Aggressively
+
+Commit frequently when working with AI tools. If a change goes wrong, you can easily revert. Create a new branch before asking the AI to make large changes.
+
+### 5. Learn Prompting for Code
+
+Effective prompts for code generation include:
+- The specific file or function to modify
+- The desired behavior with concrete examples
+- Constraints ("use the existing database schema," "don't add new dependencies")
+- Edge cases to handle
+
+## The Prompt-to-App Pipeline
+
+The most exciting trend in AI development is the **prompt-to-app** pipeline: describing what you want in natural language and getting a working application.
+
+```
+Prompt: "Build a task management app with user authentication,
+         drag-and-drop boards, and real-time updates."
+
+  AI agent plans the architecture
+  Scaffolds the project (Next.js, Prisma, Tailwind)
+  Implements authentication (NextAuth.js)
+  Creates the database schema
+  Builds the UI components
+  Adds drag-and-drop functionality
+  Sets up real-time with WebSockets
+  Runs tests and fixes issues
+  Deploys to Vercel
+```
+
+Tools like Cursor Composer, Claude Code, and GitHub Copilot Workspace are making this pipeline increasingly viable for production applications. The developer's role shifts from writing every line to guiding the AI, reviewing output, and making architectural decisions.
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You Have Learned:**
+1. Cursor excels at multi-file editing with Composer and project-aware completions
+2. Claude Code is a terminal-based agent for complex, multi-step coding tasks
+3. Windsurf's Cascade provides accessible agentic coding with a generous free tier
+4. GitHub Copilot has the deepest GitHub ecosystem integration
+5. Always review AI-generated code -- it can contain subtle bugs and security issues
+6. Use project configuration files (.cursorrules, CLAUDE.md) to dramatically improve output quality
+7. The prompt-to-app pipeline is shifting the developer role from writing to guiding and reviewing
+</Callout>
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What is the primary difference between Cursor's Composer and standard inline autocomplete?",
+      options: [
+        "Composer is faster at generating code",
+        "Composer plans and applies changes across multiple files based on a natural language description, while autocomplete suggests the next few lines in the current file",
+        "Composer only works with Python, autocomplete works with all languages",
+        "There is no significant difference"
+      ],
+      correctAnswer: 1,
+      explanation: "Composer takes a natural language description of a feature or change and plans multi-file edits across your entire project. Inline autocomplete only predicts the next few lines within the current file based on surrounding context."
+    },
+    {
+      question: "What makes Claude Code different from other AI coding tools?",
+      options: [
+        "It only works with Anthropic's models",
+        "It runs in the terminal as an agentic tool that can read files, run commands, edit code, and verify changes autonomously",
+        "It can only generate Python code",
+        "It requires a GPU to run"
+      ],
+      correctAnswer: 1,
+      explanation: "Claude Code operates in the terminal rather than inside an IDE. It takes autonomous multi-step actions -- reading files, running shell commands, editing code, executing tests, and verifying results -- like a pair programmer in your terminal."
+    },
+    {
+      question: "What is the purpose of a .cursorrules file?",
+      options: [
+        "It stores your Cursor license key",
+        "It defines project-level coding standards and context that the AI uses to generate more consistent, project-appropriate code",
+        "It lists the files that Cursor should ignore",
+        "It configures keyboard shortcuts"
+      ],
+      correctAnswer: 1,
+      explanation: "A .cursorrules file acts as a project-level system prompt. It defines coding conventions, framework preferences, naming standards, and other context that helps the AI generate code consistent with your project's style."
+    },
+    {
+      question: "What is the most important best practice when using AI coding tools?",
+      options: [
+        "Accept all suggestions without review",
+        "Only use one tool at a time",
+        "Always review AI-generated code for bugs, security issues, and correctness",
+        "Disable version control to avoid conflicts"
+      ],
+      correctAnswer: 2,
+      explanation: "AI-generated code can contain subtle bugs, security vulnerabilities, or architectural problems. Always review diffs carefully, test thoroughly, and understand what the code does before shipping it."
+    }
+  ]}
+/>

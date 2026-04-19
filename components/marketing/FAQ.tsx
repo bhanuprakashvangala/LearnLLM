@@ -14,54 +14,54 @@ import Link from "next/link";
 
 const faqs = [
   {
-    question: "Do I need coding experience to learn LLM development?",
+    question: "Do I need coding experience to start?",
     answer:
-      "Basic Python knowledge helps, but it's not required! Our 'LLM Fundamentals' path starts with the basics. If you can write simple Python scripts, you're ready to start. We focus on practical LLM tools and frameworks rather than complex algorithms, making it accessible for developers at all levels.",
+      "Not at all! Our Beginner path requires zero coding. You'll start with prompt engineering, explore tools like NotebookLM, Bolt.new, and Cursor, and understand what agentic AI actually is. When you're ready to code, our Intermediate path eases you in with Python examples you can follow step-by-step.",
   },
   {
-    question: "What LLM frameworks and tools do you cover?",
+    question: "What is Agentic AI and do you teach it?",
     answer:
-      "We cover all major frameworks: LangChain, LlamaIndex, Hugging Face Transformers, OpenAI API, Anthropic Claude, Vector databases (Pinecone, Weaviate, Qdrant, ChromaDB), and deployment tools (LangServe, FastAPI). You'll learn both theory and hands-on implementation for each tool.",
+      "Agentic AI is the biggest trend in AI right now - it's AI that doesn't just chat, but actually reasons, plans, uses tools, and takes actions autonomously. We have 20+ dedicated lessons covering Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, MCP Protocol, agent orchestration patterns, and hands-on projects building real multi-agent systems.",
+  },
+  {
+    question: "What frameworks and tools do you cover?",
+    answer:
+      "Every major tool and framework: Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, LangChain, LlamaIndex, Vercel AI SDK, MCP (Model Context Protocol), vector databases (Pinecone, ChromaDB, Weaviate), AI code editors (Cursor, Claude Code, Windsurf), and deployment tools (vLLM, FastAPI, Vercel). Over 36 tools across the entire AI development stack.",
+  },
+  {
+    question: "What is MCP (Model Context Protocol)?",
+    answer:
+      "MCP is Anthropic's open protocol for connecting AI models to tools and data sources - think of it as the USB-C of AI. Instead of building custom integrations for every tool, MCP provides a universal standard. We teach you how MCP works, how to build MCP servers, and how to use them in production. It's becoming essential for any serious AI developer.",
   },
   {
     question: "Will I learn how to fine-tune LLMs?",
     answer:
-      "Absolutely! Our Advanced path includes comprehensive fine-tuning tutorials covering LoRA, QLoRA, and full fine-tuning techniques. You'll fine-tune models like Llama, Mistral, and GPT for custom use cases, and learn when to fine-tune vs. use RAG or prompt engineering.",
+      "Absolutely! Our Advanced path covers LoRA, QLoRA, full fine-tuning, RLHF, and DPO. You'll fine-tune models like Llama and Mistral for custom use cases, and learn when to fine-tune vs. use RAG vs. prompt engineering. We also cover deployment with vLLM and cost optimization.",
   },
   {
-    question: "What is RAG and will I learn how to implement it?",
+    question: "What is RAG and why does it matter?",
     answer:
-      "RAG (Retrieval Augmented Generation) is a technique to give LLMs access to external knowledge. Yes! We have extensive tutorials on RAG implementation, from basic concepts to production-ready systems with vector databases, embedding models, and semantic search.",
+      "RAG (Retrieval Augmented Generation) lets AI work with YOUR data - documents, databases, websites. Instead of relying only on training data, RAG retrieves relevant information and feeds it to the LLM. We cover RAG from basics to production systems with vector databases, embedding strategies, and advanced techniques like re-ranking and hybrid search.",
   },
   {
-    question: "Do you teach prompt engineering and Chain of Thought?",
+    question: "Can I actually build real applications?",
     answer:
-      "Yes! We cover advanced prompting techniques including Chain of Thought (CoT), Few-Shot learning, Tree of Thoughts, ReAct patterns, and more. You'll learn how to craft effective prompts for different use cases and get better outputs from any LLM.",
+      "Yes - that's the whole point! Every module ends with a hands-on project. You'll build multi-agent research systems with CrewAI, full-stack AI apps with Vercel AI SDK, production RAG pipelines, autonomous research agents, and more. These are portfolio-ready projects that demonstrate real skills to employers.",
   },
   {
-    question: "Can I build real AI applications with what I learn?",
+    question: "How is this different from other AI courses?",
     answer:
-      "Definitely! Every tutorial includes production-ready code examples. You'll build chatbots, document Q&A systems, code assistants, AI agents, and more. We also teach deployment, monitoring, caching, and cost optimization for real-world applications.",
+      "Most AI courses teach you to use ChatGPT or cover old-school ML theory. LearnLLM.dev teaches you to BUILD with AI using the tools that matter NOW - Google ADK, CrewAI, MCP, LangChain, and the full agentic AI stack. We update our content as new frameworks launch. It's GeeksforGeeks meets the AI agent revolution.",
   },
   {
-    question: "How is this different from ChatGPT or generic AI courses?",
+    question: "How often is the content updated?",
     answer:
-      "LearnLLM.dev is like GeeksforGeeks for the AI era. We focus on practical LLM development tools and techniques (LangChain, RAG, fine-tuning, agents) that you need to build production AI apps - not just using ChatGPT, but understanding how to build systems like it.",
+      "We update constantly. When Google launched ADK, we added lessons. When OpenAI released their Agents SDK, we covered it. When MCP gained traction, we built a full module. The AI landscape moves fast, and we move with it.",
   },
   {
-    question: "What's the difference between the Free and Premium plans?",
+    question: "What's the difference between Free and Premium?",
     answer:
-      "Free includes LangChain basics, intro to RAG, and prompt engineering fundamentals. Premium unlocks all 50+ advanced tutorials including fine-tuning, vector databases, agent building, production deployment, weekly live Q&A, and private community access.",
-  },
-  {
-    question: "Will I learn about AI agents and multi-model systems?",
-    answer:
-      "Yes! We cover autonomous agents with tool use, function calling, multi-step reasoning, and Mixture of Experts (MoE) architectures. You'll learn how to build agents that can interact with APIs, databases, and other tools to solve complex problems.",
-  },
-  {
-    question: "Do you offer team or enterprise plans?",
-    answer:
-      "Yes! Our Enterprise plan is perfect for AI teams. It includes custom LLM workshops, team collaboration tools, private deployment tutorials, dedicated support, and unlimited team members. Contact our sales team for custom content tailored to your use cases.",
+      "Free gives you access to all 100+ lessons - yes, really. Premium ($19/mo) adds the interactive AI playground, 30+ coding challenges, real-world projects with code, certificates, and priority support. Teams ($49/user/mo) adds analytics, SSO, and a dedicated account manager.",
   },
 ];
 
@@ -80,12 +80,6 @@ export function FAQ() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <div className="inline-block mb-4">
-            <div className="glass rounded-full px-4 py-1.5 inline-flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-info" />
-              <span className="text-sm font-medium">Got Questions?</span>
-            </div>
-          </div>
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">
             Frequently Asked <span className="gradient-text">Questions</span>
           </h2>

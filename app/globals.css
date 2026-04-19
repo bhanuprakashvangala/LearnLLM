@@ -193,6 +193,33 @@ html {
   background-clip: text;
 }
 
+/* Hero gradient text - luminous emerald-to-cyan */
+.hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    #059669 0%,
+    #10b981 30%,
+    #06b6d4 70%,
+    #0891b2 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    #34d399 0%,
+    #6ee7b7 30%,
+    #67e8f9 70%,
+    #22d3ee 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .gradient-bg {
   background: linear-gradient(
     135deg,

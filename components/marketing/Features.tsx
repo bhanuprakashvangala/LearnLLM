@@ -20,55 +20,55 @@ const features = [
   {
     icon: BookOpen,
     title: "Start with No Code",
-    description: "Begin your AI journey with zero coding. Learn ChatGPT, prompt engineering, and AI tools through visual interfaces. Perfect for everyone!",
+    description: "Begin your AI journey with zero coding. Learn ChatGPT, prompt engineering, NotebookLM, and Bolt.new - perfect for everyone!",
     gradient: "from-green-500 to-emerald-500",
   },
   {
     icon: Target,
     title: "Prompt Engineering",
-    description: "Get 10x better results from ChatGPT and Claude. Learn Chain of Thought, Few-Shot prompting, and techniques used by pros.",
+    description: "Get 10x better results from ChatGPT and Claude. Master Chain of Thought, Few-Shot prompting, and techniques the pros use.",
     gradient: "from-orange-500 to-red-500",
   },
   {
     icon: Brain,
-    title: "Understand How LLMs Work",
-    description: "Demystify AI in plain English. Understand tokens, context windows, embeddings, and RAG - no PhD required!",
+    title: "Agentic AI Frameworks",
+    description: "Build autonomous agents with Google ADK, OpenAI Agents SDK, CrewAI, and AutoGen. The hottest skill in AI right now.",
     gradient: "from-blue-500 to-cyan-500",
   },
   {
     icon: Code2,
-    title: "Build with LangChain",
-    description: "Start building AI apps visually, then level up to code. Learn the most popular framework for LLM applications step-by-step.",
+    title: "LangChain & LlamaIndex",
+    description: "Master the two most popular AI frameworks. Build chains, agents, and data-connected AI apps from scratch.",
     gradient: "from-purple-500 to-pink-500",
   },
   {
     icon: Sparkles,
-    title: "Create AI Agents",
-    description: "Build smart assistants that can search, analyze, and take actions. Start simple, then create autonomous agents.",
+    title: "MCP Protocol",
+    description: "Learn Anthropic's Model Context Protocol - the open standard connecting AI to tools and data. The USB-C of AI integration.",
     gradient: "from-indigo-500 to-purple-500",
   },
   {
     icon: Zap,
-    title: "RAG for Your Data",
-    description: "Make AI work with YOUR documents and data. Learn Retrieval Augmented Generation to build custom Q&A systems.",
+    title: "RAG & Vector Search",
+    description: "Make AI work with YOUR documents and data. Build production RAG systems with Pinecone, ChromaDB, and Weaviate.",
     gradient: "from-yellow-500 to-orange-500",
   },
   {
     icon: Trophy,
-    title: "Fine-Tune Models",
-    description: "Customize AI for your needs. Learn when and how to fine-tune models like GPT, Llama, and Mistral (advanced path).",
+    title: "Fine-Tune & Deploy",
+    description: "Customize models with LoRA/QLoRA, then deploy with vLLM. Go from fine-tuning to production-ready in one path.",
     gradient: "from-pink-500 to-rose-500",
   },
   {
     icon: MessagesSquare,
-    title: "Deploy & Share",
-    description: "Turn your AI projects into real apps anyone can use. Learn deployment, sharing, and making money from your AI creations.",
+    title: "AI Dev Tools",
+    description: "Master Cursor, Claude Code, Windsurf, and the Vercel AI SDK. Build full-stack AI apps with the modern development stack.",
     gradient: "from-teal-500 to-cyan-500",
   },
   {
     icon: Gamepad2,
-    title: "Real Projects",
-    description: "Build portfolio-worthy projects: chatbots, content generators, research assistants, and more. Show employers what you can do!",
+    title: "Real Projects & Challenges",
+    description: "Build multi-agent research systems, production RAG pipelines, full-stack AI apps, and more. Portfolio-ready from day one.",
     gradient: "from-violet-500 to-purple-500",
   },
 ];
@@ -101,17 +101,12 @@ export function Features() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <div className="inline-block mb-4">
-            <div className="glass rounded-full px-4 py-1.5 inline-flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">Everything You Need</span>
-            </div>
-          </div>
           <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            AI Skills <span className="gradient-text">Everyone Needs</span>
+            What You'll <span className="gradient-text">Learn</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            In the vibe coding era, AI literacy is as essential as using Google. Start with no code, build real projects, level up at your own pace.
+            From prompt engineering to production agentic systems. Every major framework,
+            every essential tool, every skill that matters.
           </p>
         </motion.div>
 
@@ -155,10 +150,10 @@ export function Features() {
           <div className="bg-card rounded-2xl p-10 md:p-16 shadow-xl border-2 border-border">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
               {[
-                { value: "50+", label: "Beginner-Friendly Tutorials", color: "from-primary to-secondary" },
+                { value: "100+", label: "Hands-On Lessons", color: "from-primary to-secondary" },
                 { value: "0", label: "Coding Required to Start", color: "from-secondary to-accent" },
-                { value: "10K+", label: "People Learning", color: "from-accent to-primary" },
-                { value: "100%", label: "Practical Skills", color: "from-primary via-secondary to-accent" },
+                { value: "20+", label: "Agentic AI Lessons", color: "from-accent to-primary" },
+                { value: "100%", label: "Hands-On & Practical", color: "from-primary via-secondary to-accent" },
               ].map((stat, i) => (
                 <div key={i} className="group">
                   <div className={cn("text-5xl md:text-6xl font-extrabold bg-gradient-to-r bg-clip-text text-transparent mb-3", stat.color)}>

@@ -1,0 +1,559 @@
+---
+title: "Project: Build a Full-Stack AI Application"
+description: "Build a complete AI-powered web app from scratch using modern tools and frameworks"
+difficulty: "intermediate"
+duration: 45
+order: 50
+tags: ["Project", "Full-Stack", "AI App", "Next.js", "Vercel AI SDK"]
+---
+
+# Project: Build a Full-Stack AI Application
+
+Time to put everything together. In this project, you'll build a complete AI-powered web application from scratch -- a **multi-model chat app** with streaming, tool calling, conversation history, and a polished UI. This is the kind of app you would actually deploy and use.
+
+<Callout type="info">
+**What You Will Build:** A Next.js chat application that supports multiple AI providers (OpenAI, Anthropic, Google), streams responses in real-time, can call tools (weather, calculations, current time), displays tool results with custom UI components, and has error handling built in.
+</Callout>
+
+## Project Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│              Next.js Frontend                │
+│  ┌──────────┐  ┌──────────┐  ┌───────────┐ │
+│  │  Chat UI  │  │  Model   │  │  Tool     │ │
+│  │  Component│  │  Selector│  │  Results  │ │
+│  └──────────┘  └──────────┘  └───────────┘ │
+└──────────────────┬──────────────────────────┘
+                   │ POST /api/chat (streaming)
+┌──────────────────▼──────────────────────────┐
+│              API Route                       │
+│  ┌──────────┐  ┌──────────┐  ┌───────────┐ │
+│  │  Vercel  │  │  Tool    │  │  Provider │ │
+│  │  AI SDK  │  │  Defs    │  │  Router   │ │
+│  └──────────┘  └──────────┘  └───────────┘ │
+└──────────────────┬──────────────────────────┘
+                   │
+    ┌──────────────┼──────────────┐
+    ▼              ▼              ▼
+┌────────┐  ┌──────────┐  ┌──────────┐
+│ OpenAI │  │Anthropic │  │ Google   │
+│ GPT-4o │  │ Claude   │  │ Gemini   │
+└────────┘  └──────────┘  └──────────┘
+```
+
+## Step 1: Project Setup
+
+```bash
+# Create a new Next.js project with TypeScript and Tailwind CSS
+npx create-next-app@latest ai-chat-app --typescript --tailwind --app --eslint
+cd ai-chat-app
+
+# Install the Vercel AI SDK and providers
+npm install ai @ai-sdk/openai @ai-sdk/anthropic @ai-sdk/google zod
+```
+
+Set up your environment variables:
+
+```bash
+# .env.local
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_GENERATIVE_AI_API_KEY=AI...
+```
+
+<Callout type="warning">
+The `.env.local` file is automatically gitignored by Next.js. Never commit API keys to version control. When deploying, add these as environment variables in your hosting platform's dashboard.
+</Callout>
+
+## Step 2: Create the Provider Router
+
+Build a utility that maps provider names to model instances. This is the core of multi-model support.
+
+```typescript
+// lib/models.ts
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
+
+export const models = {
+  "gpt-4o-mini": {
+    instance: openai("gpt-4o-mini"),
+    name: "GPT-4o Mini",
+    provider: "OpenAI",
+    color: "bg-green-500",
+  },
+  "claude-sonnet": {
+    instance: anthropic("claude-sonnet-4-20250514"),
+    name: "Claude Sonnet",
+    provider: "Anthropic",
+    color: "bg-orange-500",
+  },
+  "gemini-flash": {
+    instance: google("gemini-2.0-flash"),
+    name: "Gemini Flash",
+    provider: "Google",
+    color: "bg-blue-500",
+  },
+} as const;
+
+export type ModelId = keyof typeof models;
+
+export function getModel(id: ModelId) {
+  return models[id]?.instance ?? models["gpt-4o-mini"].instance;
+}
+```
+
+<Callout type="tip">
+**Why a model registry?** Centralizing model configuration means you can add or remove models in one place. The UI reads from the same registry, so adding a new model automatically adds it to the model selector.
+</Callout>
+
+## Step 3: Define the Tools
+
+Tools extend your AI beyond text generation. We define a weather tool, calculator, and time tool -- each with Zod schemas for type safety.
+
+```typescript
+// lib/tools.ts
+import { tool } from "ai";
+import { z } from "zod";
+
+export const chatTools = {
+  getWeather: tool({
+    description:
+      "Get the current weather for a city. Use when the user asks about weather.",
+    parameters: z.object({
+      city: z.string().describe("The city name, e.g. 'San Francisco'"),
+    }),
+    execute: async ({ city }) => {
+      // Simulated response -- in production, call a real weather API
+      const conditions = ["Sunny", "Cloudy", "Rainy", "Partly Cloudy", "Foggy"];
+      const temp = Math.floor(Math.random() * 30) + 50;
+      return {
+        city,
+        temperature: temp,
+        unit: "°F",
+        condition: conditions[Math.floor(Math.random() * conditions.length)],
+        humidity: Math.floor(Math.random() * 40) + 40,
+        wind: `${Math.floor(Math.random() * 20) + 5} mph`,
+      };
+    },
+  }),
+
+  calculate: tool({
+    description: "Perform a mathematical calculation.",
+    parameters: z.object({
+      expression: z
+        .string()
+        .describe("A math expression to evaluate, e.g. '15 * 47 + 318'"),
+    }),
+    execute: async ({ expression }) => {
+      try {
+        const result = Function(`'use strict'; return (${expression})`)();
+        return {
+          expression,
+          result: Number(result),
+          formatted: `${expression} = ${Number(result).toLocaleString()}`,
+        };
+      } catch {
+        return { expression, error: "Could not evaluate this expression" };
+      }
+    },
+  }),
+
+  getCurrentTime: tool({
+    description: "Get the current date and time in a given timezone.",
+    parameters: z.object({
+      timezone: z
+        .string()
+        .optional()
+        .default("UTC")
+        .describe("Timezone, e.g. 'America/New_York'"),
+    }),
+    execute: async ({ timezone }) => {
+      const now = new Date();
+      return {
+        datetime: now.toLocaleString("en-US", { timeZone: timezone }),
+        timezone,
+      };
+    },
+  }),
+};
+```
+
+## Step 4: Build the API Route
+
+The API route handles incoming chat messages, selects the model, attaches tools, and streams the response.
+
+```typescript
+// app/api/chat/route.ts
+import { streamText } from "ai";
+import { getModel, ModelId } from "@/lib/models";
+import { chatTools } from "@/lib/tools";
+
+export async function POST(req: Request) {
+  const { messages, modelId = "gpt-4o-mini" } = await req.json();
+
+  const model = getModel(modelId as ModelId);
+
+  const result = streamText({
+    model,
+    system: `You are a helpful AI assistant. Today's date is ${new Date().toLocaleDateString()}.
+Be concise, friendly, and helpful. When asked about weather, calculations, or the current time, use the available tools.
+Format responses with markdown when appropriate.`,
+    messages,
+    tools: chatTools,
+    maxSteps: 5,
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+The `maxSteps: 5` parameter allows the model to call multiple tools in sequence. For example, if the user asks "What's the weather in Tokyo and what's 20% of the temperature?", the model can call `getWeather` first, then `calculate` with the result.
+
+## Step 5: Build Tool Result Components
+
+When the AI calls a tool, we display the result as a rich UI component instead of raw JSON.
+
+```tsx
+// components/tool-results.tsx
+
+export function WeatherCard({ data }: { data: any }) {
+  return (
+    <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white rounded-xl p-4 my-2 max-w-xs">
+      <div className="text-sm opacity-80">{data.condition}</div>
+      <div className="text-3xl font-bold">
+        {data.temperature}{data.unit}
+      </div>
+      <div className="text-lg font-medium mt-1">{data.city}</div>
+      <div className="flex gap-4 mt-2 text-sm opacity-80">
+        <span>Humidity: {data.humidity}%</span>
+        <span>Wind: {data.wind}</span>
+      </div>
+    </div>
+  );
+}
+
+export function CalcCard({ data }: { data: any }) {
+  if (data.error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3 my-2 text-sm text-red-700">
+        Error: {data.error}
+      </div>
+    );
+  }
+  return (
+    <div className="bg-gray-50 border rounded-lg p-3 my-2 font-mono text-sm">
+      {data.formatted}
+    </div>
+  );
+}
+
+export function TimeCard({ data }: { data: any }) {
+  return (
+    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 my-2 text-sm">
+      <div className="font-medium">{data.datetime}</div>
+      <div className="text-purple-600 text-xs">{data.timezone}</div>
+    </div>
+  );
+}
+
+export function ToolResult({ toolName, result }: { toolName: string; result: any }) {
+  switch (toolName) {
+    case "getWeather":
+      return <WeatherCard data={result} />;
+    case "calculate":
+      return <CalcCard data={result} />;
+    case "getCurrentTime":
+      return <TimeCard data={result} />;
+    default:
+      return (
+        <pre className="bg-gray-50 rounded p-2 text-xs overflow-auto my-2">
+          {JSON.stringify(result, null, 2)}
+        </pre>
+      );
+  }
+}
+```
+
+## Step 6: Build the Chat UI
+
+The main chat interface brings everything together -- model selection, message display, tool results, and input handling.
+
+```tsx
+// app/page.tsx
+"use client";
+import { useChat } from "ai/react";
+import { useState } from "react";
+import { ToolResult } from "@/components/tool-results";
+
+const modelOptions = [
+  { id: "gpt-4o-mini", name: "GPT-4o Mini", color: "bg-green-500" },
+  { id: "claude-sonnet", name: "Claude Sonnet", color: "bg-orange-500" },
+  { id: "gemini-flash", name: "Gemini Flash", color: "bg-blue-500" },
+];
+
+export default function ChatPage() {
+  const [modelId, setModelId] = useState("gpt-4o-mini");
+
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+    reload,
+  } = useChat({
+    body: { modelId },
+  });
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b px-6 py-3 shadow-sm">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-900">AI Chat</h1>
+          <div className="flex gap-2">
+            {modelOptions.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setModelId(m.id)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  modelId === m.id
+                    ? `${m.color} text-white shadow-md`
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {m.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="max-w-3xl mx-auto space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center py-20 text-gray-400">
+              <p className="text-2xl mb-2">Start a conversation</p>
+              <p className="text-sm">
+                Try: &quot;What&apos;s the weather in Tokyo?&quot; or
+                &quot;Calculate 15% tip on $89.50&quot;
+              </p>
+            </div>
+          )}
+
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                  m.role === "user"
+                    ? "bg-blue-500 text-white"
+                    : "bg-white border shadow-sm"
+                }`}
+              >
+                {m.toolInvocations?.map((invocation, i) => (
+                  <div key={i}>
+                    {invocation.state === "result" && (
+                      <ToolResult
+                        toolName={invocation.toolName}
+                        result={invocation.result}
+                      />
+                    )}
+                    {invocation.state === "call" && (
+                      <div className="text-xs text-gray-400 italic my-1">
+                        Calling {invocation.toolName}...
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+              </div>
+            </div>
+          ))}
+
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-white border shadow-sm rounded-2xl px-4 py-3">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" />
+                  <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:100ms]" />
+                  <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:200ms]" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="px-6">
+          <div className="max-w-3xl mx-auto bg-red-50 border border-red-200 rounded-lg p-3 mb-2 flex items-center justify-between">
+            <p className="text-red-700 text-sm">Error: {error.message}</p>
+            <button onClick={() => reload()} className="text-red-700 text-sm underline">
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Input */}
+      <div className="bg-white border-t px-6 py-4">
+        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3">
+          <input
+            value={input}
+            onChange={handleInputChange}
+            placeholder="Type a message..."
+            className="flex-1 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className="bg-blue-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-600 disabled:opacity-50 transition-colors"
+          >
+            Send
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+```
+
+## Step 7: Run and Test
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000` and try these interactions:
+
+- **Basic chat:** "Hello! Tell me about yourself."
+- **Tool calling:** "What's the weather in San Francisco?"
+- **Math:** "Calculate 25 * 47 + 318"
+- **Multi-tool:** "What's the current time in Tokyo, and what's the weather there?"
+- **Model switching:** Switch between providers and compare response styles
+
+<Callout type="tip">
+**Compare the models.** Try the same prompt with GPT-4o Mini, Claude Sonnet, and Gemini Flash. You'll notice each model has a different personality, formatting style, and strengths. This is one of the benefits of multi-provider support.
+</Callout>
+
+## Step 8: Deploy to Vercel
+
+```bash
+# Install Vercel CLI if needed
+npm i -g vercel
+
+# Deploy (follow the prompts)
+vercel
+```
+
+Or connect your GitHub repository to Vercel for automatic deployments on every push. Add your API keys as environment variables in your Vercel project settings.
+
+## Enhancements to Try
+
+Now that you have a working app, here are ideas to extend it:
+
+1. **Markdown rendering** -- Use `react-markdown` to render formatted responses with headings, lists, and code blocks
+2. **Conversation persistence** -- Save chats to a database (Supabase, Vercel KV) with timestamps
+3. **Authentication** -- Add user login with NextAuth.js so each user has their own chat history
+4. **More tools** -- Add web search (Tavily API), image generation (DALL-E), or code execution
+5. **System prompt customization** -- Let users configure the AI's personality
+6. **Dark mode** -- Add a theme toggle with Tailwind's dark mode
+7. **File upload** -- Let users upload documents for RAG-style Q&A
+8. **Rate limiting** -- Add rate limiting to prevent API abuse
+
+## Project File Structure
+
+```
+ai-chat-app/
+├── app/
+│   ├── api/
+│   │   └── chat/
+│   │       └── route.ts        # API route with streaming + tools
+│   ├── page.tsx                 # Main chat UI
+│   └── layout.tsx               # Root layout
+├── components/
+│   └── tool-results.tsx         # Custom tool result components
+├── lib/
+│   ├── models.ts                # Model provider configuration
+│   └── tools.ts                 # Tool definitions
+├── .env.local                   # API keys (gitignored)
+├── package.json
+├── tailwind.config.ts
+└── tsconfig.json
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You Built:**
+1. A full-stack AI chat app with Next.js and the Vercel AI SDK
+2. Multi-provider support letting users switch between OpenAI, Anthropic, and Google models
+3. Tool calling with custom React components for rich visual results
+4. Real-time streaming for responsive user experience
+5. Clean separation of concerns: models, tools, API route, and UI in separate modules
+6. A deployable application ready to extend with persistence, auth, and more tools
+</Callout>
+
+Congratulations -- you've built a production-quality AI web application. This architecture is the foundation used by real AI products. Everything you add from here (persistence, auth, more tools, better UI) builds on the same patterns. In the Advanced track, you'll learn to add agent orchestration, evaluation, and production monitoring.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "Why does the API route use streamText instead of generateText?",
+      options: [
+        "streamText is cheaper to run",
+        "streamText sends tokens to the client as they are generated, providing real-time streaming instead of making the user wait for the complete response",
+        "generateText does not support tools",
+        "streamText is the only function available in the AI SDK"
+      ],
+      correctAnswer: 1,
+      explanation: "streamText sends tokens to the client as they are generated by the model. The user sees the response building in real time, dramatically reducing perceived latency. generateText waits for the full response before sending anything."
+    },
+    {
+      question: "What does the maxSteps parameter control in the streamText call?",
+      options: [
+        "The maximum number of tokens in the response",
+        "The maximum number of sequential tool calls the model can make in a single response",
+        "The maximum number of messages in the conversation",
+        "The maximum time the request can take"
+      ],
+      correctAnswer: 1,
+      explanation: "maxSteps controls how many sequential tool-call-and-response cycles the model can perform. With maxSteps: 5, the model can call a tool, get the result, call another tool based on that result, and continue up to 5 times before sending the final text response."
+    },
+    {
+      question: "Why is the model configuration centralized in a separate lib/models.ts file?",
+      options: [
+        "It is required by the Vercel AI SDK",
+        "It provides clean separation of concerns, making it easy to add or remove models and share configuration between the API route and UI",
+        "Model imports cannot work inside API routes",
+        "It improves the application's runtime performance"
+      ],
+      correctAnswer: 1,
+      explanation: "Centralizing model configuration follows clean architecture principles. It makes it easy to add new models, share model metadata (names, colors) with the UI for the model selector, and reuse the configuration across multiple API routes."
+    },
+    {
+      question: "What happens when useChat receives body: { modelId } as a prop?",
+      options: [
+        "It changes which model the React hook uses internally",
+        "It includes modelId in the JSON body of every POST request to the /api/chat endpoint",
+        "It filters messages by model",
+        "It has no effect on the API request"
+      ],
+      correctAnswer: 1,
+      explanation: "The body property in useChat adds extra fields to the JSON body sent with every POST request to the chat API endpoint. The API route then reads modelId from the request body and uses it to select the appropriate model provider."
+    }
+  ]}
+/>

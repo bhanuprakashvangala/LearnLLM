@@ -1,0 +1,448 @@
+---
+title: "Understanding Agentic AI: Beyond Chatbots"
+description: "Deep dive into what makes AI truly agentic - planning, reasoning, tool use, and memory"
+difficulty: "intermediate"
+duration: 20
+order: 41
+tags: ["Agentic AI", "AI Agents", "Planning", "Tool Use"]
+---
+
+# Understanding Agentic AI: Beyond Chatbots
+
+Most people interact with AI as a chatbot: you ask a question, you get a response, and the conversation ends. But the frontier of AI has moved far beyond this reactive pattern. Agentic AI systems can plan, reason, use tools, and remember context across interactions -- they don't just respond, they *act*.
+
+This lesson explores what makes AI truly agentic and the architectural patterns that power the most capable AI agents today.
+
+<Callout type="info">
+**Agentic AI Definition:** AI systems that can autonomously plan multi-step tasks, reason about their approach, use external tools, and maintain memory -- going beyond simple question-answering to proactively accomplish goals with minimal human intervention.
+</Callout>
+
+## The Shift: Reactive vs. Agentic
+
+Traditional chatbots are **reactive** -- they wait for input, generate a response, and forget everything. Agentic AI is **proactive** -- it decomposes goals, decides what tools to use, recovers from errors, and iterates until the task is done.
+
+```
+┌─────────────────────────────────────────────────────┐
+│                REACTIVE CHATBOT                     │
+│                                                     │
+│   User ──► Prompt ──► LLM ──► Response ──► Done     │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│                AGENTIC AI                           │
+│                                                     │
+│   Goal ──► Plan ──► Reason ──► Act ──► Observe ─┐   │
+│              ▲                                   │   │
+│              └───────── Loop until done ──────────┘  │
+│                                                     │
+│   + Memory    + Tools    + Self-correction          │
+└─────────────────────────────────────────────────────┘
+```
+
+## The Four Pillars of Agentic AI
+
+Every capable AI agent relies on four foundational pillars. Let's examine each one.
+
+### Pillar 1: Planning (Task Decomposition)
+
+An agent's first job is to break a complex goal into manageable steps. Without planning, an LLM tries to solve everything in one shot -- and often fails on multi-step tasks.
+
+```python
+class Planner:
+    """Decomposes a high-level goal into executable steps."""
+
+    def __init__(self, llm):
+        self.llm = llm
+
+    def decompose(self, goal: str) -> list[str]:
+        prompt = f"""Break this goal into a numbered list of concrete steps.
+Each step should be a single, actionable task.
+
+Goal: {goal}
+
+Steps:"""
+        response = self.llm.invoke(prompt)
+        # Parse numbered steps from the response
+        steps = [
+            line.strip().lstrip("0123456789.)")
+            for line in response.split("\n")
+            if line.strip() and line.strip()[0].isdigit()
+        ]
+        return steps
+
+
+# Usage
+planner = Planner(llm)
+steps = planner.decompose(
+    "Research competitor pricing, analyze our margins, and write a pricing recommendation report"
+)
+# Returns:
+# [
+#     "Search for competitor pricing data across top 5 competitors",
+#     "Collect our current product pricing and cost data",
+#     "Calculate profit margins for each product line",
+#     "Compare our margins against competitor pricing",
+#     "Draft a pricing recommendation report with findings"
+# ]
+```
+
+<Callout type="tip">
+Good planning is the difference between an agent that flails and one that executes efficiently. The best agents re-plan when they encounter unexpected results, adjusting their approach dynamically.
+</Callout>
+
+### Pillar 2: Reasoning (Chain-of-Thought)
+
+Reasoning is the agent's ability to think step-by-step before acting. Chain-of-thought prompting dramatically improves accuracy on complex tasks by forcing the model to show its work.
+
+```python
+class Reasoner:
+    """Applies chain-of-thought reasoning before making decisions."""
+
+    def __init__(self, llm):
+        self.llm = llm
+
+    def think_and_act(self, observation: str, available_tools: list[str]) -> dict:
+        prompt = f"""Given the current situation, think step-by-step about what to do next.
+
+Available tools: {', '.join(available_tools)}
+
+Current observation: {observation}
+
+Think through this carefully:
+1. What do I know so far?
+2. What do I still need to find out?
+3. Which tool would help me most right now?
+4. What input should I give that tool?
+
+Reasoning:"""
+
+        reasoning = self.llm.invoke(prompt)
+
+        # Parse the decision from the reasoning
+        decision_prompt = f"""Based on this reasoning:
+{reasoning}
+
+Respond with JSON: {{"tool": "tool_name", "input": "tool_input"}}"""
+
+        decision = self.llm.invoke(decision_prompt)
+        return {"reasoning": reasoning, "decision": decision}
+```
+
+### Pillar 3: Tool Use (Function Calling)
+
+Tools are what give agents real power. Without tools, an LLM can only generate text. With tools, it can search the web, query databases, write files, call APIs, and execute code.
+
+```python
+class ToolRegistry:
+    """Manages available tools for an agent."""
+
+    def __init__(self):
+        self.tools = {}
+
+    def register(self, name: str, func, description: str):
+        self.tools[name] = {
+            "function": func,
+            "description": description
+        }
+
+    def execute(self, tool_name: str, tool_input: str) -> str:
+        if tool_name not in self.tools:
+            return f"Error: Unknown tool '{tool_name}'"
+        try:
+            return self.tools[tool_name]["function"](tool_input)
+        except Exception as e:
+            return f"Error executing {tool_name}: {str(e)}"
+
+    def get_descriptions(self) -> str:
+        return "\n".join(
+            f"- {name}: {info['description']}"
+            for name, info in self.tools.items()
+        )
+
+
+# Register tools
+registry = ToolRegistry()
+registry.register("search", web_search, "Search the web for information")
+registry.register("calculate", calculator, "Perform mathematical calculations")
+registry.register("read_file", read_file, "Read contents of a local file")
+```
+
+<Callout type="info">
+**Function Calling** is the mechanism modern LLMs use for tool use. The model outputs a structured request (tool name + arguments) instead of plain text, and your application executes the function and feeds the result back. OpenAI, Anthropic, and Google all support this natively.
+</Callout>
+
+### Pillar 4: Memory (Short-Term and Long-Term)
+
+Memory is what separates a stateless chatbot from an agent that learns and adapts. Agents need two kinds of memory:
+
+```python
+class AgentMemory:
+    """Dual memory system for an AI agent."""
+
+    def __init__(self):
+        # Short-term: current task context (working memory)
+        self.short_term = []
+        # Long-term: persistent knowledge across sessions
+        self.long_term = {}
+
+    def add_to_working_memory(self, entry: dict):
+        """Add an observation or thought to working memory."""
+        self.short_term.append(entry)
+        # Keep working memory manageable
+        if len(self.short_term) > 20:
+            self.short_term = self.short_term[-20:]
+
+    def store_long_term(self, key: str, value: str):
+        """Persist important information for future sessions."""
+        self.long_term[key] = value
+
+    def recall(self, query: str) -> list:
+        """Retrieve relevant memories (simplified -- use embeddings in production)."""
+        relevant = [
+            entry for entry in self.short_term
+            if query.lower() in str(entry).lower()
+        ]
+        return relevant
+
+    def get_context_window(self, last_n: int = 5) -> list:
+        """Get recent working memory for the LLM context."""
+        return self.short_term[-last_n:]
+```
+
+<Callout type="warning">
+Short-term memory (the conversation and recent tool outputs) fits in the LLM context window. Long-term memory requires external storage -- vector databases are the most common choice for semantic retrieval of past interactions.
+</Callout>
+
+## Agentic Design Patterns
+
+Three dominant patterns have emerged for building agents. Each makes different trade-offs between flexibility and reliability.
+
+### Pattern 1: ReAct (Reasoning + Acting)
+
+The most common pattern. The agent alternates between thinking and acting in a loop.
+
+```
+Thought → Action → Observation → Thought → Action → ... → Final Answer
+```
+
+```python
+def react_loop(agent, goal: str, max_steps: int = 10) -> str:
+    """Simple ReAct agent loop."""
+    observations = []
+
+    for step in range(max_steps):
+        # REASON: Decide what to do
+        thought = agent.reason(goal, observations)
+        print(f"Step {step + 1} - Thought: {thought}")
+
+        if thought.startswith("FINAL ANSWER:"):
+            return thought.replace("FINAL ANSWER:", "").strip()
+
+        # ACT: Execute a tool
+        action = agent.choose_action(thought)
+        result = agent.execute(action)
+        print(f"Step {step + 1} - Action: {action}")
+        print(f"Step {step + 1} - Result: {result[:200]}")
+
+        # OBSERVE: Record the result
+        observations.append({
+            "thought": thought,
+            "action": action,
+            "result": result
+        })
+
+    return "Max steps reached without a final answer."
+```
+
+**Strengths:** Flexible, handles diverse tasks, easy to understand and debug.
+**Weaknesses:** Can loop inefficiently, no upfront plan, may get stuck.
+
+### Pattern 2: Plan-and-Execute
+
+The agent creates a full plan first, then executes each step. This is better for complex tasks with clear structure.
+
+```python
+def plan_and_execute(agent, goal: str) -> str:
+    """Plan-and-Execute agent pattern."""
+    # PLAN: Create a full plan upfront
+    plan = agent.planner.decompose(goal)
+    print(f"Plan: {plan}")
+
+    results = []
+    for i, step in enumerate(plan):
+        print(f"\nExecuting step {i + 1}: {step}")
+
+        # EXECUTE: Run each step
+        result = agent.execute_step(step, context=results)
+        results.append({"step": step, "result": result})
+
+        # RE-PLAN if needed: Adjust remaining steps based on results
+        if agent.needs_replan(results, plan[i + 1:]):
+            remaining = agent.planner.replan(goal, results, plan[i + 1:])
+            plan = plan[:i + 1] + remaining
+            print(f"Re-planned remaining steps: {remaining}")
+
+    return agent.synthesize(results)
+```
+
+**Strengths:** More efficient for structured tasks, avoids aimless wandering.
+**Weaknesses:** Upfront plan can be wrong, re-planning adds complexity.
+
+### Pattern 3: Reflection
+
+The agent evaluates its own outputs and improves them iteratively. This is powerful for quality-sensitive tasks like writing or code generation.
+
+```python
+def reflection_loop(agent, task: str, max_iterations: int = 3) -> str:
+    """Reflection pattern -- generate, critique, and improve."""
+    # Initial attempt
+    output = agent.generate(task)
+
+    for i in range(max_iterations):
+        # REFLECT: Critique the output
+        critique = agent.reflect(task, output)
+        print(f"Iteration {i + 1} critique: {critique}")
+
+        if "SATISFACTORY" in critique:
+            break
+
+        # IMPROVE: Revise based on critique
+        output = agent.improve(task, output, critique)
+
+    return output
+```
+
+**Strengths:** Produces higher-quality outputs, self-correcting.
+**Weaknesses:** Multiple LLM calls increase latency and cost.
+
+## Pattern Comparison
+
+| Pattern | Best For | Latency | Reliability | Flexibility |
+|---------|----------|---------|-------------|-------------|
+| **ReAct** | Open-ended tasks, research, Q&A | Medium | Medium | High |
+| **Plan-and-Execute** | Structured workflows, multi-step tasks | Lower (planned) | Higher | Medium |
+| **Reflection** | Writing, code generation, quality-critical tasks | Higher (iterative) | High | Medium |
+
+<Callout type="tip">
+In practice, production agents often **combine** these patterns. For example, you might use Plan-and-Execute for the overall structure, ReAct within each step for tool use, and Reflection on the final output for quality assurance.
+</Callout>
+
+## Putting It All Together: A Minimal Agent
+
+Here is a minimal but complete agent that combines all four pillars:
+
+```python
+class SimpleAgent:
+    """A minimal agent combining planning, reasoning, tool use, and memory."""
+
+    def __init__(self, llm, tools: ToolRegistry):
+        self.llm = llm
+        self.tools = tools
+        self.memory = AgentMemory()
+
+    def run(self, goal: str, max_steps: int = 10) -> str:
+        # Step 1: Plan
+        plan_prompt = f"Break this goal into steps: {goal}"
+        plan = self.llm.invoke(plan_prompt)
+        self.memory.add_to_working_memory({"type": "plan", "content": plan})
+
+        for step in range(max_steps):
+            # Step 2: Reason about next action
+            context = self.memory.get_context_window()
+            reason_prompt = f"""Goal: {goal}
+Context so far: {context}
+Available tools: {self.tools.get_descriptions()}
+
+What should I do next? If done, respond with DONE: <final answer>"""
+
+            thought = self.llm.invoke(reason_prompt)
+
+            if thought.startswith("DONE:"):
+                return thought.replace("DONE:", "").strip()
+
+            # Step 3: Use a tool
+            action_prompt = f"Based on: {thought}\nChoose a tool and input as JSON."
+            action = self.llm.invoke(action_prompt)  # Returns {"tool": ..., "input": ...}
+
+            result = self.tools.execute(action["tool"], action["input"])
+
+            # Step 4: Store in memory
+            self.memory.add_to_working_memory({
+                "type": "action",
+                "thought": thought,
+                "tool": action["tool"],
+                "result": result
+            })
+
+        return "Reached max steps. Partial results in memory."
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You've Learned:**
+1. Agentic AI goes beyond chatbots -- agents plan, reason, act, and remember
+2. The four pillars are Planning, Reasoning, Tool Use, and Memory
+3. ReAct is the most common pattern (think-act-observe loop)
+4. Plan-and-Execute works better for structured, multi-step tasks
+5. Reflection improves output quality through self-critique
+6. Production agents often combine multiple patterns for best results
+</Callout>
+
+## Next Steps
+
+Now that you understand the foundations, we'll dive into specific frameworks that implement these patterns. Up next: Google ADK, OpenAI Agents SDK, and CrewAI -- three production-ready frameworks for building agentic systems.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What are the four pillars of agentic AI?",
+      options: [
+        "Speed, accuracy, cost, and scalability",
+        "Planning, reasoning, tool use, and memory",
+        "Training, fine-tuning, prompting, and evaluation",
+        "Input, processing, output, and feedback"
+      ],
+      correctAnswer: 1,
+      explanation: "The four pillars of agentic AI are Planning (task decomposition), Reasoning (chain-of-thought thinking), Tool Use (function calling to interact with external systems), and Memory (short-term and long-term context retention)."
+    },
+    {
+      question: "How does the ReAct pattern work?",
+      options: [
+        "It creates a full plan upfront, then executes all steps at once",
+        "It alternates between reasoning (thinking) and acting (using tools) in a loop",
+        "It generates multiple outputs in parallel and picks the best one",
+        "It uses React.js to build a user interface for the agent"
+      ],
+      correctAnswer: 1,
+      explanation: "ReAct (Reasoning + Acting) alternates between thinking about what to do next (Thought), taking an action with a tool (Action), and observing the result (Observation), repeating until the task is complete."
+    },
+    {
+      question: "When would you choose Plan-and-Execute over ReAct?",
+      options: [
+        "When you want the cheapest possible solution",
+        "When the task is well-structured and has clear sequential steps",
+        "When you need real-time streaming responses",
+        "When you only have a single tool available"
+      ],
+      correctAnswer: 1,
+      explanation: "Plan-and-Execute is ideal for structured, multi-step tasks where creating an upfront plan leads to more efficient execution. ReAct is better for open-ended exploration where the next step depends heavily on previous results."
+    },
+    {
+      question: "Why do agentic AI systems need both short-term and long-term memory?",
+      options: [
+        "Short-term memory is faster, long-term memory is more accurate",
+        "Short-term memory holds current task context, long-term memory persists knowledge across sessions",
+        "Short-term memory uses less storage, long-term memory uses more storage",
+        "Short-term memory is for text, long-term memory is for images"
+      ],
+      correctAnswer: 1,
+      explanation: "Short-term (working) memory holds the current task context -- recent observations, tool outputs, and reasoning steps that fit in the LLM context window. Long-term memory persists important knowledge across sessions using external storage like vector databases."
+    }
+  ]}
+/>

@@ -1,0 +1,488 @@
+---
+title: "Project: Build a Multi-Agent Research System"
+description: "Hands-on project combining CrewAI agents to build a real collaborative research system"
+difficulty: "intermediate"
+duration: 45
+order: 45
+tags: ["Project", "Multi-Agent", "Research", "CrewAI"]
+---
+
+# Project: Build a Multi-Agent Research System
+
+In this hands-on project, you will build a complete multi-agent research system using CrewAI. The system coordinates three specialized agents -- a Researcher, a Writer, and an Editor -- to take any topic and produce a polished, well-researched article. By the end, you will have a working pipeline you can adapt for your own content creation, market analysis, or knowledge synthesis workflows.
+
+<Callout type="info">
+**What You Will Build:**
+- A 3-agent research crew with specialized roles (Researcher, Writer, Editor)
+- Web search integration for real-time information gathering
+- Structured task definitions with clear deliverables
+- Sequential crew orchestration where each agent builds on the previous output
+- A reusable system you can adapt for any research topic
+</Callout>
+
+## Prerequisites
+
+Before starting, make sure you have:
+
+- Python 3.10 or higher installed
+- An OpenAI API key (GPT-4o recommended)
+- Basic familiarity with CrewAI concepts (agents, tasks, crews)
+
+## Step 1: Project Setup
+
+Create a new project directory and install the required dependencies.
+
+```bash
+# Create project directory
+mkdir research-crew && cd research-crew
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install crewai crewai-tools duckduckgo-search beautifulsoup4 requests python-dotenv
+```
+
+Set up your environment variables by creating a `.env` file:
+
+```bash
+# .env
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+<Callout type="warning">
+Never commit your `.env` file to version control. Add it to your `.gitignore` immediately.
+</Callout>
+
+## Step 2: Define Custom Tools
+
+Our Researcher agent needs the ability to search the web and read webpages. We define two custom tools using CrewAI's `@tool` decorator.
+
+```python
+# tools.py
+from crewai.tools import tool
+
+
+@tool("Web Search")
+def web_search(query: str) -> str:
+    """Search the web for current information on a topic.
+
+    Args:
+        query: The search query to look up.
+    """
+    from duckduckgo_search import DDGS
+
+    results = DDGS().text(query, max_results=5)
+    formatted = ""
+    for r in results:
+        formatted += f"**{r['title']}**\n{r['body'][:300]}\nURL: {r['href']}\n\n"
+    return formatted if formatted else "No results found."
+
+
+@tool("Read Webpage")
+def read_webpage(url: str) -> str:
+    """Read and extract the main content from a webpage.
+
+    Args:
+        url: The full URL of the webpage to read.
+    """
+    import requests
+    from bs4 import BeautifulSoup
+
+    try:
+        response = requests.get(url, timeout=10, headers={
+            "User-Agent": "Mozilla/5.0 (Research Agent)"
+        })
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Remove non-content elements
+        for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
+            tag.decompose()
+
+        text = soup.get_text(separator="\n", strip=True)
+        return text[:4000]  # Limit to avoid token overflow
+    except Exception as e:
+        return f"Error reading webpage: {str(e)}"
+```
+
+<Callout type="tip">
+**Why DuckDuckGo?** The `duckduckgo-search` library provides free web search without requiring an API key, making it perfect for prototyping. For production systems, consider the Serper API or Tavily for more reliable results and higher rate limits.
+</Callout>
+
+## Step 3: Configure the Agents
+
+Each agent gets a carefully crafted role, goal, and backstory. The backstory shapes the persona and expertise the LLM adopts when acting as that agent.
+
+```python
+# agents.py
+from crewai import Agent
+from tools import web_search, read_webpage
+
+
+def create_researcher():
+    return Agent(
+        role="Senior Research Analyst",
+        goal="Produce comprehensive, accurate, and well-sourced research briefs on any given topic",
+        backstory="""You are a veteran research analyst with 15 years of experience
+        at a top-tier consulting firm. You are known for your meticulous approach
+        to information gathering -- you never settle for surface-level findings.
+        You always cross-reference multiple sources, identify primary data,
+        and separate facts from opinions. Your research has informed
+        billion-dollar strategic decisions.""",
+        tools=[web_search, read_webpage],
+        verbose=True,
+        allow_delegation=True,
+        llm="gpt-4o"
+    )
+
+
+def create_writer():
+    return Agent(
+        role="Content Strategist & Writer",
+        goal="Transform raw research into clear, engaging, and well-structured articles",
+        backstory="""You are an award-winning content strategist who has written
+        for Wired, MIT Technology Review, and The Verge. You specialize in making
+        complex technical topics accessible to a broad audience without dumbing
+        them down. Your writing is known for strong narrative structure,
+        vivid examples, and clear explanations that respect the reader's
+        intelligence.""",
+        verbose=True,
+        allow_delegation=False,
+        llm="gpt-4o"
+    )
+
+
+def create_editor():
+    return Agent(
+        role="Senior Editor",
+        goal="Ensure all content is polished, accurate, logically structured, and publication-ready",
+        backstory="""You are a meticulous senior editor with experience at
+        The New York Times and Harvard Business Review. You have an eye for
+        factual accuracy, logical flow, clarity, and engaging prose. You catch
+        inconsistencies others miss, tighten wordy paragraphs, and ensure
+        every section earns its place. You make direct edits rather than
+        just suggesting changes.""",
+        verbose=True,
+        allow_delegation=False,
+        llm="gpt-4o"
+    )
+```
+
+<Callout type="info">
+**Why Backstories Matter:** A well-crafted backstory significantly improves agent output quality. It establishes expertise level, working style, and quality expectations. Think of it as a system prompt with personality -- the LLM behaves differently when it adopts the persona of a "15-year veteran analyst" versus a generic "research assistant."
+</Callout>
+
+## Step 4: Define the Tasks
+
+Tasks are the deliverables you assign to each agent. Each task has a description that explains what to do, and an `expected_output` that defines the format and quality bar.
+
+```python
+# tasks.py
+from crewai import Task
+
+
+def create_research_task(agent, topic):
+    return Task(
+        description=f"""Conduct thorough research on the following topic:
+
+        "{topic}"
+
+        Your research must include:
+        1. An overview of the current state of this topic
+        2. Key players, technologies, or concepts involved
+        3. Recent developments or breakthroughs (last 12 months)
+        4. Specific data points, statistics, or metrics where available
+        5. Different perspectives or debates within the field
+        6. Practical implications and real-world applications
+
+        Search for at least 3-5 different queries to get comprehensive coverage.
+        Cross-reference claims across multiple sources.""",
+        expected_output="""A structured research brief containing:
+        - Executive summary (3-4 sentences)
+        - Key findings organized by subtopic
+        - Specific data points and statistics with source attribution
+        - Notable quotes or expert opinions
+        - Identified trends and predictions
+        Total length: 800-1200 words.""",
+        agent=agent
+    )
+
+
+def create_writing_task(agent, topic):
+    return Task(
+        description=f"""Using the research provided, write a comprehensive article on:
+
+        "{topic}"
+
+        Requirements:
+        - Compelling opening that hooks the reader with a surprising fact or scenario
+        - Clear structure with descriptive headings
+        - Specific examples and data woven naturally into the narrative
+        - Accessible language that a technical professional can follow
+        - A conclusion that synthesizes key insights and looks ahead
+        - 1000-1500 words in length
+        - Written in markdown format""",
+        expected_output="""A publication-ready article in markdown format with:
+        - Engaging title and subtitle
+        - Strong opening paragraph
+        - 4-6 main sections with clear headings
+        - Data points and examples integrated throughout
+        - Conclusion with forward-looking perspective
+        - Professional, authoritative tone""",
+        agent=agent
+    )
+
+
+def create_editing_task(agent):
+    return Task(
+        description="""Review and edit the article for publication. Perform the following:
+
+        1. **Fact-check**: Verify all claims and data match the original research
+        2. **Structure**: Ensure logical flow between sections with smooth transitions
+        3. **Clarity**: Simplify any convoluted sentences; ensure each paragraph has a clear purpose
+        4. **Engagement**: Strengthen the opening hook and closing call-to-action
+        5. **Grammar & Style**: Fix any grammatical errors, improve word choice
+        6. **Consistency**: Check for consistent tone, tense, and formatting
+
+        Make direct edits to the article. Do not just list suggestions -- produce the final version.""",
+        expected_output="""The final, polished article ready for publication.
+        Include a brief editor's note at the top (2-3 sentences) summarizing the key improvements made.""",
+        agent=agent
+    )
+```
+
+## Step 5: Orchestrate the Crew
+
+Now bring it all together. The Crew class coordinates the agents, passes outputs between tasks, and manages execution.
+
+```python
+# main.py
+import os
+from dotenv import load_dotenv
+from crewai import Crew, Process
+from agents import create_researcher, create_writer, create_editor
+from tasks import create_research_task, create_writing_task, create_editing_task
+
+# Load environment variables
+load_dotenv()
+
+
+def run_research_crew(topic: str) -> str:
+    """Run the full research crew pipeline on a given topic."""
+
+    # Create agents
+    researcher = create_researcher()
+    writer = create_writer()
+    editor = create_editor()
+
+    # Create tasks
+    research_task = create_research_task(researcher, topic)
+    writing_task = create_writing_task(writer, topic)
+    editing_task = create_editing_task(editor)
+
+    # Assemble the crew
+    crew = Crew(
+        agents=[researcher, writer, editor],
+        tasks=[research_task, writing_task, editing_task],
+        process=Process.sequential,  # Research -> Write -> Edit
+        verbose=True,
+        memory=True  # Enable memory for better context sharing
+    )
+
+    # Run the crew
+    result = crew.kickoff()
+    return result
+
+
+if __name__ == "__main__":
+    topic = "The impact of AI agents on software development in 2025"
+    print(f"\nStarting research crew for topic: {topic}\n")
+    print("=" * 60)
+
+    final_article = run_research_crew(topic)
+
+    print("\n" + "=" * 60)
+    print("FINAL ARTICLE")
+    print("=" * 60)
+    print(final_article)
+
+    # Save to file
+    with open("output_article.md", "w") as f:
+        f.write(str(final_article))
+    print("\nArticle saved to output_article.md")
+```
+
+## Step 6: Run the System
+
+Execute the pipeline from your terminal:
+
+```bash
+python main.py
+```
+
+You will see verbose output as each agent works through its task. The Researcher will make multiple web searches, the Writer will draft the article, and the Editor will polish the final version. A typical run takes 2-4 minutes depending on the model and topic complexity.
+
+### What Happens During Execution
+
+```
+Starting research crew for topic: The impact of AI agents on software development in 2025
+============================================================
+
+[Researcher] Starting task: Conduct thorough research...
+[Researcher] Using tool: Web Search
+  Query: "AI agents software development 2025 market size"
+  Found 5 results...
+[Researcher] Using tool: Web Search
+  Query: "AI coding assistants impact developer productivity 2025"
+  Found 5 results...
+[Researcher] Using tool: Read Webpage
+  Reading: https://example.com/ai-agents-report...
+[Researcher] Task complete. Output: 1,100 words research brief.
+
+[Writer] Starting task: Write comprehensive article...
+[Writer] Task complete. Output: 1,350 words article draft.
+
+[Editor] Starting task: Review and edit the article...
+[Editor] Task complete. Output: Final polished article with editor's note.
+============================================================
+FINAL ARTICLE
+============================================================
+Editor's Note: Strengthened the opening hook with a specific statistic,
+tightened transitions between sections, and clarified technical terminology...
+
+# The Rise of AI Agents in Software Development
+...
+```
+
+## Step 7: Extend the System
+
+Here are practical ways to make this system more powerful.
+
+### Add a Fact-Checker Agent
+
+```python
+fact_checker = Agent(
+    role="Fact Checker",
+    goal="Verify all claims and statistics in the article against primary sources",
+    backstory="""You are a rigorous fact-checker for a major news organization.
+    You verify every claim against primary sources and flag anything unsubstantiated.""",
+    tools=[web_search, read_webpage],
+    verbose=True,
+    llm="gpt-4o"
+)
+
+fact_check_task = Task(
+    description="Verify all factual claims in the article. Flag any that cannot be verified.",
+    expected_output="The article with [VERIFIED] or [UNVERIFIED] tags next to each claim.",
+    agent=fact_checker
+)
+```
+
+### Use Hierarchical Process
+
+For more dynamic coordination, switch to a hierarchical process where a manager agent decides execution order:
+
+```python
+crew = Crew(
+    agents=[researcher, writer, editor],
+    tasks=[research_task, writing_task, editing_task],
+    process=Process.hierarchical,
+    manager_llm="gpt-4o"  # Manager delegates tasks dynamically
+)
+```
+
+### Add Dynamic Inputs
+
+CrewAI supports input variables that let you parameterize tasks at runtime:
+
+```python
+research_task = Task(
+    description="Research the topic: {topic}",
+    expected_output="A research brief on {topic}.",
+    agent=researcher
+)
+
+# Pass inputs at kickoff
+result = crew.kickoff(inputs={"topic": "quantum computing breakthroughs"})
+```
+
+## Project File Structure
+
+```
+research-crew/
+├── .env                  # API keys (gitignored)
+├── .gitignore            # Ignore .env and venv
+├── agents.py             # Agent definitions
+├── tasks.py              # Task definitions
+├── tools.py              # Custom tools (web search, webpage reader)
+├── main.py               # Orchestration and entry point
+├── output_article.md     # Generated article output
+└── requirements.txt      # Dependencies
+```
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You Built:**
+1. A complete multi-agent research pipeline with Researcher, Writer, and Editor agents
+2. Custom tools for web search and webpage reading using DuckDuckGo
+3. Structured tasks with clear deliverables and quality expectations
+4. Sequential crew orchestration where each agent builds on the previous output
+5. An extensible system you can customize with new agents, tools, and process types
+</Callout>
+
+This project demonstrates the core power of agentic AI: breaking complex work into specialized roles, giving each agent the right tools and context, and orchestrating them into a reliable pipeline. The same pattern applies to market research, competitive analysis, report generation, and any multi-step knowledge work.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "Why does the research system use a sequential process instead of hierarchical?",
+      options: [
+        "Sequential is always faster than hierarchical",
+        "The tasks have a clear linear dependency: research must happen before writing, and writing before editing",
+        "Hierarchical processes are not supported by CrewAI",
+        "Sequential processes use less memory"
+      ],
+      correctAnswer: 1,
+      explanation: "Sequential process is ideal when tasks have a clear order of dependency. Research must come first to provide data, writing depends on the research, and editing depends on the draft. Each stage builds on the output of the previous one."
+    },
+    {
+      question: "What is the purpose of the 'expected_output' field in a CrewAI Task?",
+      options: [
+        "It automatically validates the agent's output against a test suite",
+        "It tells the agent what format, structure, and quality level its output should have",
+        "It limits the number of tokens the agent can generate",
+        "It provides example data for the agent to copy"
+      ],
+      correctAnswer: 1,
+      explanation: "The expected_output field guides the agent on the format, structure, and quality bar for its deliverable. It functions like a specification or acceptance criteria -- helping the LLM understand exactly what a successful output looks like."
+    },
+    {
+      question: "Why is the Writer agent configured with allow_delegation=False?",
+      options: [
+        "Delegation is a paid feature",
+        "The Writer should focus on its own task without passing work to other agents, since the sequential process already handles the workflow",
+        "Delegation only works with hierarchical processes",
+        "The Writer does not have any tools to delegate"
+      ],
+      correctAnswer: 1,
+      explanation: "With allow_delegation=False, the Writer focuses entirely on transforming the research into an article. In a sequential process, the workflow is already structured -- the Researcher has completed its work and the output is available. Allowing delegation could cause unnecessary back-and-forth."
+    },
+    {
+      question: "How does enabling memory=True on the Crew improve the system?",
+      options: [
+        "It saves previous research to avoid repeating searches",
+        "It helps agents maintain context about the task and previous agents' outputs throughout the pipeline",
+        "It stores API keys securely",
+        "It automatically backs up reports"
+      ],
+      correctAnswer: 1,
+      explanation: "Enabling memory on the Crew helps agents maintain context about the overall task and what previous agents have produced. This leads to better continuity between the research, writing, and editing stages."
+    }
+  ]}
+/>

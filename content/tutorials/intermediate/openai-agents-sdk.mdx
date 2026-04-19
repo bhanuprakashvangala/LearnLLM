@@ -1,0 +1,480 @@
+---
+title: "OpenAI Agents SDK: Building Smart Agents"
+description: "Master OpenAI's official framework for building, orchestrating, and deploying AI agents"
+difficulty: "intermediate"
+duration: 25
+order: 43
+tags: ["OpenAI", "Agents SDK", "Swarm", "AI Agents"]
+---
+
+# OpenAI Agents SDK: Building Smart Agents
+
+OpenAI's Agents SDK is the company's official framework for building production AI agents. It evolved from **Swarm**, an experimental multi-agent library, into a fully supported SDK with built-in support for tool calling, agent handoffs, guardrails, and tracing.
+
+<Callout type="info">
+**OpenAI Agents SDK Definition:** A lightweight, production-ready Python framework from OpenAI for building agentic applications. It provides primitives for defining agents, running agentic loops, coordinating multi-agent handoffs, enforcing guardrails, and tracing execution -- all designed to work natively with OpenAI models.
+</Callout>
+
+## From Swarm to Agents SDK
+
+In late 2024, OpenAI released **Swarm** -- an experimental library demonstrating how to build multi-agent systems with handoffs. It was lightweight, educational, and explicitly not production-ready.
+
+The Agents SDK took Swarm's best ideas and built them into a proper framework:
+
+- **Swarm's handoff pattern** became first-class agent-to-agent transfers
+- **Function calling** became structured tool definitions with validation
+- **Ad-hoc tracing** became built-in observability with OpenAI's dashboard
+- **No guardrails** became input and output validation
+
+## Core Concepts
+
+The Agents SDK is built around five key primitives.
+
+### 1. Agent
+
+An `Agent` is an LLM configured with instructions, tools, and optional handoff targets. Think of it as a specialized worker with a clear job description.
+
+```python
+from agents import Agent, Runner
+
+# Create a simple agent
+assistant = Agent(
+    name="Customer Support",
+    instructions="""You are a customer support agent for TechCo.
+    Help customers with product questions, billing issues, and technical problems.
+    Be friendly, concise, and always confirm the customer's issue before solving it.
+    If a question is about billing, transfer to the billing specialist.""",
+    model="gpt-4o"
+)
+```
+
+### 2. Runner
+
+The `Runner` executes the agentic loop. It sends the user message to the agent, processes any tool calls, handles handoffs, and returns the final result.
+
+```python
+from agents import Agent, Runner
+
+agent = Agent(
+    name="assistant",
+    instructions="You are a helpful assistant. Answer questions concisely.",
+    model="gpt-4o"
+)
+
+# Run the agent (synchronous)
+result = Runner.run_sync(agent, "What is the capital of France?")
+print(result.final_output)
+# "The capital of France is Paris."
+```
+
+<Callout type="tip">
+`Runner.run_sync()` is the simplest way to run an agent. For production applications with streaming, use `Runner.run_streamed()` to get real-time token-by-token output.
+</Callout>
+
+### 3. Tools
+
+Tools extend what an agent can do. They're defined as Python functions with type annotations.
+
+```python
+from agents import Agent, Runner, function_tool
+
+@function_tool
+def get_order_status(order_id: str) -> str:
+    """Looks up the status of a customer order.
+
+    Args:
+        order_id: The unique order identifier (e.g., ORD-12345).
+    """
+    # In production, query your database
+    orders = {
+        "ORD-12345": "Shipped - arriving March 18",
+        "ORD-67890": "Processing - expected ship date March 16",
+        "ORD-11111": "Delivered on March 10"
+    }
+    return orders.get(order_id, f"Order {order_id} not found")
+
+
+@function_tool
+def search_products(query: str, max_results: int = 5) -> str:
+    """Searches the product catalog.
+
+    Args:
+        query: Search terms for finding products.
+        max_results: Maximum number of results to return.
+    """
+    # Simulated product search
+    return f"Found {max_results} products matching '{query}': [Product list...]"
+
+
+@function_tool
+def create_support_ticket(
+    customer_email: str,
+    issue_description: str,
+    priority: str = "medium"
+) -> str:
+    """Creates a support ticket for unresolved issues.
+
+    Args:
+        customer_email: Customer's email address.
+        issue_description: Description of the issue.
+        priority: Ticket priority (low, medium, high).
+    """
+    return f"Ticket created for {customer_email} with {priority} priority."
+
+
+# Give tools to the agent
+support_agent = Agent(
+    name="Support Agent",
+    instructions="Help customers. Use tools to look up orders and search products.",
+    model="gpt-4o",
+    tools=[get_order_status, search_products, create_support_ticket]
+)
+```
+
+### 4. Handoffs
+
+Handoffs are what made Swarm special, and they're even better in the Agents SDK. An agent can transfer the conversation to another agent when the task falls outside its expertise.
+
+```python
+from agents import Agent, Runner
+
+# Specialist agents
+billing_agent = Agent(
+    name="Billing Specialist",
+    instructions="""You handle all billing-related questions:
+    - Payment issues and refunds
+    - Subscription changes
+    - Invoice requests
+    Always verify the customer's account before making changes.""",
+    model="gpt-4o",
+    tools=[lookup_billing, process_refund]
+)
+
+technical_agent = Agent(
+    name="Technical Support",
+    instructions="""You handle technical issues:
+    - Software bugs and errors
+    - Configuration help
+    - Integration support
+    Ask for error messages and steps to reproduce.""",
+    model="gpt-4o",
+    tools=[search_knowledge_base, create_bug_report]
+)
+
+# Triage agent that routes to specialists
+triage_agent = Agent(
+    name="Triage Agent",
+    instructions="""You are the first point of contact for customer support.
+    Understand the customer's issue, then transfer to the right specialist:
+    - Billing questions → Billing Specialist
+    - Technical problems → Technical Support
+    For simple questions, answer directly without transferring.""",
+    model="gpt-4o",
+    handoffs=[billing_agent, technical_agent]
+)
+
+# Run the triage agent
+result = Runner.run_sync(
+    triage_agent,
+    "I was charged twice for my subscription last month"
+)
+print(result.final_output)
+# The triage agent recognizes this as billing and hands off to billing_agent
+```
+
+<Callout type="info">
+**How Handoffs Work:** When an agent decides to hand off, it calls a special transfer function that passes the full conversation history to the target agent. The target agent picks up the conversation seamlessly -- the user experiences a smooth transition, not a cold restart.
+</Callout>
+
+### 5. Guardrails
+
+Guardrails validate inputs and outputs to keep agents safe and on-task. They can block harmful inputs before they reach the agent and verify that outputs meet your requirements.
+
+```python
+from agents import Agent, Runner, InputGuardrail, OutputGuardrail, GuardrailFunctionOutput
+
+# Input guardrail: Block off-topic requests
+@InputGuardrail
+async def topic_filter(ctx, agent, input_data) -> GuardrailFunctionOutput:
+    """Ensures the user's request is related to our products."""
+    # Use a lightweight model for classification
+    classifier = Agent(
+        name="classifier",
+        instructions="Classify if this message is about product support. Reply ONLY with 'on_topic' or 'off_topic'.",
+        model="gpt-4o-mini"
+    )
+    result = Runner.run_sync(classifier, input_data)
+
+    is_off_topic = "off_topic" in result.final_output.lower()
+    return GuardrailFunctionOutput(
+        output_info={"classification": result.final_output},
+        tripwire_triggered=is_off_topic
+    )
+
+
+# Output guardrail: Prevent sensitive data leaks
+@OutputGuardrail
+async def pii_filter(ctx, agent, output_data) -> GuardrailFunctionOutput:
+    """Checks that the agent's response doesn't contain sensitive data."""
+    import re
+    # Check for common PII patterns
+    has_ssn = bool(re.search(r'\d{3}-\d{2}-\d{4}', output_data))
+    has_credit_card = bool(re.search(r'\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}', output_data))
+
+    return GuardrailFunctionOutput(
+        output_info={"contains_pii": has_ssn or has_credit_card},
+        tripwire_triggered=has_ssn or has_credit_card
+    )
+
+
+# Agent with guardrails
+safe_agent = Agent(
+    name="Safe Support Agent",
+    instructions="Help customers with product support questions.",
+    model="gpt-4o",
+    input_guardrails=[topic_filter],
+    output_guardrails=[pii_filter]
+)
+```
+
+<Callout type="warning">
+Guardrails add latency because they run additional LLM calls or processing. Use lightweight models (like gpt-4o-mini) for classification guardrails, and regex or rule-based checks where possible for output validation.
+</Callout>
+
+## The Agent Loop
+
+Understanding how the Runner executes an agent is crucial for debugging and optimization.
+
+```
+┌──────────────────────────────────────────────────┐
+│                  AGENT LOOP                      │
+│                                                  │
+│  1. Input Guardrails  ──► Block if triggered     │
+│          │                                       │
+│          ▼                                       │
+│  2. LLM Call  ──► Generate response              │
+│          │                                       │
+│          ▼                                       │
+│  3. Response Type?                               │
+│     ├── Text ──► Output Guardrails ──► Return    │
+│     ├── Tool Call ──► Execute tool ──► Loop (2)  │
+│     └── Handoff ──► Switch agent ──► Loop (1)    │
+│                                                  │
+│  4. Max turns reached? ──► Return final state    │
+└──────────────────────────────────────────────────┘
+```
+
+The loop continues until the agent produces a text response (not a tool call or handoff) or the maximum number of turns is reached.
+
+## Tracing
+
+The Agents SDK includes built-in tracing that records every step of agent execution. This is invaluable for debugging and monitoring.
+
+```python
+from agents import Agent, Runner, trace
+
+# Tracing is automatic -- every run is traced
+result = Runner.run_sync(agent, "Check order ORD-12345")
+
+# You can also create custom trace spans
+with trace("custom_operation"):
+    # Your custom logic here
+    data = fetch_external_data()
+    processed = process_data(data)
+```
+
+Traces appear in the OpenAI dashboard, showing the full execution timeline: LLM calls, tool invocations, handoffs, guardrail checks, and timing for each step.
+
+## Complete Example: Customer Support System
+
+Let's build a full customer support system with multiple agents:
+
+```python
+from agents import Agent, Runner, function_tool
+
+# --- Tools ---
+
+@function_tool
+def lookup_customer(email: str) -> str:
+    """Looks up customer information by email.
+
+    Args:
+        email: Customer's email address.
+    """
+    customers = {
+        "alice@example.com": {"name": "Alice", "plan": "Pro", "since": "2024-01"},
+        "bob@example.com": {"name": "Bob", "plan": "Free", "since": "2025-02"},
+    }
+    customer = customers.get(email)
+    if customer:
+        return f"Customer: {customer['name']}, Plan: {customer['plan']}, Member since: {customer['since']}"
+    return f"No customer found with email: {email}"
+
+
+@function_tool
+def check_subscription(email: str) -> str:
+    """Checks subscription status and billing details.
+
+    Args:
+        email: Customer's email address.
+    """
+    return f"Subscription for {email}: Pro plan, $29/month, next billing: April 1"
+
+
+@function_tool
+def process_cancellation(email: str, reason: str) -> str:
+    """Processes a subscription cancellation request.
+
+    Args:
+        email: Customer's email address.
+        reason: Reason for cancellation.
+    """
+    return f"Cancellation processed for {email}. Reason: {reason}. Access until end of billing period."
+
+
+@function_tool
+def search_docs(query: str) -> str:
+    """Searches the technical documentation.
+
+    Args:
+        query: Search query for finding relevant docs.
+    """
+    return f"Documentation results for '{query}': [Setup guide, API reference, troubleshooting guide]"
+
+
+# --- Specialist Agents ---
+
+billing_specialist = Agent(
+    name="Billing Specialist",
+    instructions="""You handle billing and subscription issues.
+    Always look up the customer first, then check their subscription.
+    For cancellations, ask for a reason and try to offer alternatives before processing.
+    Be empathetic but efficient.""",
+    model="gpt-4o",
+    tools=[lookup_customer, check_subscription, process_cancellation]
+)
+
+tech_specialist = Agent(
+    name="Technical Specialist",
+    instructions="""You handle technical questions and issues.
+    Search the documentation first before answering.
+    If you can't resolve the issue, create a detailed bug report.
+    Ask for specifics: error messages, steps to reproduce, environment details.""",
+    model="gpt-4o",
+    tools=[search_docs, lookup_customer]
+)
+
+# --- Triage Agent ---
+
+triage = Agent(
+    name="Support Triage",
+    instructions="""You are the front-line support agent for TechCo.
+    Your job is to understand the customer's issue and route them appropriately:
+
+    - Billing, payments, subscriptions, cancellations → Billing Specialist
+    - Technical issues, bugs, how-to questions → Technical Specialist
+
+    For simple greetings or FAQs, answer directly.
+    Always be warm and professional.""",
+    model="gpt-4o",
+    tools=[lookup_customer],
+    handoffs=[billing_specialist, tech_specialist]
+)
+
+# --- Run it ---
+if __name__ == "__main__":
+    # Scenario 1: Billing issue
+    result = Runner.run_sync(
+        triage,
+        "Hi, I'm alice@example.com. I want to cancel my subscription."
+    )
+    print("Billing scenario:", result.final_output)
+    print()
+
+    # Scenario 2: Technical question
+    result = Runner.run_sync(
+        triage,
+        "How do I set up the API integration? I keep getting auth errors."
+    )
+    print("Technical scenario:", result.final_output)
+```
+
+## OpenAI Agents SDK vs Alternatives
+
+| Feature | OpenAI Agents SDK | Google ADK | CrewAI |
+|---------|------------------|-----------|--------|
+| **Model support** | OpenAI-first (others possible) | Gemini-first (others via LiteLLM) | Model-agnostic |
+| **Multi-agent** | Handoffs between agents | Sub-agents, Sequential, Loop | Crews with roles |
+| **Guardrails** | Built-in input/output guardrails | Basic validation | Limited |
+| **Tracing** | Built-in dashboard integration | Built-in eval framework | Basic logging |
+| **Complexity** | Low -- minimal abstractions | Medium -- more structure | Medium -- role-based |
+| **Best for** | OpenAI-powered apps, handoff patterns | Google Cloud, Gemini apps | Collaborative AI teams |
+
+## Key Takeaways
+
+<Callout type="tip">
+**What You've Learned:**
+1. The Agents SDK evolved from Swarm into a production framework
+2. Five core primitives: Agent, Runner, Tools, Handoffs, Guardrails
+3. Handoffs enable seamless multi-agent routing
+4. Guardrails enforce safety on inputs and outputs
+5. Built-in tracing provides observability for debugging
+6. The agent loop runs until it gets a text response or hits the turn limit
+</Callout>
+
+## Next Steps
+
+We've now covered two major agentic frameworks. Next up is CrewAI, which takes a completely different approach -- instead of handoffs between specialists, CrewAI models agents as a team with roles, goals, and collaborative processes. Let's see how that works.
+
+---
+
+## Quiz
+
+<Quiz
+  questions={[
+    {
+      question: "What is a 'handoff' in the OpenAI Agents SDK?",
+      options: [
+        "Passing data between two tool calls",
+        "Transferring the conversation from one agent to another specialist agent",
+        "Sending the agent's output to the user",
+        "Moving the agent from development to production"
+      ],
+      correctAnswer: 1,
+      explanation: "A handoff is when one agent transfers the conversation (including full history) to another agent that is better suited to handle the current request. This enables specialized agents to work together seamlessly."
+    },
+    {
+      question: "What is the purpose of guardrails in the Agents SDK?",
+      options: [
+        "To make agents run faster",
+        "To validate inputs before they reach the agent and verify outputs before they reach the user",
+        "To train the model on new data",
+        "To encrypt the conversation"
+      ],
+      correctAnswer: 1,
+      explanation: "Guardrails validate inputs (blocking off-topic or harmful requests) and outputs (preventing sensitive data leaks or policy violations). They act as safety layers around the agent."
+    },
+    {
+      question: "How does the Agent Loop work in the Agents SDK?",
+      options: [
+        "It runs the agent exactly once and returns the result",
+        "It repeatedly calls the LLM, executing tool calls and handoffs, until it gets a text response",
+        "It runs all tools in parallel and combines the results",
+        "It asks the user for confirmation after each step"
+      ],
+      correctAnswer: 1,
+      explanation: "The Agent Loop keeps calling the LLM and processing its responses. If the LLM makes a tool call, the tool is executed and the result fed back. If it makes a handoff, the target agent takes over. The loop ends when the LLM produces a plain text response."
+    },
+    {
+      question: "How did the Agents SDK evolve from Swarm?",
+      options: [
+        "They are completely unrelated projects",
+        "Swarm was an experimental library that pioneered handoff patterns, which the Agents SDK formalized into a production framework",
+        "Swarm replaced the Agents SDK",
+        "Swarm was a mobile app that became a desktop SDK"
+      ],
+      correctAnswer: 1,
+      explanation: "Swarm was OpenAI's experimental multi-agent library that demonstrated handoff patterns. The Agents SDK took Swarm's best ideas (handoffs, lightweight agents) and added production features like guardrails, tracing, and structured tool support."
+    }
+  ]}
+/>
