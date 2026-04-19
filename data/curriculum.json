@@ -1,159 +1,197 @@
 {
   "beginner": {
     "title": "Complete Beginner",
-    "description": "Zero coding required - perfect for everyone!",
-    "duration": "2-3 weeks",
+    "description": "Start from zero — no NLP, no ML, no coding required",
+    "duration": "3-4 weeks",
     "icon": "BookOpen",
     "modules": [
       {
+        "id": "foundations",
+        "title": "Foundations",
+        "description": "The ideas that make tokens, embeddings, and LLMs make sense",
+        "order": 1,
+        "lessons": [
+          {
+            "slug": "what-is-nlp",
+            "title": "What is NLP? Teaching Computers to Read",
+            "duration": 10,
+            "order": 1
+          },
+          {
+            "slug": "what-is-ml",
+            "title": "What is Machine Learning? (Plain English)",
+            "duration": 12,
+            "order": 2
+          },
+          {
+            "slug": "what-is-deep-learning",
+            "title": "Deep Learning & Neural Networks, No Math",
+            "duration": 15,
+            "order": 3
+          },
+          {
+            "slug": "words-as-numbers",
+            "title": "How Computers Turn Words Into Numbers (Embeddings)",
+            "duration": 12,
+            "order": 4
+          },
+          {
+            "slug": "from-rnn-to-transformer",
+            "title": "From RNNs to Transformers: The Big Idea",
+            "duration": 15,
+            "order": 5
+          }
+        ]
+      },
+      {
         "id": "ai-fundamentals",
         "title": "AI Fundamentals",
-        "description": "Understanding the basics of Large Language Models",
-        "order": 1,
+        "description": "How modern LLMs actually work",
+        "order": 2,
         "lessons": [
           {
             "slug": "what-is-llm",
             "title": "What is a Large Language Model?",
             "duration": 10,
-            "order": 1
+            "order": 6
           },
           {
             "slug": "how-ai-learns",
             "title": "How AI Learns: Training vs Inference",
             "duration": 12,
-            "order": 2
+            "order": 7
           },
           {
             "slug": "tokens-and-context",
             "title": "Understanding Tokens and Context Windows",
             "duration": 15,
-            "order": 3
+            "order": 8
           },
           {
             "slug": "prompt-engineering-intro",
             "title": "The Power of Prompt Engineering",
             "duration": 12,
-            "order": 4
+            "order": 9
           },
           {
             "slug": "first-chatgpt-conversation",
-            "title": "Hands-on: Your First ChatGPT Conversation",
+            "title": "Hands-on: Your First Claude or ChatGPT Conversation",
             "duration": 20,
-            "order": 5
+            "order": 10
           }
         ]
       },
       {
         "id": "prompt-mastery",
         "title": "Prompt Mastery",
-        "description": "Learn to write effective prompts",
-        "order": 2,
+        "description": "Write prompts that work with Claude 4.7, GPT-5, and Gemini 2.5",
+        "order": 3,
         "lessons": [
           {
             "slug": "effective-prompts",
             "title": "Writing Effective Prompts",
             "duration": 15,
-            "order": 6
+            "order": 11
           },
           {
             "slug": "few-shot-learning",
             "title": "Few-Shot Learning Explained",
             "duration": 12,
-            "order": 7
-          },
-          {
-            "slug": "chain-of-thought",
-            "title": "Chain of Thought Prompting",
-            "duration": 15,
-            "order": 8
-          },
-          {
-            "slug": "prompt-patterns",
-            "title": "Common Prompt Patterns",
-            "duration": 18,
-            "order": 9
-          },
-          {
-            "slug": "prompt-library-project",
-            "title": "Project: Build a Prompt Library",
-            "duration": 30,
-            "order": 10
-          }
-        ]
-      },
-      {
-        "id": "no-code-tools",
-        "title": "No-Code AI Tools",
-        "description": "Use AI without writing code",
-        "order": 3,
-        "lessons": [
-          {
-            "slug": "ai-assistants-compared",
-            "title": "ChatGPT, Claude, and Gemini Compared",
-            "duration": 15,
-            "order": 11
-          },
-          {
-            "slug": "ai-content-creation",
-            "title": "Using AI for Content Creation",
-            "duration": 20,
             "order": 12
           },
           {
-            "slug": "ai-productivity",
-            "title": "AI Assistants and Productivity",
+            "slug": "chain-of-thought",
+            "title": "Chain-of-Thought & Reasoning-Model Prompts",
             "duration": 15,
             "order": 13
           },
           {
-            "slug": "ethical-ai",
-            "title": "Ethical AI Usage",
-            "duration": 12,
+            "slug": "prompt-patterns",
+            "title": "Common Prompt Patterns (and Anti-Patterns)",
+            "duration": 18,
             "order": 14
           },
           {
-            "slug": "ai-workflow-project",
-            "title": "Project: Create an AI-Powered Workflow",
+            "slug": "prompt-library-project",
+            "title": "Project: Build a Personal Prompt Library",
             "duration": 30,
             "order": 15
           }
         ]
       },
       {
-        "id": "real-world-ai",
-        "title": "Real-World AI Tools",
-        "description": "The AI tools reshaping how we work, code, and create",
+        "id": "no-code-tools",
+        "title": "No-Code AI Tools",
+        "description": "Use the latest AI without writing code",
         "order": 4,
         "lessons": [
           {
-            "slug": "notebooklm-research",
-            "title": "Google NotebookLM: Your AI Research Partner",
+            "slug": "ai-assistants-compared",
+            "title": "Claude 4.7, GPT-5, Gemini 2.5, and Grok Compared",
             "duration": 15,
             "order": 16
           },
           {
-            "slug": "ai-code-assistants",
-            "title": "AI Code Assistants: GitHub Copilot, Cursor & Claude Code",
-            "duration": 12,
+            "slug": "ai-content-creation",
+            "title": "Using AI for Content, Design, and Video",
+            "duration": 20,
             "order": 17
           },
           {
-            "slug": "no-code-ai-builders",
-            "title": "No-Code AI App Builders: Bolt.new, Lovable & v0",
+            "slug": "ai-productivity",
+            "title": "AI Assistants for Daily Productivity",
             "duration": 15,
             "order": 18
+          },
+          {
+            "slug": "ethical-ai",
+            "title": "Ethical AI: Bias, Privacy, and Responsible Use",
+            "duration": 12,
+            "order": 19
+          },
+          {
+            "slug": "ai-workflow-project",
+            "title": "Project: Build a No-Code AI Workflow",
+            "duration": 30,
+            "order": 20
+          }
+        ]
+      },
+      {
+        "id": "real-world-ai",
+        "title": "Real-World AI Tools",
+        "description": "The AI tools reshaping how we work, code, and create in 2026",
+        "order": 5,
+        "lessons": [
+          {
+            "slug": "notebooklm-research",
+            "title": "NotebookLM & AI Research Partners",
+            "duration": 15,
+            "order": 21
+          },
+          {
+            "slug": "ai-code-assistants",
+            "title": "AI Code Assistants: Cursor, Claude Code, Windsurf",
+            "duration": 12,
+            "order": 22
+          },
+          {
+            "slug": "no-code-ai-builders",
+            "title": "No-Code AI App Builders: Bolt.new, Lovable, v0",
+            "duration": 15,
+            "order": 23
           },
           {
             "slug": "what-is-agentic-ai",
             "title": "What is Agentic AI? (The Simple Version)",
             "duration": 10,
-            "order": 19
+            "order": 24
           },
           {
-            "slug": "ai-landscape-2025",
-            "title": "The AI Landscape: Who's Building What",
+            "slug": "ai-landscape-2026",
+            "title": "The 2026 AI Landscape: Who's Building What",
             "duration": 12,
-            "order": 20
+            "order": 25
           }
         ]
       }
@@ -161,121 +199,121 @@
   },
   "intermediate": {
     "title": "Creator & Builder",
-    "description": "Build real AI apps with modern frameworks and agentic tools",
-    "duration": "5-7 weeks",
-    "icon": "Code",
+    "description": "Build real AI apps with modern agentic frameworks, MCP, and workflows",
+    "duration": "6-8 weeks",
+    "icon": "Braces",
     "modules": [
       {
         "id": "transformer-foundations",
         "title": "Foundation of Transformers",
-        "description": "Understanding the architecture that powers modern LLMs",
+        "description": "The architecture that powers every modern LLM",
         "order": 1,
         "lessons": [
           {
             "slug": "nlp-evolution",
             "title": "The Evolution of NLP (Pre-Transformer Era)",
             "duration": 15,
-            "order": 16
+            "order": 26
           },
           {
             "slug": "attention-is-all-you-need",
             "title": "Paper: Attention Is All You Need (Simplified)",
             "duration": 25,
-            "order": 17
+            "order": 27
           },
           {
             "slug": "self-attention",
             "title": "Understanding Self-Attention",
             "duration": 20,
-            "order": 18
+            "order": 28
           },
           {
             "slug": "encoder-decoder",
             "title": "Encoder-Decoder Architecture",
             "duration": 20,
-            "order": 19
+            "order": 29
           },
           {
             "slug": "positional-encodings",
             "title": "Positional Encodings Explained",
             "duration": 15,
-            "order": 20
+            "order": 30
           }
         ]
       },
       {
         "id": "modern-architectures",
         "title": "Modern LLM Architectures",
-        "description": "Explore GPT, BERT, T5 and more",
+        "description": "GPT-5, Claude 4.7, Gemini 2.5, Llama 4, and reasoning models",
         "order": 2,
         "lessons": [
           {
             "slug": "gpt-evolution",
-            "title": "GPT Series Evolution (GPT-1 to GPT-4o)",
+            "title": "GPT Evolution: GPT-1 to GPT-5",
             "duration": 20,
-            "order": 21
+            "order": 31
           },
           {
             "slug": "bert-bidirectional",
             "title": "BERT and Bidirectional Models",
             "duration": 18,
-            "order": 22
+            "order": 32
           },
           {
-            "slug": "t5-text-to-text",
-            "title": "T5: Text-to-Text Transfer Transformer",
-            "duration": 18,
-            "order": 23
+            "slug": "reasoning-models",
+            "title": "Reasoning Models: o3, Claude Thinking, Gemini Thinking",
+            "duration": 22,
+            "order": 33
           },
           {
             "slug": "decoder-only-models",
-            "title": "Decoder-Only Models (GPT, LLaMA)",
+            "title": "Decoder-Only Models (GPT, Claude, Llama)",
             "duration": 15,
-            "order": 24
+            "order": 34
           },
           {
             "slug": "encoder-only-models",
             "title": "Encoder-Only Models (BERT, RoBERTa)",
             "duration": 15,
-            "order": 25
+            "order": 35
           }
         ]
       },
       {
         "id": "langchain-frameworks",
         "title": "LangChain & Frameworks",
-        "description": "Build AI apps with LangChain",
+        "description": "Build AI apps with LangChain and LangGraph",
         "order": 3,
         "lessons": [
           {
             "slug": "langchain-basics",
             "title": "Introduction to LangChain",
             "duration": 20,
-            "order": 26
+            "order": 36
           },
           {
             "slug": "chains-agents-tools",
             "title": "Chains, Agents, and Tools",
             "duration": 25,
-            "order": 27
+            "order": 37
           },
           {
             "slug": "memory-systems",
             "title": "Memory Systems in LangChain",
             "duration": 18,
-            "order": 28
+            "order": 38
           },
           {
             "slug": "first-langchain-app",
             "title": "Building Your First LangChain App",
             "duration": 30,
-            "order": 29
+            "order": 39
           },
           {
             "slug": "multi-step-agent-project",
             "title": "Project: Multi-Step AI Agent",
             "duration": 45,
-            "order": 30
+            "order": 40
           }
         ]
       },
@@ -289,31 +327,31 @@
             "slug": "what-is-rag",
             "title": "What is RAG and Why It Matters",
             "duration": 15,
-            "order": 31
+            "order": 41
           },
           {
             "slug": "vector-databases",
             "title": "Vector Databases Explained",
             "duration": 20,
-            "order": 32
+            "order": 42
           },
           {
             "slug": "embeddings-similarity",
             "title": "Embeddings and Similarity Search",
             "duration": 20,
-            "order": 33
+            "order": 43
           },
           {
             "slug": "building-rag-system",
             "title": "Building a RAG System with LangChain",
             "duration": 35,
-            "order": 34
+            "order": 44
           },
           {
             "slug": "document-qa-project",
             "title": "Project: Document Q&A System",
             "duration": 45,
-            "order": 35
+            "order": 45
           }
         ]
       },
@@ -327,107 +365,145 @@
             "slug": "understanding-embeddings",
             "title": "Understanding Embeddings",
             "duration": 18,
-            "order": 36
+            "order": 46
           },
           {
             "slug": "vector-db-comparison",
-            "title": "ChromaDB, Pinecone, Weaviate Compared",
+            "title": "ChromaDB, Pinecone, Weaviate, Qdrant Compared",
             "duration": 20,
-            "order": 37
+            "order": 47
           },
           {
             "slug": "chunking-strategies",
             "title": "Chunking Strategies",
             "duration": 15,
-            "order": 38
+            "order": 48
           },
           {
             "slug": "hybrid-search",
             "title": "Hybrid Search Techniques",
             "duration": 18,
-            "order": 39
+            "order": 49
           },
           {
             "slug": "semantic-search-project",
             "title": "Project: Semantic Search Engine",
             "duration": 40,
-            "order": 40
+            "order": 50
           }
         ]
       },
       {
         "id": "agentic-frameworks",
         "title": "Agentic AI Frameworks",
-        "description": "Build AI agents with Google ADK, OpenAI Agents SDK, and CrewAI",
+        "description": "Google ADK, OpenAI Agents SDK, CrewAI, and Claude Agents",
         "order": 6,
         "lessons": [
           {
             "slug": "agentic-ai-deep-dive",
             "title": "Understanding Agentic AI: Beyond Chatbots",
             "duration": 20,
-            "order": 41
+            "order": 51
           },
           {
             "slug": "google-adk",
             "title": "Google ADK: Agent Development Kit",
             "duration": 25,
-            "order": 42
+            "order": 52
           },
           {
             "slug": "openai-agents-sdk",
             "title": "OpenAI Agents SDK: Building Smart Agents",
             "duration": 25,
-            "order": 43
+            "order": 53
           },
           {
             "slug": "crewai-framework",
-            "title": "CrewAI: Building AI Teams That Collaborate",
+            "title": "CrewAI: Teams of Agents That Collaborate",
             "duration": 25,
-            "order": 44
+            "order": 54
           },
           {
             "slug": "agentic-frameworks-project",
-            "title": "Project: Build a Multi-Agent Research System",
+            "title": "Project: Multi-Agent Research System",
             "duration": 45,
-            "order": 45
+            "order": 55
+          }
+        ]
+      },
+      {
+        "id": "mcp-connectors-workflows",
+        "title": "MCP Connectors & Workflows",
+        "description": "The newest way to wire AI to real systems — MCP connectors plus stateful workflows",
+        "order": 7,
+        "lessons": [
+          {
+            "slug": "mcp-connectors-explained",
+            "title": "MCP Connectors: The USB-C of AI Integration",
+            "duration": 18,
+            "order": 56
+          },
+          {
+            "slug": "building-mcp-connectors",
+            "title": "Building Your First MCP Connector",
+            "duration": 30,
+            "order": 57
+          },
+          {
+            "slug": "ai-workflows-intro",
+            "title": "AI Workflows: Beyond Simple Chat",
+            "duration": 20,
+            "order": 58
+          },
+          {
+            "slug": "langgraph-workflows",
+            "title": "LangGraph: Stateful AI Workflows",
+            "duration": 25,
+            "order": 59
+          },
+          {
+            "slug": "workflow-orchestration-project",
+            "title": "Project: Multi-Step Workflow with MCP + Agents",
+            "duration": 50,
+            "order": 60
           }
         ]
       },
       {
         "id": "modern-ai-dev",
         "title": "Modern AI Development",
-        "description": "MCP, LlamaIndex, Vercel AI SDK, and the modern AI stack",
-        "order": 7,
+        "description": "LlamaIndex, Vercel AI SDK, and the 2026 AI stack",
+        "order": 8,
         "lessons": [
           {
             "slug": "model-context-protocol",
             "title": "MCP: Model Context Protocol Explained",
             "duration": 20,
-            "order": 46
+            "order": 61
           },
           {
             "slug": "llamaindex-basics",
             "title": "LlamaIndex: Connect AI to Your Data",
             "duration": 25,
-            "order": 47
+            "order": 62
           },
           {
             "slug": "vercel-ai-sdk",
-            "title": "Vercel AI SDK: AI for Web Apps",
+            "title": "Vercel AI SDK: Streaming AI for Web Apps",
             "duration": 20,
-            "order": 48
+            "order": 63
           },
           {
             "slug": "ai-dev-tools",
             "title": "AI-Powered Development: The New Way to Code",
             "duration": 15,
-            "order": 49
+            "order": 64
           },
           {
             "slug": "fullstack-ai-project",
-            "title": "Project: Build a Full-Stack AI Application",
+            "title": "Project: Full-Stack AI Application",
             "duration": 45,
-            "order": 50
+            "order": 65
           }
         ]
       }
@@ -435,9 +511,9 @@
   },
   "advanced": {
     "title": "Advanced Developer",
-    "description": "Production AI systems, agentic architectures, and cutting-edge deployment",
-    "duration": "8-10 weeks",
-    "icon": "Rocket",
+    "description": "Ship production agentic systems, fine-tuned models, and cutting-edge AI",
+    "duration": "9-11 weeks",
+    "icon": "Cpu",
     "modules": [
       {
         "id": "advanced-transformers",
@@ -449,69 +525,69 @@
             "slug": "multi-head-attention-deep",
             "title": "Multi-Head Attention Deep Dive",
             "duration": 25,
-            "order": 41
+            "order": 66
           },
           {
             "slug": "layer-norm-residuals",
             "title": "Layer Normalization and Residual Connections",
             "duration": 20,
-            "order": 42
+            "order": 67
           },
           {
             "slug": "tokenization-algorithms",
-            "title": "Tokenization Algorithms (BPE, WordPiece, SentencePiece)",
+            "title": "Tokenization (BPE, WordPiece, SentencePiece, Tiktoken)",
             "duration": 22,
-            "order": 43
+            "order": 68
           },
           {
             "slug": "model-scaling-laws",
             "title": "Model Scaling Laws",
             "duration": 20,
-            "order": 44
+            "order": 69
           },
           {
             "slug": "scaling-laws-paper",
             "title": "Paper: Scaling Laws for Neural Language Models",
             "duration": 25,
-            "order": 45
+            "order": 70
           }
         ]
       },
       {
         "id": "modern-architectures-advanced",
         "title": "Modern Architectures",
-        "description": "LLaMA, Mistral, and cutting-edge models",
+        "description": "Llama 4, Mistral, DeepSeek, and frontier model design",
         "order": 2,
         "lessons": [
           {
             "slug": "llama-architecture",
-            "title": "LLaMA Architecture Analysis",
+            "title": "Llama Architecture Analysis",
             "duration": 25,
-            "order": 46
+            "order": 71
           },
           {
             "slug": "mistral-moe",
             "title": "Mistral and Mixture of Experts (MoE)",
             "duration": 30,
-            "order": 47
+            "order": 72
           },
           {
             "slug": "llama-paper",
-            "title": "Paper: LLaMA - Open and Efficient Foundation Models",
+            "title": "Paper: LLaMA — Open and Efficient Foundation Models",
             "duration": 30,
-            "order": 48
+            "order": 73
           },
           {
             "slug": "flash-attention",
             "title": "FlashAttention and Optimization Techniques",
             "duration": 25,
-            "order": 49
+            "order": 74
           },
           {
             "slug": "rope-embeddings",
             "title": "Rotary Position Embeddings (RoPE)",
             "duration": 20,
-            "order": 50
+            "order": 75
           }
         ]
       },
@@ -525,107 +601,107 @@
             "slug": "transfer-learning-llms",
             "title": "Transfer Learning for LLMs",
             "duration": 18,
-            "order": 51
+            "order": 76
           },
           {
             "slug": "fine-tuning",
             "title": "Full Fine-Tuning vs Parameter-Efficient Methods",
             "duration": 22,
-            "order": 52
+            "order": 77
           },
           {
             "slug": "lora",
             "title": "LoRA (Low-Rank Adaptation)",
             "duration": 25,
-            "order": 53
+            "order": 78
           },
           {
             "slug": "qlora",
             "title": "QLoRA: Quantized LoRA",
             "duration": 25,
-            "order": 54
+            "order": 79
           },
           {
             "slug": "lora-paper",
-            "title": "Paper: LoRA - Low-Rank Adaptation of Large Language Models",
+            "title": "Paper: LoRA — Low-Rank Adaptation",
             "duration": 30,
-            "order": 55
+            "order": 80
           }
         ]
       },
       {
         "id": "advanced-fine-tuning",
         "title": "Advanced Fine-Tuning",
-        "description": "RLHF, DPO, and instruction tuning",
+        "description": "RLHF, DPO, RLAIF, and instruction tuning",
         "order": 4,
         "lessons": [
           {
             "slug": "instruction-tuning",
             "title": "Instruction Tuning",
             "duration": 20,
-            "order": 56
+            "order": 81
           },
           {
             "slug": "rlhf",
             "title": "RLHF (Reinforcement Learning from Human Feedback)",
             "duration": 30,
-            "order": 57
+            "order": 82
           },
           {
             "slug": "dpo",
             "title": "DPO (Direct Preference Optimization)",
             "duration": 25,
-            "order": 58
+            "order": 83
           },
           {
             "slug": "instructgpt-paper",
             "title": "Paper: Training Language Models to Follow Instructions",
             "duration": 30,
-            "order": 59
+            "order": 84
           },
           {
             "slug": "fine-tune-project",
             "title": "Project: Fine-Tune Your Own Model",
             "duration": 60,
-            "order": 60
+            "order": 85
           }
         ]
       },
       {
         "id": "ai-agents",
         "title": "AI Agents & Autonomous Systems",
-        "description": "Build agents that can reason and act",
+        "description": "Agents that reason, plan, and take action",
         "order": 5,
         "lessons": [
           {
             "slug": "react-reasoning-acting",
             "title": "ReAct: Reasoning and Acting",
             "duration": 25,
-            "order": 61
+            "order": 86
           },
           {
             "slug": "react-paper",
-            "title": "Paper: ReAct - Synergizing Reasoning and Acting",
+            "title": "Paper: ReAct — Synergizing Reasoning and Acting",
             "duration": 30,
-            "order": 62
+            "order": 87
           },
           {
             "slug": "tool-use-function-calling",
-            "title": "Tool Use and Function Calling",
+            "title": "Tool Use, Function Calling, and Computer Use",
             "duration": 25,
-            "order": 63
+            "order": 88
           },
           {
             "slug": "multi-agent-systems",
             "title": "Multi-Agent Systems",
             "duration": 30,
-            "order": 64
+            "order": 89
           },
           {
             "slug": "research-agent-project",
             "title": "Project: Autonomous Research Agent",
             "duration": 60,
-            "order": 65
+            "order": 90
           }
         ]
       },
@@ -639,31 +715,31 @@
             "slug": "advanced-chunking",
             "title": "Advanced Chunking Strategies",
             "duration": 20,
-            "order": 66
+            "order": 91
           },
           {
             "slug": "reranking-hybrid",
             "title": "Re-ranking and Hybrid Search",
             "duration": 25,
-            "order": 67
+            "order": 92
           },
           {
             "slug": "query-expansion",
             "title": "Query Expansion Techniques",
             "duration": 20,
-            "order": 68
+            "order": 93
           },
           {
             "slug": "context-compression",
-            "title": "Context Compression",
+            "title": "Context Compression and Long-Context RAG",
             "duration": 22,
-            "order": 69
+            "order": 94
           },
           {
             "slug": "production-rag-project",
             "title": "Project: Production-Ready RAG System",
             "duration": 60,
-            "order": 70
+            "order": 95
           }
         ]
       },
@@ -675,71 +751,77 @@
         "lessons": [
           {
             "slug": "quantization",
-            "title": "Quantization (GPTQ, AWQ, GGUF)",
+            "title": "Quantization (GPTQ, AWQ, GGUF, FP8)",
             "duration": 25,
-            "order": 71
+            "order": 96
           },
           {
             "slug": "model-serving",
-            "title": "Model Serving with vLLM and TGI",
+            "title": "Model Serving: vLLM, TGI, SGLang",
             "duration": 30,
-            "order": 72
+            "order": 97
           },
           {
             "slug": "caching-strategies",
-            "title": "Caching Strategies",
+            "title": "Prompt Caching and KV-Cache Strategies",
             "duration": 20,
-            "order": 73
+            "order": 98
           },
           {
             "slug": "cost-optimization",
             "title": "Cost Optimization",
             "duration": 22,
-            "order": 74
+            "order": 99
           },
           {
             "slug": "monitoring-observability",
             "title": "Monitoring and Observability",
             "duration": 25,
-            "order": 75
+            "order": 100
           }
         ]
       },
       {
         "id": "cutting-edge",
         "title": "Cutting-Edge Topics",
-        "description": "The future of LLMs",
+        "description": "Reasoning models, computer use, and the frontier",
         "order": 8,
         "lessons": [
           {
             "slug": "moe-deep-dive",
             "title": "Mixture of Experts (MoE) in Depth",
             "duration": 30,
-            "order": 76
+            "order": 101
           },
           {
             "slug": "long-context-models",
-            "title": "Long Context Models (100k+ tokens)",
+            "title": "Long-Context Models (1M+ tokens)",
             "duration": 25,
-            "order": 77
+            "order": 102
           },
           {
             "slug": "multimodal-models",
-            "title": "Multimodal Models (Vision + Language)",
+            "title": "Multimodal Models (Vision, Audio, Video)",
             "duration": 30,
-            "order": 78
+            "order": 103
+          },
+          {
+            "slug": "computer-use-agents",
+            "title": "Computer-Use Agents (Claude, OpenAI Operator)",
+            "duration": 28,
+            "order": 104
           },
           {
             "slug": "constitutional-ai",
             "title": "Constitutional AI and Safety",
             "duration": 25,
-            "order": 79
+            "order": 105
           },
           {
             "slug": "future-of-llms",
             "title": "The Future of LLMs",
             "duration": 20,
-            "order": 80
+            "order": 106
           }
         ]
       },
@@ -753,31 +835,31 @@
             "slug": "autogen-framework",
             "title": "AutoGen: Microsoft's Multi-Agent Framework",
             "duration": 25,
-            "order": 81
+            "order": 107
           },
           {
             "slug": "agent-orchestration-patterns",
             "title": "Agent Orchestration Patterns",
             "duration": 30,
-            "order": 82
+            "order": 108
           },
           {
             "slug": "mcp-servers-production",
             "title": "Building MCP Servers for Production",
             "duration": 30,
-            "order": 83
+            "order": 109
           },
           {
             "slug": "evaluating-ai-agents",
             "title": "Evaluating & Testing AI Agents",
             "duration": 25,
-            "order": 84
+            "order": 110
           },
           {
             "slug": "production-agents-project",
             "title": "Project: Production Multi-Agent Pipeline",
             "duration": 60,
-            "order": 85
+            "order": 111
           }
         ]
       }
