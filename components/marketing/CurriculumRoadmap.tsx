@@ -74,7 +74,7 @@ const roadmapSteps = [
 
 export function CurriculumRoadmap() {
   return (
-    <section className="py-20 md:py-28 lg:py-32 relative overflow-hidden bg-background">
+    <section className="snap-section py-20 md:py-28 lg:py-32 relative overflow-hidden bg-background">
       <div id="curriculum" className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div

@@ -204,7 +204,7 @@ function AnimatedTerminal() {
 
 export function HeroSection() {
   return (
-    <section className="relative flex items-center overflow-hidden bg-[#fafbfc] dark:bg-[#050505] py-20 md:py-24 lg:py-28">
+    <section className="snap-section relative items-center overflow-hidden bg-[#fafbfc] dark:bg-[#050505] py-20 md:py-24 lg:py-28">
       {/* Atmospheric background */}
       <div className="absolute inset-0 -z-10">
         {/* Grid with vignette mask */}

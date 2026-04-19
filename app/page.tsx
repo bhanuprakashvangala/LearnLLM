@@ -12,7 +12,7 @@ import { FinalCTA } from "@/components/marketing/FinalCTA";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen snap-landing">
       <Navbar />
       <HeroSection />
       <LearningPaths />

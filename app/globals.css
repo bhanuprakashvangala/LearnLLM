@@ -199,6 +199,27 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Page-by-page scroll-snap on the marketing landing (desktop only).
+   Applied via .snap-landing on the <main> wrapper so lesson pages and
+   app routes are unaffected. Sections with .snap-section get aligned
+   to the top of the viewport when scrolled near. `proximity` (not
+   `mandatory`) means long sections scroll naturally through their
+   content before snapping to the next section boundary. */
+@media (min-width: 1024px) {
+  .snap-landing {
+    scroll-snap-type: y proximity;
+    scroll-padding-top: 4rem;
+  }
+  .snap-section {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
 /* Selection */
 ::selection {
   background: rgb(var(--primary) / 0.2);
