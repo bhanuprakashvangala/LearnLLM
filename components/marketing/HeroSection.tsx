@@ -202,7 +202,7 @@ function AnimatedTerminal() {
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-[#fafbfc] dark:bg-[#050505]">
+    <section className="relative flex items-center overflow-hidden bg-[#fafbfc] dark:bg-[#050505] py-20 md:py-24 lg:py-28">
       {/* Atmospheric background */}
       <div className="absolute inset-0 -z-10">
         {/* Grid with vignette mask */}
@@ -212,8 +212,8 @@ export function HeroSection() {
         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/[0.06] dark:bg-cyan-500/[0.04] rounded-full blur-[90px]" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 items-center">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
           {/* Left: Copy */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -280,7 +280,7 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="hidden lg:block"
           >
-            <Card className="w-full h-[500px] bg-black/[0.96] relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10">
+            <Card className="w-full aspect-[4/5] max-h-[620px] min-h-[440px] bg-black/[0.96] relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10">
               <Spotlight
                 className="-top-40 left-0 md:left-60 md:-top-20"
                 fill="rgba(16,185,129,0.55)"

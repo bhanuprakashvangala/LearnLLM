@@ -116,7 +116,7 @@ const item = {
 
 export function AgenticShowcase() {
   return (
-    <section className="py-24 md:py-32 relative overflow-hidden bg-[#fafbfc] dark:bg-[#050505]">
+    <section className="py-20 md:py-28 lg:py-32 relative overflow-hidden bg-[#fafbfc] dark:bg-[#050505]">
       {/* Background accents */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-[20%] right-0 w-[400px] h-[400px] bg-emerald-500/[0.04] rounded-full blur-[100px]" />
