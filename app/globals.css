@@ -200,31 +200,40 @@ html {
 }
 
 /* Page-by-page scroll-snap on the marketing landing (desktop only).
-   MANDATORY snap + "always" stop means one scroll gesture locks to
-   exactly the next section. Each section sizes to the viewport (minus
-   the 4rem nav) so nothing spills beyond one screen. */
+   The scroll container for a full HTML page is the ROOT — <html> —
+   so the snap directives have to live there, not on <main>. We scope
+   the root-level snap to when body.snap-on is set (only set on the
+   home page's layout) so lesson pages and dashboards scroll normally.
+
+   scroll-snap-type: y mandatory  → any scroll gesture locks to the
+   nearest snap target. Combined with scroll-snap-stop: always on each
+   section, one wheel tick / swipe advances exactly one section. */
 @media (min-width: 1024px) {
-  .snap-landing {
+  html:has(body.snap-on) {
     scroll-snap-type: y mandatory;
-    scroll-padding-top: 4rem;
-    scroll-behavior: smooth;
+    scroll-padding-top: 0;
   }
-  .snap-section {
+  body.snap-on .snap-section {
     scroll-snap-align: start;
     scroll-snap-stop: always;
-    height: calc(100vh - 4rem);
-    min-height: calc(100vh - 4rem);
+    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     overflow: hidden;
   }
   /* Sections with real content density (9-card feature grid, full tool
-     ecosystem, curriculum roadmap) should be allowed to scroll inside
-     their own pane rather than clip. */
-  .snap-section-scroll {
+     ecosystem, curriculum roadmap, FAQ) are taller than a viewport —
+     let them scroll internally so nothing gets clipped. */
+  body.snap-on .snap-section-scroll {
     overflow-y: auto;
     justify-content: flex-start;
+  }
+  /* Hide the sticky navbar's scrolled-state drop shadow inside snap
+     pages so it doesn't flash as each section locks in. */
+  body.snap-on header {
+    transition: none;
   }
 }
 
