@@ -62,17 +62,17 @@ export function Footer() {
           </div>
 
           {/* Social */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {socialLinks.map((social) => (
               <a
                 key={social.label}
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-muted hover:bg-primary flex items-center justify-center transition-colors group"
+                className="w-10 h-10 rounded-lg border border-border bg-card hover:bg-primary hover:border-primary flex items-center justify-center transition-colors group"
                 aria-label={social.label}
               >
-                <social.icon className="w-4 h-4 text-muted-foreground group-hover:text-white transition-colors" />
+                <social.icon className="w-5 h-5 text-foreground/70 group-hover:text-primary-foreground transition-colors" />
               </a>
             ))}
           </div>

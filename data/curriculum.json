@@ -1,6 +1,6 @@
 {
   "beginner": {
-    "title": "Complete Beginner",
+    "title": "Beginner",
     "description": "Start from zero — no NLP, no ML, no coding required",
     "duration": "3-4 weeks",
     "icon": "BookOpen",
@@ -198,7 +198,7 @@
     ]
   },
   "intermediate": {
-    "title": "Creator & Builder",
+    "title": "Intermediate",
     "description": "Build real AI apps with modern agentic frameworks, MCP, and workflows",
     "duration": "6-8 weeks",
     "icon": "Braces",
@@ -510,7 +510,7 @@
     ]
   },
   "advanced": {
-    "title": "Advanced Developer",
+    "title": "Advanced",
     "description": "Ship production agentic systems, fine-tuned models, and cutting-edge AI",
     "duration": "9-11 weeks",
     "icon": "Cpu",

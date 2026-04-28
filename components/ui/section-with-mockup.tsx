@@ -45,7 +45,7 @@ export function SectionWithMockup({
   const imageOrder = reverseLayout ? "md:col-start-1 md:row-start-1" : "";
 
   return (
-    <section className={cn("relative py-24 md:py-40 bg-black overflow-hidden", className)}>
+    <section className={cn("relative py-20 md:py-24 bg-black overflow-hidden", className)}>
       {/* Background atmosphere */}
       <div className="absolute inset-0 -z-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-emerald-500/[0.06] rounded-full blur-[140px]" />
@@ -76,7 +76,7 @@ export function SectionWithMockup({
             <h2 className="text-white text-3xl md:text-[40px] font-extrabold leading-[1.1] tracking-tight">
               {title}
             </h2>
-            <p className="text-[#9aa3ad] text-sm md:text-[15px] leading-7">{description}</p>
+            <p className="text-[#c9d1d9] text-sm md:text-[15px] leading-7">{description}</p>
           </motion.div>
 
           {/* Visual */}
@@ -94,8 +94,8 @@ export function SectionWithMockup({
                 style={{
                   top: reverseLayout ? "auto" : "8%",
                   bottom: reverseLayout ? "8%" : "auto",
-                  left: reverseLayout ? "auto" : "-12%",
-                  right: reverseLayout ? "-12%" : "auto",
+                  left: reverseLayout ? "auto" : "-6%",
+                  right: reverseLayout ? "-6%" : "auto",
                   filter: "blur(0.5px)",
                   opacity: 0.92,
                 }}

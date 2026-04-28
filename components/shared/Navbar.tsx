@@ -12,10 +12,10 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Logo, LogoText } from "./Logo";
 
 const navLinks = [
-  { href: "/", label: "Home" },
   { href: "/learn", label: "Learn" },
   { href: "/challenges", label: "Challenges" },
   { href: "/playground", label: "Playground" },
+  { href: "/about", label: "About" },
 ];
 
 export function Navbar() {
@@ -105,8 +105,9 @@ export function Navbar() {
                       {session.user.name?.charAt(0).toUpperCase() || session.user.email?.charAt(0).toUpperCase() || "U"}
                     </div>
                   )}
-                  <span className="text-sm font-medium hidden lg:inline-block max-w-[120px] truncate">
-                    {session.user.name || session.user.email?.split("@")[0]}
+                  <span className="text-sm font-medium hidden lg:inline-block">
+                    {session.user.name?.split(" ")[0] ||
+                      session.user.email?.split("@")[0]}
                   </span>
                   <ChevronDown className={cn("w-4 h-4 transition-transform", userMenuOpen && "rotate-180")} />
                 </button>
@@ -168,7 +169,10 @@ export function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
-            <ThemeToggle />
+            {/* ThemeToggle is rendered in the desktop right-side cluster
+                above; on mobile it appears inside the mobile menu drawer.
+                This avoids two simultaneous Toggle Theme buttons in the
+                accessibility tree on narrow viewports. */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -236,6 +240,15 @@ export function Navbar() {
                   </Link>
                 );
               })}
+
+              <div className="h-px bg-border my-2" />
+
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Theme
+                </span>
+                <ThemeToggle />
+              </div>
 
               <div className="h-px bg-border my-2" />
 

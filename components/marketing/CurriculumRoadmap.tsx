@@ -143,17 +143,15 @@ export function CurriculumRoadmap() {
                 </div>
 
                 {/* Outcome */}
-                <div className="flex items-center justify-between gap-4 pt-4 border-t border-border">
-                  <div>
-                    <div className="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5">Outcome</div>
-                    <div className="text-sm font-medium text-foreground">{step.outcome}</div>
-                  </div>
-                  <Link
-                    href={step.link}
-                    className="flex-shrink-0 text-sm font-medium text-primary hover:underline flex items-center gap-1"
-                  >
-                    View <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                <div className="pt-4 border-t border-border">
+                  <div className="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5">Outcome</div>
+                  <div className="text-sm font-medium text-foreground mb-4">{step.outcome}</div>
+                  <Button asChild className="w-full h-11 font-semibold group/btn">
+                    <Link href={step.link}>
+                      Start the {step.level} path
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </motion.div>

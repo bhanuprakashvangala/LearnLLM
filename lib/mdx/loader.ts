@@ -4,8 +4,30 @@ import matter from "gray-matter";
 import { compileMDX } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { MDXComponents } from "./components";
+import curriculum from "@/data/curriculum.json";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "tutorials");
+
+/**
+ * Build a slug → canonical position map from curriculum.json. We use this
+ * (not the per-MDX `order` frontmatter) as the authoritative sort order
+ * because the MDX files have duplicate order values across lessons,
+ * which makes the previous/next navigation point at the wrong lesson.
+ */
+function getCanonicalPositions(
+  difficulty: "beginner" | "intermediate" | "advanced"
+): Map<string, number> {
+  const positions = new Map<string, number>();
+  const data = curriculum[difficulty];
+  if (!data) return positions;
+  let pos = 0;
+  for (const module of data.modules) {
+    for (const lesson of module.lessons) {
+      positions.set(lesson.slug, pos++);
+    }
+  }
+  return positions;
+}
 
 export interface LessonMetadata {
   title: string;
@@ -52,10 +74,18 @@ export async function getLessonsByDifficulty(
     })
   );
 
-  // Filter out null values and sort by order
+  // Filter out nulls; sort by curriculum.json canonical position. Lessons
+  // not listed in curriculum.json fall through to the end, ordered by
+  // their MDX `order` frontmatter as a stable fallback.
+  const positions = getCanonicalPositions(difficulty);
+  const FALLBACK_BASE = 100000;
   return lessons
     .filter((lesson): lesson is Lesson => lesson !== null)
-    .sort((a, b) => a.metadata.order - b.metadata.order);
+    .sort((a, b) => {
+      const aPos = positions.get(a.slug) ?? FALLBACK_BASE + a.metadata.order;
+      const bPos = positions.get(b.slug) ?? FALLBACK_BASE + b.metadata.order;
+      return aPos - bPos;
+    });
 }
 
 /**

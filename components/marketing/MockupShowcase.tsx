@@ -286,10 +286,10 @@ export function MockupShowcase() {
         }
         description={
           <>
-            Skip the API keys, the install errors, the version mismatches. Edit
-            the prompt, swap the model, change the temperature — watch the
-            response stream back next to the lesson explaining it. Claude,
-            GPT-5, Gemini 2.5, and local Llama, all in one place.
+            Skip the API keys, the install errors, the version mismatches. Open
+            an in-browser playground from any lesson, edit the prompt, change
+            the temperature, and watch the response stream back. Llama 3 70B
+            is wired up today; Claude, GPT, and Gemini are next.
           </>
         }
         primary={<PlaygroundMockup />}
