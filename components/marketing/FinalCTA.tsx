@@ -23,12 +23,12 @@ export function FinalCTA() {
           className="max-w-3xl mx-auto text-center"
         >
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-6">
-            Ready to start?
+            Start learning today.
           </h2>
 
           <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-            Create a free account to save your progress, or browse the
-            curriculum without signing in.
+            Sign up free in 30 seconds. Your progress saves across every
+            device. No credit card. No course fees. Ever.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -39,8 +39,8 @@ export function FinalCTA() {
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild className="text-base px-8 h-12">
-              <Link href="/learn">
-                Browse the curriculum
+              <Link href="#curriculum">
+                See what you'll learn
               </Link>
             </Button>
           </div>

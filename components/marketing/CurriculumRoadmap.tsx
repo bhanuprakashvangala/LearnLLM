@@ -27,7 +27,7 @@ const roadmapSteps = [
       "No-Code Tools (ChatGPT, Claude, Gemini)",
       "Real-World AI (NotebookLM, Bolt.new, Cursor, Agentic AI Basics)",
     ],
-    outcome: "Understand AI deeply, write expert-level prompts, use every major AI tool",
+    outcome: "Use AI like a pro, write prompts that actually work, and finally understand what's happening behind the chat box.",
     lessons: 20,
     duration: "2-3 weeks",
     link: "/learn/beginner",
@@ -46,7 +46,7 @@ const roadmapSteps = [
       "Agentic Frameworks (Google ADK, OpenAI SDK, CrewAI)",
       "Modern Stack (MCP Protocol, Vercel AI SDK, AI Dev Tools)",
     ],
-    outcome: "Build AI agents, RAG systems, and full-stack AI apps from scratch",
+    outcome: "Build AI apps that use tools, answer questions over your own data, and run multi-step workflows end to end.",
     lessons: 35,
     duration: "5-7 weeks",
     link: "/learn/intermediate",
@@ -65,7 +65,7 @@ const roadmapSteps = [
       "Production RAG, Deployment (vLLM) & Optimization",
       "Production Agentic (AutoGen, Orchestration, MCP Servers, Evaluation)",
     ],
-    outcome: "Ship production multi-agent pipelines, fine-tuned models, and scalable AI systems",
+    outcome: "Fine-tune your own models, ship multi-agent systems, and run AI in production at scale.",
     lessons: 45,
     duration: "8-10 weeks",
     link: "/learn/advanced",
@@ -89,11 +89,12 @@ export function CurriculumRoadmap() {
             <span className="h-px flex-1 bg-border max-w-[200px]" />
           </div>
           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-            The full roadmap.
+            Three levels. One path.
           </h2>
           <p className="text-lg text-muted-foreground mt-5 leading-relaxed">
-            110 lessons across three levels. Each module ends with a
-            hands-on project. Self-paced, self-contained.
+            110+ lessons that take you from "what is a token" to shipping
+            production AI agents. Each level ends with a hands-on project.
+            Self-paced. Always free.
           </p>
         </motion.div>
 

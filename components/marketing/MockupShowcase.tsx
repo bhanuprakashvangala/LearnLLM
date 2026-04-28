@@ -245,9 +245,10 @@ export function MockupShowcase() {
         }
         description={
           <>
-            NLP, machine learning, neural networks, and transformers — explained in
-            plain language before a single line of code. 110+ lessons with runnable
-            examples, diagrams, and hands-on projects in every module.
+            Start with what AI actually is. Then how it learns. Then how it
+            talks. Every lesson uses an everyday example first, then shows you
+            the math and the runnable code. By the end you can read a research
+            paper without flinching.
           </>
         }
         primary={<LessonMockup />}
@@ -264,10 +265,10 @@ export function MockupShowcase() {
         }
         description={
           <>
-            Reason, plan, call real tools, take real actions. Production coverage of
-            Google ADK, OpenAI Agents SDK, CrewAI, AutoGen, and Claude Agents —
-            with MCP connectors that wire your AI into GitHub, Slack, databases, and
-            your own internal systems.
+            Modern AI doesn't just chat. It reads files, hits APIs, writes
+            code, and ships work on its own. Build agents like that with Google
+            ADK, OpenAI Agents SDK, CrewAI, AutoGen, and Claude — wired into
+            GitHub, Slack, and your own systems through MCP.
           </>
         }
         primary={<AgentMockup />}
@@ -285,9 +286,10 @@ export function MockupShowcase() {
         }
         description={
           <>
-            No local setup. Edit prompts, swap models, tweak temperature, and watch
-            the response stream back — all in the same window you're reading the
-            lesson in. Claude, GPT-5, Gemini 2.5, and local Llama side-by-side.
+            Skip the API keys, the install errors, the version mismatches. Edit
+            the prompt, swap the model, change the temperature — watch the
+            response stream back next to the lesson explaining it. Claude,
+            GPT-5, Gemini 2.5, and local Llama, all in one place.
           </>
         }
         primary={<PlaygroundMockup />}

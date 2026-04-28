@@ -226,15 +226,15 @@ export function HeroSection() {
           >
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold mb-6 leading-[1.08] tracking-tight">
-              Learn to build{" "}
-              <span className="hero-gradient-text">real AI systems</span>.
+              Learn how AI actually works.{" "}
+              <span className="hero-gradient-text">Then build it.</span>
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground mb-9 max-w-xl leading-relaxed">
-              A full curriculum for engineers, from the fundamentals of NLP
-              and neural networks through modern LLMs, agents, MCP connectors,
-              workflows, RAG, and fine-tuning. Written and maintained by
-              practicing engineers.
+              A free, complete course on AI engineering. Start with what a
+              large language model really is, end with shipping production AI
+              agents. 110+ structured lessons, runnable code, an in-browser
+              playground. No setup. No paywall.
             </p>
 
             {/* CTA */}
