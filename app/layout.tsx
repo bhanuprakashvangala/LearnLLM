@@ -203,7 +203,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="canonical" href={SITE_URL} />
+        {/* Per-page canonical comes from each page's `metadata.alternates.canonical`.
+            We deliberately do NOT hardcode a canonical link here, because doing so
+            emits a second <link rel="canonical"> on every page — and on subpages
+            it points to the homepage, which tells Google every lesson is a
+            duplicate of the homepage. */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}

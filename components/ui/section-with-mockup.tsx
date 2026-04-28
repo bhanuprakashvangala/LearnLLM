@@ -37,8 +37,8 @@ export function SectionWithMockup({
     visible: { transition: { staggerChildren: 0.18 } },
   };
   const item = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const } },
+    hidden: { y: 40 },
+    visible: { y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const } },
   };
 
   const textOrder = reverseLayout ? "md:col-start-2" : "";

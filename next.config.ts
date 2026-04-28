@@ -36,6 +36,22 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  /**
+   * Permanent www → apex redirect. Without this, www.learnllm.dev and
+   * learnllm.dev both serve the same Next.js app from Vercel as separate
+   * origins, which Google indexes as two competing sites and splits
+   * link equity between them.
+   */
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.learnllm.dev" }],
+        destination: "https://learnllm.dev/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
