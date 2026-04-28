@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ArrowLeft, ArrowRight, Clock, ChevronLeft, GraduationCap } from "lucide-react";
 import { getLessonBySlug, getAllLessonSlugs, getLessonsByDifficulty } from "@/lib/mdx/loader";
 import { notFound } from "next/navigation";
@@ -16,6 +17,10 @@ interface LessonPageProps {
   }>;
 }
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+  "https://learnllm.dev";
+
 const difficultyBadge = {
   beginner: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
   intermediate: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
@@ -25,6 +30,51 @@ const difficultyBadge = {
 export async function generateStaticParams() {
   const slugs = getAllLessonSlugs();
   return slugs.map(({ difficulty, slug }) => ({ difficulty, slug }));
+}
+
+export async function generateMetadata({ params }: LessonPageProps): Promise<Metadata> {
+  const { difficulty, slug } = await params;
+  if (!["beginner", "intermediate", "advanced"].includes(difficulty)) return {};
+
+  const lesson = await getLessonBySlug(
+    difficulty as "beginner" | "intermediate" | "advanced",
+    slug
+  );
+  if (!lesson) return {};
+
+  const title = lesson.metadata.title;
+  const description =
+    lesson.metadata.description ||
+    `A ${lesson.metadata.duration}-minute ${difficulty} lesson on LearnLLM.dev — part of a free, complete curriculum on AI engineering.`;
+  const path = `/learn/${difficulty}/${slug}`;
+  const url = `${SITE_URL}${path}`;
+  const keywords = [
+    ...(lesson.metadata.tags || []),
+    "AI tutorial",
+    "LLM tutorial",
+    `${difficulty} AI`,
+    "LearnLLM.dev",
+  ];
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url,
+      siteName: "LearnLLM.dev",
+      locale: "en_US",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
 }
 
 export default async function LessonPage({ params }: LessonPageProps) {
@@ -59,8 +109,62 @@ export default async function LessonPage({ params }: LessonPageProps) {
   const difficultyLevel = difficulty.toUpperCase() as Difficulty;
   const difficultyKey = difficulty as "beginner" | "intermediate" | "advanced";
 
+  const lessonUrl = `${SITE_URL}/learn/${difficulty}/${slug}`;
+  const articleLd = {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    headline: lesson.metadata.title,
+    name: lesson.metadata.title,
+    description: lesson.metadata.description,
+    url: lessonUrl,
+    inLanguage: "en-US",
+    educationalLevel: difficulty,
+    learningResourceType: "Lesson",
+    timeRequired: `PT${lesson.metadata.duration}M`,
+    keywords: lesson.metadata.tags?.join(", "),
+    isAccessibleForFree: true,
+    publisher: {
+      "@type": "EducationalOrganization",
+      name: "LearnLLM.dev",
+      url: SITE_URL,
+    },
+    isPartOf: {
+      "@type": "Course",
+      name: curriculumData.title,
+      url: `${SITE_URL}/learn/${difficulty}`,
+    },
+  };
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Learn", item: `${SITE_URL}/learn` },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: curriculumData.title,
+        item: `${SITE_URL}/learn/${difficulty}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: lesson.metadata.title,
+        item: lessonUrl,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       {/* Sticky top nav */}
       <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">

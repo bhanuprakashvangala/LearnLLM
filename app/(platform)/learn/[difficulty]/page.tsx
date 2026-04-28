@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ArrowRight, Clock, BookOpen, ChevronLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import curriculum from "@/data/curriculum.json";
@@ -10,6 +11,10 @@ interface DifficultyPageProps {
     difficulty: string;
   }>;
 }
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+  "https://learnllm.dev";
 
 const difficultyColors = {
   beginner: "from-green-500 to-emerald-600",
@@ -23,6 +28,32 @@ export async function generateStaticParams() {
     { difficulty: "intermediate" },
     { difficulty: "advanced" },
   ];
+}
+
+export async function generateMetadata({ params }: DifficultyPageProps): Promise<Metadata> {
+  const { difficulty } = await params;
+  if (!["beginner", "intermediate", "advanced"].includes(difficulty)) return {};
+  const data = curriculum[difficulty as keyof typeof curriculum];
+  const totalLessons = data.modules.reduce(
+    (acc, module) => acc + module.lessons.length,
+    0
+  );
+  const title = `${data.title} — AI engineering`;
+  const description = `${data.description}. ${totalLessons} free lessons across ${data.modules.length} modules. Self-paced. ${data.duration}.`;
+  const url = `${SITE_URL}/learn/${difficulty}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "website",
+      siteName: "LearnLLM.dev",
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
 }
 
 export default async function DifficultyPage({ params }: DifficultyPageProps) {
@@ -39,8 +70,43 @@ export default async function DifficultyPage({ params }: DifficultyPageProps) {
     0
   );
 
+  const courseUrl = `${SITE_URL}/learn/${difficulty}`;
+  const itemListLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: data.title,
+    description: data.description,
+    url: courseUrl,
+    numberOfItems: totalLessons,
+    itemListElement: data.modules.flatMap((module, mIdx) =>
+      module.lessons.map((lesson, lIdx) => ({
+        "@type": "ListItem",
+        position: mIdx * 100 + lIdx + 1,
+        name: lesson.title,
+        url: `${SITE_URL}/learn/${difficulty}/${lesson.slug}`,
+      }))
+    ),
+  };
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Learn", item: `${SITE_URL}/learn` },
+      { "@type": "ListItem", position: 3, name: data.title, item: courseUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       {/* Compact Header */}
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">

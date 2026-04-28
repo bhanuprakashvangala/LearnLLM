@@ -21,22 +21,21 @@ export function ContentGate({ difficulty, children, slug }: ContentGateProps) {
   const [isSignUp, setIsSignUp] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [mounted, setMounted] = React.useState(false);
   const [formData, setFormData] = React.useState({
     name: "",
     email: "",
     password: "",
   });
 
-  // Show loading state
-  if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // Wait for client-side hydration before deciding to show the gate. This
+  // means the SSR HTML always contains the full lesson content, which is
+  // what search engine crawlers index. The signup overlay only appears
+  // after hydration if the visitor isn't signed in.
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Check access
   const userAccess = session?.user
     ? {
         plan: (session.user.plan as "FREE" | "PRO" | "TEAMS") || "FREE",
@@ -46,8 +45,12 @@ export function ContentGate({ difficulty, children, slug }: ContentGateProps) {
 
   const hasAccess = canAccessDifficulty(userAccess, difficulty, slug);
 
-  // If user has access, show content
-  if (hasAccess) {
+  // SSR + signed-in users see the content directly. We only render the gate
+  // once the client knows for sure the visitor is unauthenticated, so we
+  // never flash the modal at someone who's already logged in.
+  const showGate = mounted && status === "unauthenticated" && !hasAccess;
+
+  if (!showGate) {
     return <>{children}</>;
   }
 

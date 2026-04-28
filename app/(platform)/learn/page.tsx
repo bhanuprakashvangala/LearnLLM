@@ -32,25 +32,12 @@ const difficultyBgColors = {
 };
 
 export default function LearnPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const { completedLessons, lessonProgress } = useProgress();
 
-  // Clicking "Learn" while signed out should take you to the sign-in page.
-  // We only do this once auth status is known (not "loading") to avoid
-  // bouncing hydrated sessions back to /login.
-  React.useEffect(() => {
-    if (status === "unauthenticated") {
-      window.location.href = "/login?callbackUrl=/learn";
-    }
-  }, [status]);
-
-  if (status === "loading" || status === "unauthenticated") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // The curriculum overview is intentionally public so it can be indexed.
+  // Signed-in users get the progress widget added; signed-out users still
+  // see the full path layout and can browse from here.
 
   // Calculate total lessons per difficulty
   const stats = {

@@ -13,6 +13,12 @@ import { getToken } from "next-auth/jwt";
  * reachable without an account and (b) about / contact are
  * conversion pages that shouldn't be gated.
  */
+/**
+ * Lesson reading is intentionally public so that the content can be
+ * indexed by search engines. The signup nudge happens client-side via
+ * ContentGate after hydration. Platform features (dashboard, playground,
+ * challenges, profile, settings, quiz, all of /api/*) stay protected.
+ */
 const PUBLIC_PATHS = [
   "/",
   "/login",
@@ -22,6 +28,7 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/cookies",
+  "/learn",
 ];
 
 function isPublic(pathname: string): boolean {
