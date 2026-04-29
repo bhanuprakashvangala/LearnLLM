@@ -204,7 +204,7 @@ function AnimatedTerminal() {
 
 export function HeroSection() {
   return (
-    <section className="snap-section relative items-center overflow-hidden bg-[#fafbfc] dark:bg-[#050505] py-20 md:py-24 lg:py-28">
+    <section className="snap-section relative flex flex-col justify-center overflow-hidden bg-[#fafbfc] dark:bg-[#050505] py-20 md:py-24 lg:py-28 min-h-[calc(100dvh-65px)]">
       {/* Atmospheric background */}
       <div className="absolute inset-0 -z-10">
         {/* Grid with vignette mask */}
@@ -288,7 +288,7 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="hidden lg:block"
           >
-            <Card className="w-full aspect-[4/5] max-h-[620px] min-h-[440px] bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10">
+            <Card className="w-full max-h-[580px] min-h-[400px] h-[calc(100dvh-280px)] bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-emerald-500/10">
               <Spotlight
                 className="-top-40 left-0 md:left-60 md:-top-20"
                 fill="rgba(16,185,129,0.5)"
