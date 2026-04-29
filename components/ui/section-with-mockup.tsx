@@ -45,7 +45,7 @@ export function SectionWithMockup({
   const imageOrder = reverseLayout ? "md:col-start-1 md:row-start-1" : "";
 
   return (
-    <section className={cn("relative flex flex-col justify-center py-20 md:py-24 bg-black overflow-hidden min-h-[calc(100dvh-65px)]", className)}>
+    <section className={cn("relative flex flex-col justify-center py-20 md:py-24 bg-[#070a08] overflow-hidden min-h-[calc(100dvh-65px)]", className)}>
       {/* Background atmosphere */}
       <div className="absolute inset-0 -z-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-emerald-500/[0.06] rounded-full blur-[140px]" />

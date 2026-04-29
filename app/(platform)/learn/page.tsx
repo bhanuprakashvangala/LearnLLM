@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import {
   BookOpen, Code, Rocket, ArrowRight, Clock,
-  Trophy, Play, GraduationCap, Layers
+  Trophy, Play, Layers
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ const difficultyBgColors = {
 
 export default function LearnPage() {
   const { data: session } = useSession();
-  const { completedLessons, lessonProgress } = useProgress();
+  const { completedLessons } = useProgress();
 
   // The curriculum overview is intentionally public so it can be indexed.
   // Signed-in users get the progress widget added; signed-out users still
@@ -59,67 +59,50 @@ export default function LearnPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-purple-500/5 to-transparent" />
-        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto text-center"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 rounded-full text-sm font-medium text-primary mb-6">
-              <GraduationCap className="w-4 h-4" />
-              Start Your AI Journey
-            </div>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              Master{" "}
-              <span className="gradient-text">LLMs & Agentic AI</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              From complete beginner to production AI engineer. 110+ hands-on lessons covering
-              Google ADK, CrewAI, MCP, LangChain, RAG, fine-tuning, and the entire agentic AI stack.
-            </p>
-
-            {/* Progress for logged in users */}
-            {session && completedLessons > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center gap-3 px-5 py-3 bg-card border-2 border-primary/30 rounded-xl shadow-lg"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold">{completedLessons} lessons completed</div>
-                  <div className="text-sm text-muted-foreground">
-                    {Math.round((completedLessons / totalLessons) * 100)}% of the curriculum
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Learning Paths */}
-      <section className="py-16 md:py-20">
+      {/* Learning Paths — no marketing hero. The page is a curriculum
+          index, not a landing page; the homepage already does the
+          pitch. We go straight to "pick your level" with a tight
+          intro line and an optional progress chip for returning users. */}
+      <section className="pt-12 md:pt-16 pb-16 md:pb-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-12 text-center"
+              className="mb-12 max-w-2xl"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Choose Your Learning Path</h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Start where you are. Each path is designed to take you from your current
-                level to the next with hands-on practice.
+              <div className="text-[11px] font-mono uppercase tracking-widest text-primary mb-4">
+                Curriculum
+              </div>
+              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.05] mb-5">
+                Three levels. One path.
+              </h1>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                110+ lessons that take you from "what is a token" to shipping
+                production AI agents. Pick where you are. Move at your own pace.
+                Always free.
               </p>
+
+              {session && completedLessons > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="inline-flex items-center gap-3 px-4 py-2.5 mt-6 bg-card border border-primary/30 rounded-xl shadow-sm"
+                >
+                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
+                    <Trophy className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-sm">
+                      {completedLessons} {completedLessons === 1 ? "lesson" : "lessons"} complete
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {Math.round((completedLessons / totalLessons) * 100)}% of the curriculum
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">

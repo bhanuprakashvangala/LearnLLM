@@ -8,6 +8,7 @@ import curriculum from "@/data/curriculum.json";
 import { ContentGate } from "@/components/shared/ContentGate";
 import { LessonProgressBar } from "@/components/learn/LessonProgressBar";
 import { LessonToc } from "@/components/learn/LessonToc";
+import { MarkCompleteCard } from "@/components/learn/MarkCompleteCard";
 import type { Difficulty } from "@/lib/access";
 
 interface LessonPageProps {
@@ -248,8 +249,20 @@ export default async function LessonPage({ params }: LessonPageProps) {
                 {lesson.content}
               </article>
 
+              {/* End-of-lesson — sign-up prompt, mark complete, or
+                  celebratory completed state depending on auth + progress. */}
+              <div className="mt-12">
+                <MarkCompleteCard
+                  slug={slug}
+                  difficulty={difficultyKey}
+                  difficultyLabel={curriculumData.title}
+                  totalLessons={allLessons.length}
+                  currentIndex={currentIndex}
+                />
+              </div>
+
               {/* Prev / Next */}
-              <nav className="mt-16 pt-8 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <nav className="mt-10 pt-8 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {prevLesson ? (
                   <Link
                     href={`/learn/${difficulty}/${prevLesson.slug}`}

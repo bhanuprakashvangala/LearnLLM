@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Bot, Zap, Brain, Wrench, CheckCircle2 } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  Zap,
+  Brain,
+  Wrench,
+  CheckCircle2,
+  BookOpen,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Spotlight } from "@/components/ui/spotlight";
@@ -245,39 +254,72 @@ export function HeroSection() {
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" asChild className="text-base px-7 h-12">
-                <Link href="#curriculum">
-                  Browse curriculum
-                </Link>
+              <Button
+                variant="outline"
+                size="lg"
+                asChild
+                className="text-base px-7 h-12 !bg-emerald-50 hover:!bg-emerald-100 dark:!bg-emerald-500/[0.08] dark:hover:!bg-emerald-500/[0.16] !text-emerald-700 dark:!text-emerald-300 !border-emerald-500/40 hover:!border-emerald-500/60 transition-colors"
+              >
+                <Link href="#curriculum">Browse curriculum</Link>
               </Button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 max-w-md">
-              {[
-                { numeric: 110, suffix: "+", label: "lessons", delay: 0.1 },
-                { numeric: 40, suffix: "+", label: "tools covered", delay: 0.2 },
-                { numeric: null, value: "Free", label: "to start", delay: 0.3 },
-              ].map((stat, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + i * 0.1, duration: 0.5 }}
-                  className="border-l-2 border-primary/60 pl-4"
-                >
-                  <div className="text-2xl font-extrabold tracking-tight text-foreground">
-                    {stat.numeric !== null ? (
-                      <NumberTicker value={stat.numeric} suffix={stat.suffix} delay={stat.delay} />
-                    ) : (
-                      stat.value
-                    )}
-                  </div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-0.5">
-                    {stat.label}
-                  </div>
-                </motion.div>
-              ))}
+            {/* Stats — wrapped in a subtle tinted panel with a per-stat icon
+                so the numbers don't look like a Tailwind boilerplate row. */}
+            <div className="relative max-w-lg">
+              <div className="absolute -inset-3 rounded-2xl bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-transparent border border-emerald-500/10 pointer-events-none" />
+              <div className="relative grid grid-cols-3 gap-6 px-1 py-1">
+                {[
+                  {
+                    icon: BookOpen,
+                    numeric: 110,
+                    suffix: "+",
+                    label: "lessons",
+                    delay: 0.1,
+                  },
+                  {
+                    icon: Wrench,
+                    numeric: 40,
+                    suffix: "+",
+                    label: "tools covered",
+                    delay: 0.2,
+                  },
+                  {
+                    icon: Sparkles,
+                    numeric: null,
+                    value: "Free",
+                    label: "forever",
+                    delay: 0.3,
+                  },
+                ].map((stat, i) => {
+                  const StatIcon = stat.icon;
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + i * 0.1, duration: 0.5 }}
+                      className="border-l-2 border-primary/60 pl-4"
+                    >
+                      <StatIcon className="w-3.5 h-3.5 text-emerald-600/80 dark:text-emerald-400/80 mb-1.5" />
+                      <div className="text-2xl font-extrabold tracking-tight text-foreground">
+                        {stat.numeric !== null ? (
+                          <NumberTicker
+                            value={stat.numeric}
+                            suffix={stat.suffix}
+                            delay={stat.delay}
+                          />
+                        ) : (
+                          stat.value
+                        )}
+                      </div>
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-0.5">
+                        {stat.label}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
 

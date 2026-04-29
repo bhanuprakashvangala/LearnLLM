@@ -69,6 +69,20 @@ export default function ChallengesPage() {
     return !challenge.prerequisites.every(prereq => isChallengeCompleted(prereq));
   };
 
+  // Map challenge id → title for surfacing real prereq names in the
+  // locked state ("First complete: Build Your First Chatbot") instead
+  // of the generic "Complete prerequisites to unlock" string.
+  const titleById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of challenges) map.set(c.id, c.title);
+    return map;
+  }, [challenges]);
+
+  const getPrereqTitles = (challenge: Challenge): string[] =>
+    challenge.prerequisites
+      .map((id) => titleById.get(id))
+      .filter((t): t is string => Boolean(t));
+
   // Only show user's actual stats after hydration, otherwise show 0
   const displayTotalPoints = isHydrated ? totalPoints : 0;
   const displayCompletedChallenges = isHydrated ? completedChallenges : 0;
@@ -366,7 +380,7 @@ export default function ChallengesPage() {
                     {isLocked ? (
                       <span className="flex items-center justify-center">
                         <Lock className="w-4 h-4 mr-2" />
-                        Complete prerequisites to unlock
+                        {!session ? "Sign in to unlock" : "Complete prerequisites first"}
                       </span>
                     ) : isCompleted ? (
                       <Link href={`/challenges/${challenge.id}`} className="flex items-center justify-center">
@@ -382,6 +396,29 @@ export default function ChallengesPage() {
                       </Link>
                     )}
                   </Button>
+
+                  {/* Lock-state hint — show the actual prereq titles or
+                      a sign-in nudge so the locked state is informative,
+                      not just discouraging. */}
+                  {isLocked && session && getPrereqTitles(challenge).length > 0 && (
+                    <div className="mt-2.5 text-xs text-muted-foreground text-center px-1 leading-relaxed">
+                      First complete:{" "}
+                      <span className="text-foreground/80 font-medium">
+                        {getPrereqTitles(challenge).join(" · ")}
+                      </span>
+                    </div>
+                  )}
+                  {isLocked && !session && (
+                    <div className="mt-2.5 text-xs text-muted-foreground text-center">
+                      <Link
+                        href="/login?callbackUrl=/challenges"
+                        className="text-primary hover:underline font-medium"
+                      >
+                        Sign in
+                      </Link>{" "}
+                      to track progress and unlock
+                    </div>
+                  )}
                 </Card>
               </motion.div>
             );
