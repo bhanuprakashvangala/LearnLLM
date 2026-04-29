@@ -5,6 +5,7 @@ import { MockupShowcase } from "@/components/marketing/MockupShowcase";
 import { CurriculumRoadmap } from "@/components/marketing/CurriculumRoadmap";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
+import { HomeScrollEnhancer } from "@/components/marketing/HomeScrollEnhancer";
 import { faqs } from "@/data/faqs";
 
 const faqLd = {
@@ -27,6 +28,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
+      <HomeScrollEnhancer />
       <Navbar />
       <HeroSection />
       <MockupShowcase />

@@ -218,41 +218,34 @@ html, body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Page-by-page scroll-snap on the marketing landing (desktop only).
+/* Page-by-page scroll-snap on the marketing landing.
    The scroll container for a full HTML page is the ROOT — <html> —
    so the snap directives have to live there, not on <main>. We scope
-   the root-level snap to when body.snap-on is set (only set on the
-   home page's layout) so lesson pages and dashboards scroll normally.
+   them to the `.snap-on` class which a small client component adds to
+   <html> only on the home page, so lesson pages and dashboards keep
+   normal continuous scroll.
 
-   scroll-snap-type: y mandatory  → any scroll gesture locks to the
-   nearest snap target. Combined with scroll-snap-stop: always on each
-   section, one wheel tick / swipe advances exactly one section. */
-@media (min-width: 1024px) {
-  html:has(body.snap-on) {
-    scroll-snap-type: y mandatory;
-    scroll-padding-top: 0;
-  }
-  body.snap-on .snap-section {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-    height: 100vh;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    overflow: hidden;
-  }
-  /* Sections with real content density (9-card feature grid, full tool
-     ecosystem, curriculum roadmap, FAQ) are taller than a viewport —
-     let them scroll internally so nothing gets clipped. */
-  body.snap-on .snap-section-scroll {
-    overflow-y: auto;
-    justify-content: flex-start;
-  }
-  /* Hide the sticky navbar's scrolled-state drop shadow inside snap
-     pages so it doesn't flash as each section locks in. */
-  body.snap-on header {
-    transition: none;
+   `proximity` (vs `mandatory`) is intentional: the browser only
+   snaps when you're already near a section boundary, so fast scrolls
+   and trackpad gestures don't feel imprisoned. The reading-density
+   sections (curriculum, FAQ) opt out of snap-stop with the
+   .snap-section-scroll modifier so users can read past their height. */
+html.snap-on {
+  scroll-snap-type: y proximity;
+}
+html.snap-on .snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+html.snap-on .snap-section-scroll {
+  scroll-snap-align: none;
+}
+
+/* Honor reduced-motion: snap can feel like a forced animation, so
+   visitors who've asked for less motion get plain continuous scroll. */
+@media (prefers-reduced-motion: reduce) {
+  html.snap-on {
+    scroll-snap-type: none;
   }
 }
 
