@@ -55,16 +55,16 @@ export default function ChallengesPage() {
 
   const challenges: Challenge[] = challengesData.challenges as Challenge[];
 
-  // Check if a challenge is locked
-  // Only the first beginner challenge is free, everything else requires login
+  // Check if a challenge is locked. The first two beginner challenges
+  // are open to everyone — locking everything by default kills the
+  // "try before you sign up" moment for new visitors. Once a visitor
+  // signs in, prerequisite-based locking takes over for the rest.
+  const FREE_CHALLENGE_IDS = new Set(["1", "2"]);
   const isChallengelocked = (challenge: Challenge): boolean => {
-    // First beginner challenge (id "1") is always free
-    if (challenge.id === "1") {
+    if (FREE_CHALLENGE_IDS.has(challenge.id)) {
       return false;
     }
-    // Everything else requires login
     if (!session) return true;
-    // Check prerequisites if logged in
     if (challenge.prerequisites.length === 0) return false;
     return !challenge.prerequisites.every(prereq => isChallengeCompleted(prereq));
   };

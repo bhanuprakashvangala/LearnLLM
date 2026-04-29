@@ -35,7 +35,7 @@ const values = [
 
 const stats = [
   { value: "10,000+", label: "Active Learners" },
-  { value: "83+", label: "Comprehensive Lessons" },
+  { value: "110+", label: "Comprehensive Lessons" },
   { value: "30+", label: "Hands-on Challenges" },
   { value: "95%", label: "Completion Rate" }
 ];

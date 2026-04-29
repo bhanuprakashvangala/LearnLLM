@@ -80,7 +80,7 @@ export default function LearnPage() {
               <span className="gradient-text">LLMs & Agentic AI</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              From complete beginner to production AI engineer. 100+ hands-on lessons covering
+              From complete beginner to production AI engineer. 110+ hands-on lessons covering
               Google ADK, CrewAI, MCP, LangChain, RAG, fine-tuning, and the entire agentic AI stack.
             </p>
 
