@@ -194,9 +194,28 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
 }
 
-/* Smooth Scrolling */
+/* Smooth Scrolling + sticky-nav-aware anchor jumps. The 80px offset
+   keeps the destination heading visible below the 64px sticky header
+   when the user clicks an in-page anchor like /#curriculum or jumps
+   to a lesson section via the table-of-contents. */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Mobile-friendly tweaks. overscroll-behavior-y: contain prevents the
+   address bar pull-to-refresh from kicking in mid-scroll on iOS Chrome
+   and Safari, and -webkit-text-size-adjust pins font sizing across
+   orientation changes. */
+html, body {
+  overscroll-behavior-y: contain;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Page-by-page scroll-snap on the marketing landing (desktop only).
